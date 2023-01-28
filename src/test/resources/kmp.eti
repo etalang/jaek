@@ -1,0 +1,5 @@
+// Knuth-Morris-Pratt string finder
+
+begin(t:int[], p:int[]) : int[]
+
+next(t:int[], p:int[], pi:int[], i:int):int
