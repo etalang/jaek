@@ -3,7 +3,7 @@ all: etac.jar
 
 etac.jar: bin/lexer/JFlexLexer.class
 etac.jar: src/main/Main.kt
-	kotlinc -include-runtime -cp bin -d etac.jar $<
+	kotlinc -include-runtime -cp "bin:lib/clikt-3.5.1.jar" -d etac.jar $<
 
 bin/lexer/JFlexLexer.class: src/lexer/JFlexLexer.java
 	javac -cp bin -d bin $<
