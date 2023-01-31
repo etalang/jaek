@@ -23,3 +23,6 @@ replay_pid*
 /build/
 /.gradle/
 /gradle/
+
+# JFlex Output
+!/src/lexer/JFlexLexer.java
