@@ -26,8 +26,6 @@ replay_pid*
 
 # JFlex Output
 !/src/lexer/JFlexLexer.java
-/docker/.gradle/
-/docker/build/
-/docker/dependencies/
-/docker/build.gradle
-/docker/src/
+/production/.gradle/
+/production/build/
+/production/src/
