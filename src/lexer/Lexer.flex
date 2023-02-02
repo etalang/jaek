@@ -13,16 +13,40 @@
 %pack
 
 %{
-    /** Type of tokens in the lexer. */
-    enum TokenType {
-        RESERVED, SYMBOL, STRING, CHAR, INT, ID
-    }
-
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() { return yyline + 1; }
 
     /** Returns the column the lexer head is currently at in the file, numbered from 1. */
     public int column() { return yycolumn + 1; }
+
+    /** Types of possible errors encounterable while lexing */
+    enum LexErrType { StringNotEnd, CharWrong, UnexpectedChar }
+
+    /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
+    class LexicalError extends Exception {
+      LexErrType errorType;
+      int lineNum;
+      int col;
+      String msg;
+
+      LexicalError(LexErrType lt) {
+          errorType = lt;
+          switch (lt)  {
+              case StringNotEnd:
+                  msg = "Non-terminating string"; break;
+              case CharWrong:
+                  msg = "Invalid character constant"; break;
+              case UnexpectedChar:
+                  msg = "Unexpected character"; break;
+          }
+          lineNum = lineNumber(); col = column();
+      }
+    }
+
+    /** Type of tokens in the lexer. */
+    enum TokenType {
+        RESERVED, SYMBOL, STRING, CHAR, INT, ID
+    }
 
     /** A Token consists of a TokenType [type], the corresponding string lexeme [lexeme], positioning information
      *  ([lineNum], [col]), and if applicable, the literal value [attribute]. */
@@ -36,7 +60,7 @@
             type = tt; lineNum = lineNumber(); col = column(); lexeme = lex;
             switch (tt) {
                 case STRING:
-                    attribute = lex; break;
+                    attribute = lex; break; // TODO: Handle string parsing correctly
                 case INT:
                     attribute = Integer.parseInt(lex); break;
                 case CHAR:
@@ -50,11 +74,11 @@
          public String TTtoString(TokenType tt) {
              switch (tt) {
                  case STRING:
-                     return "string " + lexeme.substring(1, lexeme.length() - 1);
+                     return "string " + lexeme.substring(1, lexeme.length() - 1); // TODO: make sure this prints properly (escaped unicode)
                  case INT:
                      return "integer " + attribute.toString();
                  case CHAR:
-                     return "character " + attribute.toString();
+                     return "character " + attribute.toString(); // TODO: make sure this prints properly (escaped unicode)
                  default:
                      return lexeme;
                 }
@@ -68,15 +92,16 @@
 Whitespace = [ \t\f\r\n]
 Letter = [a-zA-Z]
 Digit = [0-9]
+Unicode = "\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
 Identifier = {Letter}({Digit}|{Letter}|_|')*
-Integer = "0"|"-"?[1-9]{Digit}*|"\x"
+Integer = "0"|[1-9]{Digit}*
 Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"<"|"<="|">="|">"|"=="|"!="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
-Character = "'"([^"\\"]|"\\"|"\\n"|"\\'")"'"
-String = "\"".*"\""
+Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
+
 
 %state COMMENT
-
+%state STRING
 
 %%
 
@@ -87,10 +112,17 @@ String = "\"".*"\""
     {Symbol}    { return new Token(TokenType.SYMBOL, yytext()); }
     {Integer}     { return new Token(TokenType.INT, yytext()); }
     {Character}    { return new Token(TokenType.CHAR, yytext()); }
-    {String}        {return new Token(TokenType.STRING, yytext());}
+    "\""        { yybegin(STRING); }
+    "//"         { yybegin(COMMENT); }
 
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
+      [^] { }
 }
+<STRING> { // TODO: String matching is broken
+    [^"\"\n"] { return new Token(TokenType.STRING, yytext()); }
+    "\"" { yybegin(YYINITIAL); }
+}
+[^] {  } // end of file?
 
