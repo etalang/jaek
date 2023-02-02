@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#./gradlew shadowJar
+java -jar build/libs/jaek-1.0-all.jar
