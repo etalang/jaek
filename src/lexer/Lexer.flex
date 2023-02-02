@@ -120,9 +120,9 @@ Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
     "\n"  { yybegin(YYINITIAL); }
       [^] { }
 }
-<STRING> { // TODO: String matching is broken
-    [^"\"\n"] { return new Token(TokenType.STRING, yytext()); }
-    "\"" { yybegin(YYINITIAL); }
+<STRING> { // TODO: String matching is broken? someone should look at this matching
+    (.|{Unicode})*"\"" { return new Token(TokenType.STRING, yytext()); yybegin(YYINITIAL); }
+    [^] {  } // error state
 }
 [^] {  } // end of file?
 
