@@ -1,5 +1,5 @@
 // EXAMPLE FILE
-
+package lexer;
 %%
 
 %public
