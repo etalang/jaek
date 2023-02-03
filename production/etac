@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # gradle6 shadowJar
-java build/libs/jaek-1.0-all.jar
+java -jar build/libs/jaek-1.0-all.jar $@
