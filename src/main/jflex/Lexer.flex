@@ -72,7 +72,7 @@
          public String TTtoString(TokenType tt) {
              switch (tt) {
                  case STRING:
-                     return "string " + lexeme.substring(1, lexeme.length() - 1); // TODO: make sure this prints properly (escaped unicode)
+                     return "string " + lexeme; // TODO: make sure this prints properly (escaped unicode)
                  case INT:
                      return "integer " + attribute.toString();
                  case CHAR:
@@ -119,7 +119,7 @@ Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
       [^] { }
 }
 <STRING> { // TODO: String matching is broken? someone should look at this matching
-    (.|{Unicode})*"\"" { return new Token(TokenType.STRING, yytext()); yybegin(YYINITIAL); }
+    (.|{Unicode})*"\"" { Token t = new Token(TokenType.STRING, yytext()); yybegin(YYINITIAL); return t; }
     [^] {  } // error state
 }
 
