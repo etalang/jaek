@@ -20,7 +20,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
 
     override fun run() {
-        val lexer = JFlexLexer(lexFiles.first().bufferedReader())
         // use the input values somehow
         // paths expected to be relatives, default current working dir
         val diagnosticAbsPath = Path(System.getProperty("user.dir"),diagnosticRelPath)
