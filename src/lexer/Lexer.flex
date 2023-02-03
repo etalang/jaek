@@ -124,4 +124,5 @@ Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
     (.|{Unicode})*"\"" { return new Token(TokenType.STRING, yytext()); yybegin(YYINITIAL); }
     [^] {  } // error state
 }
+
 [^] {  } // end of file?
