@@ -41,6 +41,15 @@
       }
     }
 
+    /** [isPrintable(n)] checks if n is an integer whose corresponding character is printable. For
+    * ASCII, this is 32-126. Requires n >= 0.  */
+    public boolean isPrintable(int n) {
+        if (n < 32 || n == 127) {
+            return false;
+        }
+        return true;
+    }
+
     /** A Token consists of the corresponding string lexeme [lexeme], positioning information
      *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
      *  as accurate as possible to the semantic meaning of the string. */
@@ -51,8 +60,11 @@
         Token(String lex) {
             lineNum = lineNumber(); col = column(); lexeme = lex;
         }
+        public String positionInfo() {
+            return "" + lineNum + ":" + col;
+        }
         public String toString() {
-            return "" + lineNum + ":" + col + " " + lexeme;
+            return positionInfo() + " " + lexeme;
         }
     }
 
@@ -64,13 +76,21 @@
             attribute = parseToStr(lex);
         }
         /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
-        * any unicode characters. */ // TODO: doesn't actually do the unicode thing
+        * any unicode characters. */ // TODO: the unicode replacement can definitely be done more cleanly
         public String parseToStr(String matched) {
             String ret = matched.substring(0, matched.length() - 1);
+            while (ret.contains("\\x{")) {
+                int unicodeIdx = ret.indexOf("\\x{");
+                int endUnicode = ret.indexOf("}", unicodeIdx);
+                int codePoint = Integer.parseInt(ret.substring(unicodeIdx + 3, endUnicode), 16);
+                if (isPrintable(codePoint)) {
+                    ret = ret.substring(0, unicodeIdx) + (char) (codePoint) + ret.substring(endUnicode + 1);
+                }
+            }
             return ret;
         }
         public String toString() {
-            return "" + lineNum + ":" + col + " string " + attribute;
+            return positionInfo() + " string " + attribute;
         }
     }
 
@@ -81,7 +101,7 @@
             attribute = Integer.parseInt(lex);
         }
         public String toString() {
-            return "" + lineNum + ":" + col + " integer " + attribute;
+            return positionInfo() + " integer " + attribute;
         }
     }
 
@@ -107,7 +127,7 @@
                 if (errorProne == 'n')  {
                     return 0x0A;
                 }
-                else {
+                else { // extract the character
                     return errorProne;
                 }
             }
@@ -120,7 +140,7 @@
         }
 
         public String toString() {
-            return "" + lineNum + ":" + col + " character " + (char) attribute;
+            return positionInfo() + " character " + (char) attribute;
         }
     }
 
@@ -135,7 +155,7 @@
             super(lex);
         }
         public String toString() {
-            return "" + lineNum + ":" + col + " id " + lexeme;
+            return positionInfo() + " id " + lexeme;
         }
     }
 
