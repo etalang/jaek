@@ -45,7 +45,7 @@
      *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
      *  as accurate as possible to the semantic meaning of the string. */
     abstract class Token {
-        String lexeme;
+        final String lexeme;
         int lineNum;
         int col;
         Token(String lex) {
@@ -61,7 +61,7 @@
         StringToken(String lex)  {
             super(lex);
             col = column() - 1; // need this to offset missing quotation
-            attribute = lex;
+            attribute = parseToStr(lex);
         }
         /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
         * any unicode characters. */ // TODO: doesn't actually do the unicode thing
