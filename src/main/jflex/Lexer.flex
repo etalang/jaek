@@ -18,7 +18,7 @@
     public int column() { return yycolumn + 1; }
 
     /** Types of possible errors encounterable while lexing */
-    enum LexErrType { StringNotEnd, CharWrong, UnexpectedChar }
+    enum LexErrType { StringNotEnd, MultilineString, CharWrong, UnexpectedChar }
 
     /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
     class LexicalError extends Exception {
@@ -47,7 +47,8 @@
     }
 
     /** A Token consists of a TokenType [type], the corresponding string lexeme [lexeme], positioning information
-     *  ([lineNum], [col]), and if applicable, the literal value [attribute]. */
+     *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
+     *  as accurate as possible to the semantic meaning of the string. */
     class Token {
         TokenType type;
         String lexeme;
@@ -58,25 +59,59 @@
             type = tt; lineNum = lineNumber(); col = column(); lexeme = lex;
             switch (tt) {
                 case STRING:
-                    attribute = lex; break; // TODO: Handle string parsing correctly
+                    attribute = parseToStr(lex); break;
                 case INT:
                     attribute = Integer.parseInt(lex); break;
                 case CHAR:
-                    attribute = 'a'; break; // TODO: Handle character parsing correctly
+                    attribute = parseToChar(lex); break;
                 default:
                     attribute = null; break;
             }
+        }
+        /** [parseToChar(matched)] converts the matched string to a character. */
+        // TODO: this might not be right
+        public char parseToChar(String matched) {
+            // normal case
+            if (matched.length() == 3)  {
+                return matched.charAt(1);
+            }
+            // escaped character
+            else if (matched.length() == 4) {
+                char errorProne = matched.charAt(2); // maybe this is \ or ', "error-prone" escapes
+                // newline case
+                if (errorProne == 'n')  {
+                    return Character.toChars(0x0A)[0];
+                }
+                else {
+                    return errorProne;
+                }
+            }
+            // unicode case
+            else {
+                // has format "'\x{<stuff>}'"
+                String hexNum = "0x" + matched.substring(4, matched.length() - 2);
+                int decoded = Integer.decode(hexNum);
+                return Character.toChars(decoded)[0];
+            }
+        }
+        /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
+         * any unicode characters. */ // TODO: doesn't actually do the unicode thing
+        public String parseToStr(String matched) {
+            String ret = matched.substring(0, matched.length() - 1);
+            return ret;
         }
          /** [TTtoString(tt)] returns the tokentype and literal of the current token, converted to a string
           *  consistent with the test output. */
          public String TTtoString(TokenType tt) {
              switch (tt) {
                  case STRING:
-                     return "string " + lexeme; // TODO: make sure this prints properly (escaped unicode)
+                     return "string " + attribute;
                  case INT:
                      return "integer " + attribute.toString();
                  case CHAR:
-                     return "character " + attribute.toString(); // TODO: make sure this prints properly (escaped unicode)
+                     return "character " + attribute.toString();
+                 case ID:
+                     return "id " + lexeme; // maybe this is wrong
                  default:
                      return lexeme;
                 }
@@ -118,7 +153,7 @@ Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
     "\n"  { yybegin(YYINITIAL); }
       [^] { }
 }
-<STRING> { // TODO: String matching is broken? someone should look at this matching
+<STRING> {
     (.|{Unicode})*"\"" { Token t = new Token(TokenType.STRING, yytext()); yybegin(YYINITIAL); return t; }
     [^] {  } // error state
 }
