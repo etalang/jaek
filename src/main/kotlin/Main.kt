@@ -9,7 +9,6 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import java.io.File
 import kotlin.io.path.Path
-import JFlexLexer as JFLexLexer
 
 class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
@@ -31,7 +30,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //We should lex the file in this case and output it to a file
 
                 //Create the new lexer
-                val lex = JFLexLexer(it.bufferedReader())
+                val lex = JFlexLexer(it.bufferedReader())
                 //Create the new file
                 val lexedFileName = it.nameWithoutExtension + ".lexed"
                 val lexedFile = File(diagnosticAbsPath.toString(),lexedFileName)
@@ -39,7 +38,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                 while (true) {
                     try {
-                        val t: JFLexLexer.Token = lex.nextToken() ?: break
+                        val t: JFlexLexer.Token = lex.nextToken() ?: break
                         lexedFile.appendText(t.toString() + "\n")
                     } catch (e: LexicalError) {
                         lexedFile.appendText(e.lineNum.toString() + " " + e.col.toString() + " " + e.msg.toString() + "\n")
