@@ -22,26 +22,41 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         // use the input values somehow
         // paths expected to be relatives, default current working dir
         val diagnosticAbsPath = Path(System.getProperty("user.dir"),diagnosticRelPath)
-        print(diagnosticAbsPath)
-        print(lexFiles)
 
         lexFiles.forEach{
             if(it.extension == "eta"){
-                //We should lex the file in this case and output it to a file
+                //We should lex the file in this case
 
                 //Create the new lexer
                 val lex = JFlexLexer(it.bufferedReader())
-                //Create the new file
+
+                //Create the new file name
                 val lexedFileName = it.nameWithoutExtension + ".lexed"
                 val lexedFile = File(diagnosticAbsPath.toString(),lexedFileName)
-                lexedFile.createNewFile()
 
+                //Create the new file if the file does not already exist
+                if (print){
+                    // Check if the file already exists and delete it if it does
+                    if (lexedFile.exists() && !lexedFile.isDirectory){
+                        lexedFile.delete()
+                    }
+                    lexedFile.createNewFile()
+                }
+
+                //Lex the file
                 while (true) {
                     try {
                         val t: JFlexLexer.Token = lex.nextToken() ?: break
-                        lexedFile.appendText(t.toString() + "\n")
+                        //Output to file if flag is set
+                        if (print) {
+                            lexedFile.appendText(t.toString() + "\n")
+                        }
+
                     } catch (e: LexicalError) {
-                        lexedFile.appendText(e.lineNum.toString() + " " + e.col.toString() + " " + e.msg.toString() + "\n")
+                        //Output to file if flag is set
+                        if (print) {
+                            lexedFile.appendText(e.lineNum.toString() + " " + e.col.toString() + " " + e.msg.toString() + "\n")
+                        }
                         break
                     }
                 }
