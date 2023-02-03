@@ -62,6 +62,14 @@ version '1.0'
 
 sourceCompatibility = 1.8
 
+task jflex(type: Exec) {
+    commandLine "jflex", "-q", "-d src/main/java", "src/main/jflex/Lexer.flex"
+}
+
+build {
+    mustRunAfter 'jflex'
+}
+
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
