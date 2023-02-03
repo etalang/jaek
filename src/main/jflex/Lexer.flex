@@ -41,36 +41,61 @@
       }
     }
 
-    /** Type of tokens in the lexer. */
-    enum TokenType {
-        RESERVED, SYMBOL, STRING, CHAR, INT, ID
-    }
-
-    /** A Token consists of a TokenType [type], the corresponding string lexeme [lexeme], positioning information
+    /** A Token consists of the corresponding string lexeme [lexeme], positioning information
      *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
      *  as accurate as possible to the semantic meaning of the string. */
-    class Token {
-        TokenType type;
+    abstract class Token {
         String lexeme;
         int lineNum;
         int col;
-        Object attribute;
-        Token(TokenType tt, String lex) {
-            type = tt; lineNum = lineNumber(); col = column(); lexeme = lex;
-            switch (tt) {
-                case STRING:
-                    attribute = parseToStr(lex); break;
-                case INT:
-                    attribute = Integer.parseInt(lex); break;
-                case CHAR:
-                    attribute = parseToChar(lex); break;
-                default:
-                    attribute = null; break;
-            }
+        Token(String lex) {
+            lineNum = lineNumber(); col = column(); lexeme = lex;
         }
-        /** [parseToChar(matched)] converts the matched string to a character. */
+        public String toString() {
+            return "" + lineNum + ":" + col + " " + lexeme;
+        }
+    }
+
+    class StringToken extends Token {
+        String attribute;
+        StringToken(String lex)  {
+            super(lex);
+            col = column() - 1; // need this to offset missing quotation
+            attribute = lex;
+        }
+        /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
+        * any unicode characters. */ // TODO: doesn't actually do the unicode thing
+        public String parseToStr(String matched) {
+            String ret = matched.substring(0, matched.length() - 1);
+            return ret;
+        }
+        public String toString() {
+            return "" + lineNum + ":" + col + " string " + attribute;
+        }
+    }
+
+    class IntegerToken extends Token {
+        int attribute;
+        IntegerToken(String lex)  {
+            super(lex);
+            attribute = Integer.parseInt(lex);
+        }
+        public String toString() {
+            return "" + lineNum + ":" + col + " integer " + attribute;
+        }
+    }
+
+    class CharacterToken extends Token {
+        int attribute; // the integer represents the character
+        CharacterToken(String lex)  {
+            super(lex);
+            attribute = parseToChar(lex);
+        }
+        /** [parseToChar(matched)] converts the matched string to the integer representing
+        * the character. Throws an LexicalError if the string does not correspond to a
+        * character. */
         // TODO: this might not be right
-        public char parseToChar(String matched) {
+        public int parseToChar(String matched) {
             // normal case
             if (matched.length() == 3)  {
                 return matched.charAt(1);
@@ -80,7 +105,7 @@
                 char errorProne = matched.charAt(2); // maybe this is \ or ', "error-prone" escapes
                 // newline case
                 if (errorProne == 'n')  {
-                    return Character.toChars(0x0A)[0];
+                    return 0x0A;
                 }
                 else {
                     return errorProne;
@@ -89,37 +114,38 @@
             // unicode case
             else {
                 // has format "'\x{<stuff>}'"
-                String hexNum = "0x" + matched.substring(4, matched.length() - 2);
-                int decoded = Integer.decode(hexNum);
-                return Character.toChars(decoded)[0];
+                int hexNum = Integer.parseInt(matched.substring(4, matched.length() - 2), 16);
+                return hexNum;
             }
         }
-        /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
-         * any unicode characters. */ // TODO: doesn't actually do the unicode thing
-        public String parseToStr(String matched) {
-            String ret = matched.substring(0, matched.length() - 1);
-            return ret;
-        }
-         /** [TTtoString(tt)] returns the tokentype and literal of the current token, converted to a string
-          *  consistent with the test output. */
-         public String TTtoString(TokenType tt) {
-             switch (tt) {
-                 case STRING:
-                     return "string " + attribute;
-                 case INT:
-                     return "integer " + attribute.toString();
-                 case CHAR:
-                     return "character " + attribute.toString();
-                 case ID:
-                     return "id " + lexeme; // maybe this is wrong
-                 default:
-                     return lexeme;
-                }
-            }
+
         public String toString() {
-            return "" + lineNum + ":" + col + " " + TTtoString(type);
+            return "" + lineNum + ":" + col + " character " + (char) attribute;
         }
     }
+
+    class KeywordToken extends Token {
+        KeywordToken(String lex)  {
+            super(lex);
+        }
+    }
+
+    class IdToken extends Token {
+        IdToken(String lex)  {
+            super(lex);
+        }
+        public String toString() {
+            return "" + lineNum + ":" + col + " id " + lexeme;
+        }
+    }
+
+    class SymbolToken extends Token {
+        SymbolToken(String lex)  {
+            super(lex);
+        }
+    }
+
+
 %}
 
 Whitespace = [ \t\f\r\n]
@@ -128,10 +154,9 @@ Digit = [0-9]
 Unicode = "\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
 Identifier = {Letter}({Digit}|{Letter}|_|')*
 Integer = "0"|[1-9]{Digit}*
-Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"<"|"<="|">="|">"|"=="|"!="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
+Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"<"|"<="|">="|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
 Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
-
 
 %state COMMENT
 %state STRING
@@ -140,21 +165,21 @@ Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
 
 <YYINITIAL> {
     {Whitespace}  { /* ignore */ }
-    {Reserved}     { return new Token(TokenType.RESERVED, yytext()); }
-    {Identifier}  { return new Token(TokenType.ID, yytext()); }
-    {Symbol}    { return new Token(TokenType.SYMBOL, yytext()); }
-    {Integer}     { return new Token(TokenType.INT, yytext()); }
-    {Character}    { return new Token(TokenType.CHAR, yytext()); }
+    {Reserved}     { return new KeywordToken(yytext()); }
+    {Identifier}  { return new IdToken(yytext()); }
+    {Symbol}    { return new SymbolToken(yytext()); }
+    {Integer}     { return new IntegerToken(yytext()); }
+    {Character}    { return new CharacterToken( yytext()); }
     "\""        { yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-
+// unmatched single quote error?
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
       [^] { }
 }
 <STRING> {
-    (.|{Unicode})*"\"" { Token t = new Token(TokenType.STRING, yytext()); yybegin(YYINITIAL); return t; }
+    (.|{Unicode})*"\"" { Token t = new StringToken(yytext()); yybegin(YYINITIAL); return t; }
     [^] {  } // error state
 }
 
