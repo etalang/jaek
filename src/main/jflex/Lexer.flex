@@ -58,7 +58,7 @@
             type = tt; lineNum = lineNumber(); col = column(); lexeme = lex;
             switch (tt) {
                 case STRING:
-                    attribute = lex; break; // TODO: Handle string parsing correctly, replace unicode
+                    attribute = lex; break; // TODO: Handle string parsing correctly
                 case INT:
                     attribute = Integer.parseInt(lex); break;
                 case CHAR:
@@ -72,7 +72,7 @@
          public String TTtoString(TokenType tt) {
              switch (tt) {
                  case STRING:
-                     return "string " + lexeme; // TODO: make sure this prints properly (escaped unicode)
+                     return "string " + lexeme.substring(1, lexeme.length() - 1); // TODO: make sure this prints properly (escaped unicode)
                  case INT:
                      return "integer " + attribute.toString();
                  case CHAR:
