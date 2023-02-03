@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 #./gradlew shadowJar
-java -jar build/libs/jaek-1.0-all.jar
+#echo "Values of all the arguments: $@"
+java -jar build/libs/jaek-1.0-all.jar $@
