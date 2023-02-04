@@ -1,0 +1,5 @@
+2:1 id bad_char
+2:9 :
+2:10 int
+2:14 =
+2:16 error:Invalid character constant

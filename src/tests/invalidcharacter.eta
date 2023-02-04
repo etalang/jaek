@@ -1,0 +1,3 @@
+//here is a bad character in a comment x:int = '';
+bad_char:int = '';
+this = does not matter
