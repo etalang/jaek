@@ -1,0 +1,75 @@
+/* This file includes all the examples from the
+eta language specification */
+
+// Global variable declarations
+len: int = 100
+n': int = -1
+debug: bool = false
+points: int[]
+
+// Some other variable declarations
+x:int = 2;
+y:int = 3;
+z:int
+b:bool, i:int = f(x)
+s:int[] = "Hello";
+
+// Variable assignments
+x = x + 2
+x, y = y, x
+s = {1, 2, 3}
+b = !b
+
+// Function declarations
+swap(a:int, b:int): int, int
+{
+    return b, a
+}
+
+max(a:int, b:int): int
+{
+    if (a > b)
+    {
+        return a
+    }
+    else
+    {
+        return b
+    }
+}
+
+// Return the greatest common divisor of a and b
+gcd(a:int, b:int): int
+{
+    while (a != 0) {
+        if (a < b) b = b - a
+        else a = a - b
+    }
+    return b
+}
+
+// Add two rational numbers p1/q1 and p2/q2, returning
+// two numbers p3, q3 representing their sum, p3/qe.
+ratadd(p1:int, q1:int, p2:int, q2:int): int, int
+{
+    g:int = gcd(q1, q2)
+    p3:int = p1 * (q2 / g) + p2 * (q1 / g)
+    return p3, q1/g * q2
+}
+
+// Function calls
+max(1, 2)
+max(x, y)
+swap(x, y)
+ratadd(1, 2, 3, 4)
+p:int, q = ratadd(2, 5, 1, 3)
+_, q':int = ratadd(1, 2, 1, 3)
+
+
+// Testing large integers and variable names
+var_name_'123':int = 1244345;
+
+large_variable_neg:int = -9223372036854775808
+large_variable_pos:int = 9223372036854775807
+
+

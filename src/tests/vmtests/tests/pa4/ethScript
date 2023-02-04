@@ -1,0 +1,112 @@
+# eth test script
+#
+# This file is a test script for eth (etac Test Harness).  It
+# conforms to the following grammar:
+#
+#   ScriptFile      ::= Commands+
+#   Command         ::= build
+#                     | CompilerTest
+#   CompilerTest    ::= TestKind (\(TestName\))? ([TestPath])? ("CmdLineArgs")?
+#                           { (FileTest;)* }
+#   TestKind        ::= etac
+#   TestName        ::= LitString
+#   FileTest        ::= Filenames Description? FailureSet?
+#   Filenames       ::= Filename+
+#   Description     ::= LitString
+#   FailureSet      ::= Failure (, Failure)*
+#   Failure         ::= \( ErrorKind \)
+#                     | \( ErrorKind, LitString \)
+#
+#   TestPath        :   the path to the test files, enclosed in quotes,
+#                       relative to the path given in eth's -testpath flag.
+#   CmdLineArgs     :   command-line arguments for etac
+#   Filename        :   the name of a file, interpreted from TestPath.
+#   LitString       :   a literal string, enclosed in quotes.
+#   ErrorKind       :   one of, or a unique prefix of one of the following
+#                       strings: "Leetacal Error", "Syntax Error", or
+#                       "Semantic Error".
+#
+# eth runs the commands in order of appearance.
+
+# build compiler first
+build
+
+etac ("Test --help") "--help" {
+    ;
+}
+
+etac ("Test --lex") ["../pa1"] "--lex" {
+    ex1.eta;
+    ex2.eta (Leetacal, "empty character literal");
+    spec1.eta;
+    spec2.eta;
+    spec3.eta;
+    gcd.eta;
+    ratadd.eta;
+    ratadduse.eta;
+    insertionsort.eta;
+    arrayinit.eta;
+    arrayinit2.eta;
+    mdarrays.eta;
+    add.eta;
+    beauty.eta;
+}
+
+etac ("Test --parse") ["../pa2"] "--parse" {
+    ex1.eta;
+    ex2.eta;
+    ex3.eta (Syntax, "Unexpected token +");
+    spec1.eta;
+    spec2.eta;
+    spec3.eta;
+    gcd.eta;
+    ratadd.eta;
+    ratadduse.eta;
+    insertionsort.eta;
+    arrayinit.eta;
+    arrayinit2.eta;
+    mdarrays.eta;
+    add.eta (Syntax, "Unexpected token +");
+    beauty.eta (Syntax, "Unexpected token ==");
+}
+
+etac ("Test --typecheck") ["../pa3"] "-libpath $(testpath) --typecheck" {
+    ex01.eta;
+    ex02.eta;
+    ex03.eta;
+    ex04.eta (Semantic, "Cannot assign");
+    ex05.eta (Semantic, "Operands");
+    ex06.eta (Semantic, "Name .* cannot be resolved");
+    ex07.eta (Semantic, "Expected .*, but found .*");
+    ex08.eta (Semantic, "Missing return");
+    ex09.eta (Semantic, "Expected function call");
+    ex10.eta (Semantic, "Mismatched number of values");
+    ex11.eta (Semantic, "Expected .*, but found .*");
+    ex12.eta (Semantic, "not a function");
+    spec1-full.eta;
+    spec1.eta (Semantic, "Name .* cannot be resolved");
+    spec2.eta (Semantic, "Name .* cannot be resolved");
+    spec3.eta;
+    gcd.eta;
+    ratadd-full.eta;
+    ratadd.eta (Semantic, "Name .* cannot be resolved");
+    ratadduse-full.eta;
+    ratadduse.eta (Semantic, "Name .* cannot be resolved");
+    insertionsort.eta;
+    arrayinit.eta;
+    arrayinit2-full.eta;
+    arrayinit2.eta (Semantic, "Name .* cannot be resolved");
+    mdarrays.eta;
+}
+
+etac ("Test --irgen") "-libpath $(testpath) --irgen" {
+    ex01.eta;
+    ack.eta;
+    primes.eta;
+}
+
+etac ("Test --irgen -O") "-libpath $(testpath) --irgen -O" {
+    ex01.eta;
+    ack.eta;
+    primes.eta;
+}

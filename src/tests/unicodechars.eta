@@ -1,0 +1,11 @@
+use io
+use conv
+
+usage() {
+    println("Please specify the input size")
+}
+
+integer_char:int = 'h';
+unicode_char_small:int = "U+00000"
+unicode_char_big:int = "U+10FFFF"
+

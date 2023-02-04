@@ -1,0 +1,20 @@
+use io
+use conv
+
+main(args: int[][]) {
+    a: int[]
+    if (a == null) {
+        println("All is well")
+    }
+    a = { 3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9 }
+    i: int
+    while (i < length(a)) {
+        print(unparseInt(a[i]))
+        print(", ")
+        if (a[i] == 7) {
+            break
+        }
+        i = i + 1
+    }
+    println(unparseInt(a[length(a) - 1]))
+}

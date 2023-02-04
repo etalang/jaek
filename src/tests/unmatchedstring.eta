@@ -1,0 +1,9 @@
+//import statements
+use io
+use conv
+
+// "Here is a bad string in a comment
+bad_string: int[] = "This is a bad string
+
+
+

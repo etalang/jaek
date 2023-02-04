@@ -1,0 +1,13 @@
+Starting point/coloredpoint example
+Point at x = 100 and y = 200
+Should have printed "Point at x = 100 and y = 200"
+Point at x = 100 and y = 200
+Should have printed "Point at x = 100 and y = 200"
+Point at x = 105 and y = 205
+Should have printed "Point at x = 105 and y = 205"
+ColoredPoint at x = 1000 and y = 1000 and Color with r = 255 and g = 128 and b = 0
+Should have printed "ColoredPoint at x = 1000 and y = 1000 and Color with r = 255 and g = 128 and b = 0"
+ColoredPoint at x = 1005 and y = 1005 and Color with r = 255 and g = 128 and b = 0
+Should have printed "ColoredPoint at x = 1005 and y = 1005 and Color with r = 255 and g = 128 and b = 0"
+Point at x = 1110 and y = 1210
+Should have printed "Point at x = 1110 and y = 1210"
