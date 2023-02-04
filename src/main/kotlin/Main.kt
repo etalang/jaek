@@ -55,7 +55,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     } catch (e: LexicalError) {
                         //Output to file if flag is set
                         if (print) {
-                            lexedFile.appendText(e.lineNum.toString() + " " + e.col.toString() + " " + e.msg.toString() + "\n")
+                            lexedFile.appendText(e.lineNum.toString() + ":" + e.col.toString() + " error:" + e.msg.toString() + "\n")
                         }
                         break
                     }
