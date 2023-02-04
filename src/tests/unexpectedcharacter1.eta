@@ -1,0 +1,2 @@
+unicode_too_large:int[] = "\x{FFFFFF}";
+this = does not matter
