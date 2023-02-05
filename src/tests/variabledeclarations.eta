@@ -1,8 +1,8 @@
-integer_char:int = 'h';
-weird_name123':int = 1;
-large_integer:int = 9223372036854775807;
-small_integer:int = -9223372036854775808;
-negative_space:int = - 9;
+integer_char:int = 'h'
+weird_name123':int = 1
+large_integer:int = 9223372036854775807
+small_integer:int = -9223372036854775808
+negative_space:int = - 9
 unicode_char_small:int[] = "\x{00000}"
 unicode_char_big:int[] = "\x{10FFFF}"
 unicode_emote:int[] = "\x{1f602}"
