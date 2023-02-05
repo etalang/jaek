@@ -6,3 +6,4 @@ negative_space:int = - 9;
 unicode_char_small:int[] = "\x{00000}"
 unicode_char_big:int[] = "\x{10FFFF}"
 escapes:int[] = "\\\'\n\"\x{0a}"
+printable_ascii:int[] = "\x{C0}\x{D8}"
