@@ -5,5 +5,6 @@ small_integer:int = -9223372036854775808;
 negative_space:int = - 9;
 unicode_char_small:int[] = "\x{00000}"
 unicode_char_big:int[] = "\x{10FFFF}"
+unicode_emote:int[] = "\x{1f602}"
 escapes:int[] = "\\\'\n\"\x{0a}"
 printable_ascii:int[] = "\x{48}\x{69}"
