@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-gradle6 jflex
 gradle6 shadowJar
