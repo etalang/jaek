@@ -21,7 +21,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
     public int column() { return yycolumn + 1; }
 
     /** Types of possible errors encounterable while lexing */
-    enum LexErrType { StringNotEnd, MultilineString, CharWrong, CharNotEnd }
+    enum LexErrType { StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig }
 
     /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
     class LexicalError extends Exception {
@@ -41,19 +41,21 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
                   msg = "Unmatched \"'\""; break;
               case MultilineString:
                   msg = "Newline detected in string constant"; break;
+              case UnicodeTooBig:
+                  msg = "Unicode argument too large"; break;
           }
           lineNum = lineNumber(); col = column();
       }
     }
 
     /** global character array consisting of characters to be read in for a string */
-    ArrayList<Character> charBuffer;
+    ArrayList<Integer> charBuffer;
 
     /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters*/
-    String getStringRepresentation(ArrayList<Character> list)
+    String getStringRepresentation(ArrayList<Integer> list)
     {
         StringBuilder builder = new StringBuilder(list.size());
-        for(Character ch: list)
+        for(Integer ch: list)
         {
             builder.append(formatChar(ch));
         }
@@ -63,26 +65,29 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
     /** [parseToChar(matched)] converts the matched string to the integer representing
     * the character. Throws an LexicalError if the string does not correspond to a
     * character. */
-    public int parseToChar(String matched) {
+    public int parseToChar(String matched) throws LexicalError {
         // normal case
         if (matched.length() == 1)  {
-            return matched.charAt(0);
+            return (int) matched.charAt(0);
         }
         // escaped character
         else if (matched.length() == 2) {
             char errorProne = matched.charAt(1); // maybe this is \ or ', "error-prone" escapes
             // newline case
             if (errorProne == 'n')  {
-                return '\n';
+                return 0x0A;
             }
             else { // extract the character
-                return errorProne;
+                return (int) errorProne;
             }
         }
         // unicode case
         else if (matched.length() >= 5 && matched.substring(0, 3) == "\\x{") {
         // has format "\x{<stuff>}"
             int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
+            if (hexNum < 0 || hexNum >= 1 << 24) {
+                throw new LexicalError(LexErrType.UnicodeTooBig);
+            }
             return hexNum;
         }
         else {
@@ -91,10 +96,10 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
     }
 
     /** [formatChar(n)] outputs the printable version of a Character.  */
-    private static String formatChar(Character character) {
-        if (character == '\n') return "\\n";
+    private static String formatChar(Integer character) {
+        if (character == 10) return "\\n";
         if (character < 32 || character >= 127) {
-            return "\\x{" + Integer.toHexString((int)character)+"}";
+            return "\\x{" + Integer.toHexString(character) + "}";
         }
         return character.toString();
     }
@@ -130,10 +135,10 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
     }
 
     class IntegerToken extends Token {
-        int attribute;
+        long attribute;
         IntegerToken(String lex)  {
             super(lex);
-            attribute = Integer.parseInt(lex);
+            attribute = Long.parseLong(lex);
         }
         public String toString() {
             return positionInfo() + " integer " + attribute;
@@ -142,7 +147,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
 
     class CharacterToken extends Token {
         int attribute; // the integer represents the character
-        CharacterToken(String lex)  {
+        CharacterToken(String lex) throws LexicalError {
             super(lex);
             attribute = parseToChar(lex.substring(1, lex.length() - 1));
         }
@@ -198,7 +203,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Symbol}    { return new SymbolToken(yytext()); }
     {Integer}     { return new IntegerToken(yytext()); }
     {CharLiteral}    { return new CharacterToken( yytext()); }
-    "\""        { charBuffer = new ArrayList<Character>(); yybegin(STRING); }
+    "\""        { charBuffer = new ArrayList<Integer>(); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
     "'"           { throw new LexicalError(LexErrType.CharNotEnd);}
 }
@@ -209,9 +214,9 @@ CharLiteral = "'"({Character}|"\"")"'"
 <STRING> {
     "\""               { Token t = new StringToken(getStringRepresentation(charBuffer));
                             yybegin(YYINITIAL); return t; }
-    ({Character}|"'")  { char c = parseToChar(yytext()); charBuffer.add(c); }
-    "\\n"              {throw new LexicalError(LexErrType.MultilineString);}
-    [^]                {throw new LexicalError(LexErrType.StringNotEnd); } // error state
+    '\n'          {throw new LexicalError(LexErrType.MultilineString);}
+    ({Character}|"'")  { int c = parseToChar(yytext()); charBuffer.add(c); }
+    [^]                {throw new LexicalError(LexErrType.StringNotEnd); }
 }
 
 [^] {  } // end of file?
