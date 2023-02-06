@@ -50,6 +50,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
 
     /** global character array consisting of characters to be read in for a string */
     ArrayList<Integer> charBuffer;
+    int strStart;
 
     /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters*/
     String getStringRepresentation(ArrayList<Integer> list)
@@ -128,7 +129,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
         String attribute;
         StringToken(String lex)  {
             super(lex);
-            col = column() - lex.length() - 1;
+            col = strStart;
             attribute = lex;
         }
         public String toString() {
@@ -205,7 +206,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Symbol}    { return new SymbolToken(yytext()); }
     {Integer}     { return new IntegerToken(yytext()); }
     {CharLiteral}    { return new CharacterToken( yytext()); }
-    "\""        { charBuffer = new ArrayList<Integer>(); yybegin(STRING); }
+    "\""        { charBuffer = new ArrayList<Integer>(); strStart = column(); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
     "'"           { throw new LexicalError(LexErrType.CharNotEnd);}
 }
