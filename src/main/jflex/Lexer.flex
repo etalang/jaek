@@ -51,7 +51,46 @@
     }
 
     /** global character array consisting of characters to be read in for a string */
-    
+    java.util.ArrayList<Character> charBuffer;
+
+    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters
+    * from https://stackoverflow.com/questions/6324826/converting-arraylist-of-characters-to-a-string */
+    String getStringRepresentation(ArrayList<Character> list)
+    {
+        StringBuilder builder = new StringBuilder(list.size());
+        for(Character ch: list)
+        {
+            builder.append(ch);
+        }
+        return builder.toString();
+    }
+
+    /** [parseToChar(matched)] converts the matched string to the integer representing
+    * the character. Throws an LexicalError if the string does not correspond to a
+    * character. */
+    public char parseToChar(String matched) {
+        // normal case
+        if (matched.length() == 1)  {
+            return matched.charAt(0);
+        }
+        // escaped character
+        else if (matched.length() == 2) {
+            char errorProne = matched.charAt(1); // maybe this is \ or ', "error-prone" escapes
+            // newline case
+            if (errorProne == 'n')  {
+                return '\n';
+            }
+            else { // extract the character
+                return errorProne;
+            }
+        }
+        // unicode case
+        else {
+        // has format "\x{<stuff>}"
+            int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
+            return (char) hexNum;
+        }
+    }
 
     /** A Token consists of the corresponding string lexeme [lexeme], positioning information
      *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
@@ -75,23 +114,23 @@
         String attribute;
         StringToken(String lex)  {
             super(lex);
-            col = column() - 1;
-            attribute = parseToStr(lex);
+            col = column() - lex.length(); // TODO: the column probably needs to change, could be off by 1
+            attribute = lex;
         }
-        /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
-        * any unicode characters. */ // TODO: the unicode replacement can definitely be done more cleanly
-        public String parseToStr(String matched) {
-            String ret = matched.substring(0, matched.length() - 1);
-            while (ret.contains("\\x{")) {
-                int unicodeIdx = ret.indexOf("\\x{");
-                int endUnicode = ret.indexOf("}", unicodeIdx);
-                int codePoint = Integer.parseInt(ret.substring(unicodeIdx + 3, endUnicode), 16);
-                if (isPrintable(codePoint)) {
-                    ret = ret.substring(0, unicodeIdx) + (char) (codePoint) + ret.substring(endUnicode + 1);
-                }
-            }
-            return ret;
-        }
+//        /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
+//        * any unicode characters. */ // TODO: the unicode replacement can definitely be done more cleanly
+//        public String parseToStr(String matched) {
+//            String ret = matched.substring(0, matched.length() - 1);
+//            while (ret.contains("\\x{")) {
+//                int unicodeIdx = ret.indexOf("\\x{");
+//                int endUnicode = ret.indexOf("}", unicodeIdx);
+//                int codePoint = Integer.parseInt(ret.substring(unicodeIdx + 3, endUnicode), 16);
+//                if (isPrintable(codePoint)) {
+//                    ret = ret.substring(0, unicodeIdx) + (char) (codePoint) + ret.substring(endUnicode + 1);
+//                }
+//            }
+//            return ret;
+//        }
         public String toString() {
             return positionInfo() + " string " + attribute;
         }
@@ -112,36 +151,8 @@
         int attribute; // the integer represents the character
         CharacterToken(String lex)  {
             super(lex);
-            attribute = parseToChar(lex);
+            attribute = parseToChar(lex.substring(1, lex.length() - 1));
         }
-        /** [parseToChar(matched)] converts the matched string to the integer representing
-        * the character. Throws an LexicalError if the string does not correspond to a
-        * character. */
-        // TODO: this might not be right
-        public int parseToChar(String matched) {
-            // normal case
-            if (matched.length() == 3)  {
-                return matched.charAt(1);
-            }
-            // escaped character
-            else if (matched.length() == 4) {
-                char errorProne = matched.charAt(2); // maybe this is \ or ', "error-prone" escapes
-                // newline case
-                if (errorProne == 'n')  {
-                    return 0x0A;
-                }
-                else { // extract the character
-                    return errorProne;
-                }
-            }
-            // unicode case
-            else {
-                // has format "'\x{<stuff>}'"
-                int hexNum = Integer.parseInt(matched.substring(4, matched.length() - 2), 16);
-                return hexNum;
-            }
-        }
-
         public String toString() {
             return positionInfo() + " character " + (char) attribute;
         }
@@ -194,16 +205,18 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Symbol}    { return new SymbolToken(yytext()); }
     {Integer}     { return new IntegerToken(yytext()); }
     {CharLiteral}    { return new CharacterToken( yytext()); }
-    "\""        { yybegin(STRING); }
+    "\""        { charBuffer = new java.util.ArrayList<Character>(); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-    "'"           {throw LexicalError(LexErrType.UnexpectedChar);}
+    // "'"           { throw new LexicalError(LexErrType.UnexpectedChar);}
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
       [^] { }
 }
 <STRING> {
-    ({Character}|"'")*"\"" { Token t = new StringToken(yytext()); yybegin(YYINITIAL); return t; }
+    "\""               { Token t = new StringToken(getStringRepresentation(charBuffer));
+                            yybegin(YYINITIAL); return t; }
+    ({Character}|"'")  { char c = parseToChar(yytext()); charBuffer.add(c); }
     [^] {  } // error state
 }
 
