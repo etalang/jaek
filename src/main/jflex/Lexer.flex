@@ -82,7 +82,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
             }
         }
         // unicode case
-        else if (matched.length() >= 5 && matched.substring(0, 3) == "\\x{") {
+        else if (matched.length() >= 5 && "\\x{".equals(matched.substring(0, 3))) {
         // has format "\x{<stuff>}"
             int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
             if (hexNum < 0 || hexNum >= 1 << 24) {
@@ -101,7 +101,9 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
         if (character < 32 || character >= 127) {
             return "\\x{" + Integer.toHexString(character) + "}";
         }
-        return character.toString();
+        int charTruncated = character % (1 << 16);
+        char asciiChar = (char) charTruncated;
+        return Character.toString(asciiChar);
     }
 
     /** A Token consists of the corresponding string lexeme [lexeme], positioning information
