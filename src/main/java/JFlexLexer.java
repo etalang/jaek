@@ -3,6 +3,7 @@
 // source: src/main/jflex/Lexer.flex
 
 import java.util.ArrayList;
+import java.math.BigInteger;
 
 
 // See https://github.com/jflex-de/jflex/issues/222
@@ -99,12 +100,12 @@ public class JFlexLexer {
 
   private static final String ZZ_ACTION_PACKED_0 =
     "\3\0\1\1\1\2\1\3\1\4\1\3\1\5\2\3"+
-    "\2\6\12\7\1\10\1\11\1\12\1\1\3\0\1\13"+
-    "\1\7\1\14\6\7\1\0\1\15\1\0\4\7\2\0"+
-    "\2\7\2\0\2\7\12\0";
+    "\2\6\12\7\1\10\1\11\1\12\1\13\1\14\3\0"+
+    "\1\15\1\7\1\16\6\7\1\0\1\17\1\0\4\7"+
+    "\2\0\2\7\2\0\2\7\12\0";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[64];
+    int [] result = new int[65];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -132,14 +133,15 @@ public class JFlexLexer {
     "\0\0\0\43\0\106\0\151\0\151\0\214\0\151\0\151"+
     "\0\257\0\322\0\365\0\151\0\u0118\0\u013b\0\u015e\0\u0181"+
     "\0\u01a4\0\u01c7\0\u01ea\0\u020d\0\u0230\0\u0253\0\u0276\0\151"+
-    "\0\151\0\151\0\u0299\0\u02bc\0\u02df\0\u0302\0\151\0\u0325"+
-    "\0\u013b\0\u0348\0\u036b\0\u038e\0\u03b1\0\u03d4\0\u03f7\0\u041a"+
-    "\0\151\0\u043d\0\u0460\0\u0483\0\u04a6\0\u04c9\0\u04ec\0\u050f"+
-    "\0\u0532\0\u0555\0\u0578\0\u059b\0\u05be\0\u05e1\0\u0604\0\u0627"+
-    "\0\u064a\0\u066d\0\u0690\0\u06b3\0\u06d6\0\u06f9\0\u071c\0\u073f";
+    "\0\151\0\151\0\151\0\u0299\0\u02bc\0\u02df\0\u0302\0\151"+
+    "\0\u0325\0\u013b\0\u0348\0\u036b\0\u038e\0\u03b1\0\u03d4\0\u03f7"+
+    "\0\u041a\0\151\0\u043d\0\u0460\0\u0483\0\u04a6\0\u04c9\0\u04ec"+
+    "\0\u050f\0\u0532\0\u0555\0\u0578\0\u059b\0\u05be\0\u05e1\0\u0604"+
+    "\0\u0627\0\u064a\0\u066d\0\u0690\0\u06b3\0\u06d6\0\u06f9\0\u071c"+
+    "\0\u073f";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[64];
+    int [] result = new int[65];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -166,55 +168,56 @@ public class JFlexLexer {
     "\1\14\1\15\2\6\2\16\1\4\1\10\1\16\1\17"+
     "\1\20\1\21\2\16\1\22\1\23\2\16\1\24\1\16"+
     "\1\25\1\26\1\27\1\16\2\10\2\4\1\30\40\4"+
-    "\4\31\1\32\12\31\1\33\23\31\56\0\1\10\27\0"+
-    "\17\34\1\35\23\34\14\0\1\36\36\0\1\37\43\0"+
-    "\2\15\36\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\21\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\12\16\1\40\6\16\10\0\1\16\2\0\2\16\2\0"+
-    "\2\16\1\0\10\16\1\26\10\16\10\0\1\16\2\0"+
-    "\2\16\2\0\2\16\1\0\1\16\1\20\17\16\10\0"+
-    "\1\16\2\0\2\16\2\0\2\16\1\0\4\16\1\41"+
-    "\4\16\1\42\7\16\10\0\1\16\2\0\2\16\2\0"+
-    "\2\16\1\0\3\16\1\43\15\16\10\0\1\16\2\0"+
+    "\2\31\1\32\1\31\1\33\12\31\1\34\23\31\56\0"+
+    "\1\10\27\0\17\35\1\36\23\35\14\0\1\37\36\0"+
+    "\1\40\43\0\2\15\36\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\21\16\10\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\12\16\1\41\6\16\10\0\1\16\2\0"+
+    "\2\16\2\0\2\16\1\0\10\16\1\26\10\16\10\0"+
+    "\1\16\2\0\2\16\2\0\2\16\1\0\1\16\1\20"+
+    "\17\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
+    "\4\16\1\42\4\16\1\43\7\16\10\0\1\16\2\0"+
     "\2\16\2\0\2\16\1\0\3\16\1\44\15\16\10\0"+
-    "\1\16\2\0\2\16\2\0\2\16\1\0\13\16\1\45"+
-    "\5\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\14\16\1\46\4\16\10\0\1\16\2\0\2\16\2\0"+
-    "\2\16\1\0\6\16\1\47\12\16\6\0\1\31\1\0"+
-    "\1\31\10\0\1\31\11\0\1\31\6\0\1\50\10\0"+
-    "\1\51\40\0\1\34\1\0\1\34\10\0\1\34\11\0"+
-    "\1\34\6\0\1\52\16\0\1\10\34\0\1\16\2\0"+
-    "\2\16\2\0\2\16\1\0\12\16\1\53\6\16\10\0"+
-    "\1\16\2\0\2\16\2\0\2\16\1\0\15\16\1\41"+
-    "\3\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\11\16\1\54\7\16\10\0\1\16\2\0\2\16\2\0"+
-    "\2\16\1\0\15\16\1\55\3\16\10\0\1\16\2\0"+
-    "\2\16\2\0\2\16\1\0\16\16\1\46\2\16\10\0"+
-    "\1\16\2\0\2\16\2\0\2\16\1\0\3\16\1\41"+
+    "\1\16\2\0\2\16\2\0\2\16\1\0\3\16\1\45"+
     "\15\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\7\16\1\56\11\16\43\0\1\57\42\0\1\60\7\0"+
-    "\1\16\2\0\2\16\2\0\2\16\1\0\10\16\1\41"+
-    "\10\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\5\16\1\61\13\16\10\0\1\16\2\0\2\16\2\0"+
-    "\2\16\1\0\16\16\1\62\2\16\10\0\1\16\2\0"+
-    "\2\16\2\0\2\16\1\0\10\16\1\46\10\16\13\0"+
-    "\2\63\2\0\1\63\3\0\4\63\27\0\2\64\2\0"+
-    "\1\64\3\0\4\64\24\0\1\16\2\0\2\16\2\0"+
-    "\2\16\1\0\15\16\1\65\3\16\10\0\1\16\2\0"+
-    "\2\16\2\0\2\16\1\0\13\16\1\66\5\16\13\0"+
-    "\2\67\2\0\1\67\3\0\4\67\15\0\1\31\11\0"+
-    "\2\70\2\0\1\70\3\0\4\70\15\0\1\34\6\0"+
-    "\1\16\2\0\2\16\2\0\2\16\1\0\6\16\1\41"+
-    "\12\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
-    "\11\16\1\41\7\16\13\0\2\71\2\0\1\71\3\0"+
-    "\4\71\15\0\1\31\11\0\2\72\2\0\1\72\3\0"+
-    "\4\72\15\0\1\34\11\0\2\73\2\0\1\73\3\0"+
-    "\4\73\15\0\1\31\11\0\2\74\2\0\1\74\3\0"+
-    "\4\74\15\0\1\34\11\0\2\75\2\0\1\75\3\0"+
-    "\4\75\15\0\1\31\11\0\2\76\2\0\1\76\3\0"+
-    "\4\76\15\0\1\34\11\0\2\77\2\0\1\77\3\0"+
-    "\4\77\15\0\1\31\11\0\2\100\2\0\1\100\3\0"+
-    "\4\100\15\0\1\34\42\0\1\31\42\0\1\34";
+    "\13\16\1\46\5\16\10\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\14\16\1\47\4\16\10\0\1\16\2\0"+
+    "\2\16\2\0\2\16\1\0\6\16\1\50\12\16\6\0"+
+    "\1\31\1\0\1\31\10\0\1\31\11\0\1\31\6\0"+
+    "\1\51\10\0\1\52\40\0\1\35\1\0\1\35\10\0"+
+    "\1\35\11\0\1\35\6\0\1\53\16\0\1\10\34\0"+
+    "\1\16\2\0\2\16\2\0\2\16\1\0\12\16\1\54"+
+    "\6\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
+    "\15\16\1\42\3\16\10\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\11\16\1\55\7\16\10\0\1\16\2\0"+
+    "\2\16\2\0\2\16\1\0\15\16\1\56\3\16\10\0"+
+    "\1\16\2\0\2\16\2\0\2\16\1\0\16\16\1\47"+
+    "\2\16\10\0\1\16\2\0\2\16\2\0\2\16\1\0"+
+    "\3\16\1\42\15\16\10\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\7\16\1\57\11\16\43\0\1\60\42\0"+
+    "\1\61\7\0\1\16\2\0\2\16\2\0\2\16\1\0"+
+    "\10\16\1\42\10\16\10\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\5\16\1\62\13\16\10\0\1\16\2\0"+
+    "\2\16\2\0\2\16\1\0\16\16\1\63\2\16\10\0"+
+    "\1\16\2\0\2\16\2\0\2\16\1\0\10\16\1\47"+
+    "\10\16\13\0\2\64\2\0\1\64\3\0\4\64\27\0"+
+    "\2\65\2\0\1\65\3\0\4\65\24\0\1\16\2\0"+
+    "\2\16\2\0\2\16\1\0\15\16\1\66\3\16\10\0"+
+    "\1\16\2\0\2\16\2\0\2\16\1\0\13\16\1\67"+
+    "\5\16\13\0\2\70\2\0\1\70\3\0\4\70\15\0"+
+    "\1\31\11\0\2\71\2\0\1\71\3\0\4\71\15\0"+
+    "\1\35\6\0\1\16\2\0\2\16\2\0\2\16\1\0"+
+    "\6\16\1\42\12\16\10\0\1\16\2\0\2\16\2\0"+
+    "\2\16\1\0\11\16\1\42\7\16\13\0\2\72\2\0"+
+    "\1\72\3\0\4\72\15\0\1\31\11\0\2\73\2\0"+
+    "\1\73\3\0\4\73\15\0\1\35\11\0\2\74\2\0"+
+    "\1\74\3\0\4\74\15\0\1\31\11\0\2\75\2\0"+
+    "\1\75\3\0\4\75\15\0\1\35\11\0\2\76\2\0"+
+    "\1\76\3\0\4\76\15\0\1\31\11\0\2\77\2\0"+
+    "\1\77\3\0\4\77\15\0\1\35\11\0\2\100\2\0"+
+    "\1\100\3\0\4\100\15\0\1\31\11\0\2\101\2\0"+
+    "\1\101\3\0\4\101\15\0\1\35\42\0\1\31\42\0"+
+    "\1\35";
 
   private static int [] zzUnpackTrans() {
     int [] result = new int[1890];
@@ -260,12 +263,12 @@ public class JFlexLexer {
   private static final int [] ZZ_ATTRIBUTE = zzUnpackAttribute();
 
   private static final String ZZ_ATTRIBUTE_PACKED_0 =
-    "\3\0\2\11\1\1\2\11\3\1\1\11\13\1\3\11"+
+    "\3\0\2\11\1\1\2\11\3\1\1\11\13\1\4\11"+
     "\1\1\3\0\1\11\10\1\1\0\1\11\1\0\4\1"+
     "\2\0\2\1\2\0\2\1\12\0";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[64];
+    int [] result = new int[65];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -343,99 +346,140 @@ public class JFlexLexer {
   private boolean zzEOFDone;
 
   /* user code: */
-    /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
-    public int lineNumber() { return yyline + 1; }
+    /** global character array consisting of characters to be read in for a string */
+    ArrayList<Integer> charBuffer;
+    int strStart;
 
-    /** Returns the column the lexer head is currently at in the file, numbered from 1. */
-    public int column() { return yycolumn + 1; }
-
-    /** Types of possible errors encounterable while lexing */
-    enum LexErrType { StringNotEnd, MultilineString, CharWrong, UnexpectedChar }
-
-    /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
-    class LexicalError extends Exception {
-      LexErrType errorType;
-      int lineNum;
-      int col;
-      String msg;
-
-      LexicalError(LexErrType lt) {
-          errorType = lt;
-          switch (lt)  {
-              case StringNotEnd:
-                  msg = "Non-terminating string"; break;
-              case CharWrong:
-                  msg = "Invalid character constant"; break;
-              case UnexpectedChar:
-                  msg = "Unexpected character"; break;
-          }
-          lineNum = lineNumber(); col = column();
-      }
+    /** [formatChar(n)] outputs the printable version of a Character. */
+    private static String formatChar(Integer character) {
+        if (character == 10) return "\\n";
+        if (character < 32 || character >= 127) {
+            return "\\x{" + Integer.toHexString(character) + "}";
+        }
+        int charTruncated = character % (1 << 16);
+        char asciiChar = (char) charTruncated;
+        return Character.toString(asciiChar);
     }
 
-    /** global character array consisting of characters to be read in for a string */
-    ArrayList<Character> charBuffer;
+    /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
+    public int lineNumber() {
+        return yyline + 1;
+    }
 
-    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters*/
-    String getStringRepresentation(ArrayList<Character> list)
-    {
+    /** Returns the column the lexer head is currently at in the file, numbered from 1. */
+    public int column() {
+        return yycolumn + 1;
+    }
+
+    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters */
+    String getStringRepresentation(ArrayList<Integer> list) {
         StringBuilder builder = new StringBuilder(list.size());
-        for(Character ch: list)
-        {
+        for (Integer ch : list) {
             builder.append(formatChar(ch));
         }
         return builder.toString();
     }
 
-    /** [parseToChar(matched)] converts the matched string to the integer representing
-    * the character. Throws an LexicalError if the string does not correspond to a
-    * character. */
-    public char parseToChar(String matched) {
+    /**
+     * [parseToChar(matched)] converts the matched string to the integer representing
+     * the character. Throws an LexicalError if the string does not correspond to a
+     * character.
+     */
+    public int parseToChar(String matched) throws LexicalError {
         // normal case
-        if (matched.length() == 1)  {
-            return matched.charAt(0);
+        if (matched.length() == 1) {
+            return (int) matched.charAt(0);
         }
         // escaped character
         else if (matched.length() == 2) {
             char errorProne = matched.charAt(1); // maybe this is \ or ', "error-prone" escapes
             // newline case
-            if (errorProne == 'n')  {
-                return '\n';
-            }
-            else { // extract the character
-                return errorProne;
+            if (errorProne == 'n') {
+                return 0x0A;
+            } else { // extract the character
+                return (int) errorProne;
             }
         }
         // unicode case
-        else {
-        // has format "\x{<stuff>}"
+        else if (matched.length() >= 5 && "\\x{".equals(matched.substring(0, 3))) {
+            // has format "\x{<stuff>}"
             int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
-            return (char) hexNum;
+            if (hexNum < 0 || hexNum >= 1 << 24) {
+                throw new LexicalError(LexErrType.UnicodeTooBig);
+            }
+            return hexNum;
+        } else {
+            throw new LexicalError(LexErrType.CharWrong);
         }
     }
 
-    /** [formatChar(n)] outputs the printable version of a Character.  */
-    private static String formatChar(Character character) {
-        if (character == '\n') return "\\n";
-        if (character < 32 || character >= 127) {
-            return "\\x{" + Integer.toHexString((int)character)+"}";
+    /**
+     * [parseToInt(matched)] truncates matched to fit into a long. If the number is too large, it will
+     * be taken mod 2^64 and shifted to fit into the correct long range. In the specific case
+     */
+    public long parseToInt(String matched) {
+        if (matched.length() <= 18) { // there are 19 digits in 2^63
+            return Long.parseLong(matched);
+        } else {
+            BigInteger bi = new BigInteger(matched);
+            return bi.longValue();
         }
-        return character.toString();
     }
 
-    /** A Token consists of the corresponding string lexeme [lexeme], positioning information
-     *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
-     *  as accurate as possible to the semantic meaning of the string. */
+    /** Types of possible errors encounterable while lexing */
+    enum LexErrType {StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig}
+
+    /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
+    class LexicalError extends Exception {
+        LexErrType errorType;
+        int lineNum;
+        int col;
+        String msg;
+
+        LexicalError(LexErrType lt) {
+            errorType = lt;
+            switch (lt) {
+                case StringNotEnd:
+                    msg = "Non-terminating string";
+                    break;
+                case CharWrong:
+                    msg = "Invalid character constant";
+                    break;
+                case CharNotEnd:
+                    msg = "Unmatched \"'\"";
+                    break;
+                case MultilineString:
+                    msg = "Multiline string";
+                    break;
+                case UnicodeTooBig:
+                    msg = "Unicode argument too large";
+                    break;
+            }
+            lineNum = lineNumber();
+            col = column();
+        }
+    }
+
+    /**
+     * A Token consists of the corresponding string lexeme [lexeme], positioning information
+     * ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
+     * as accurate as possible to the semantic meaning of the string.
+     */
     abstract class Token {
         final String lexeme;
         int lineNum;
         int col;
+
         Token(String lex) {
-            lineNum = lineNumber(); col = column(); lexeme = lex;
+            lineNum = lineNumber();
+            col = column();
+            lexeme = lex;
         }
+
         public String positionInfo() {
             return "" + lineNum + ":" + col;
         }
+
         public String toString() {
             return positionInfo() + " " + lexeme;
         }
@@ -443,22 +487,26 @@ public class JFlexLexer {
 
     class StringToken extends Token {
         String attribute;
-        StringToken(String lex)  {
+
+        StringToken(String lex) {
             super(lex);
-            col = column() - lex.length() - 1;
+            col = strStart;
             attribute = lex;
         }
+
         public String toString() {
             return positionInfo() + " string " + attribute;
         }
     }
 
     class IntegerToken extends Token {
-        int attribute;
-        IntegerToken(String lex)  {
+        long attribute;
+
+        IntegerToken(String lex) {
             super(lex);
-            attribute = Integer.parseInt(lex);
+            attribute = parseToInt(lex);
         }
+
         public String toString() {
             return positionInfo() + " integer " + attribute;
         }
@@ -466,37 +514,38 @@ public class JFlexLexer {
 
     class CharacterToken extends Token {
         int attribute; // the integer represents the character
-        CharacterToken(String lex)  {
+
+        CharacterToken(String lex) throws LexicalError {
             super(lex);
             attribute = parseToChar(lex.substring(1, lex.length() - 1));
         }
+
         public String toString() {
-            return positionInfo() + " character " + (char) attribute;
+            return positionInfo() + " character " + formatChar(attribute);
         }
     }
 
     class KeywordToken extends Token {
-        KeywordToken(String lex)  {
+        KeywordToken(String lex) {
             super(lex);
         }
     }
 
     class IdToken extends Token {
-        IdToken(String lex)  {
+        IdToken(String lex) {
             super(lex);
         }
+
         public String toString() {
             return positionInfo() + " id " + lexeme;
         }
     }
 
     class SymbolToken extends Token {
-        SymbolToken(String lex)  {
+        SymbolToken(String lex) {
             super(lex);
         }
     }
-
-
 
 
   /**
@@ -895,68 +944,78 @@ public class JFlexLexer {
             { 
             }
             // fall through
-          case 14: break;
+          case 16: break;
           case 2:
             { /* ignore */
             }
             // fall through
-          case 15: break;
+          case 17: break;
           case 3:
             { return new SymbolToken(yytext());
             }
             // fall through
-          case 16: break;
-          case 4:
-            { charBuffer = new ArrayList<Character>(); yybegin(STRING);
-            }
-            // fall through
-          case 17: break;
-          case 5:
-            { throw new LexicalError(LexErrType.UnexpectedChar);
-            }
-            // fall through
           case 18: break;
+          case 4:
+            { charBuffer = new ArrayList<Integer>(); strStart = column(); yybegin(STRING);
+            }
+            // fall through
+          case 19: break;
+          case 5:
+            { throw new LexicalError(LexErrType.CharNotEnd);
+            }
+            // fall through
+          case 20: break;
           case 6:
             { return new IntegerToken(yytext());
             }
             // fall through
-          case 19: break;
+          case 21: break;
           case 7:
             { return new IdToken(yytext());
             }
             // fall through
-          case 20: break;
+          case 22: break;
           case 8:
             { yybegin(YYINITIAL);
             }
             // fall through
-          case 21: break;
+          case 23: break;
           case 9:
-            { char c = parseToChar(yytext()); charBuffer.add(c);
+            { int c = parseToChar(yytext()); charBuffer.add(c);
             }
             // fall through
-          case 22: break;
+          case 24: break;
           case 10:
+            { throw new LexicalError(LexErrType.MultilineString);
+            }
+            // fall through
+          case 25: break;
+          case 11:
             { Token t = new StringToken(getStringRepresentation(charBuffer));
                             yybegin(YYINITIAL); return t;
             }
             // fall through
-          case 23: break;
-          case 11:
+          case 26: break;
+          case 12:
+            { throw new LexicalError(LexErrType.StringNotEnd);
+            }
+            // fall through
+          case 27: break;
+          case 13:
             { yybegin(COMMENT);
             }
             // fall through
-          case 24: break;
-          case 12:
+          case 28: break;
+          case 14:
             { return new KeywordToken(yytext());
             }
             // fall through
-          case 25: break;
-          case 13:
+          case 29: break;
+          case 15:
             { return new CharacterToken( yytext());
             }
             // fall through
-          case 26: break;
+          case 30: break;
           default:
             zzScanError(ZZ_NO_MATCH);
         }
