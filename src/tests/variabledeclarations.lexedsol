@@ -52,7 +52,7 @@
 9:12 [
 9:13 ]
 9:15 =
-9:17 string \\\'\n\"\x{0a}
+9:17 string \\\'\n\"\x{0a}\"
 10:1 id printable_ascii
 10:16 :
 10:16 int
