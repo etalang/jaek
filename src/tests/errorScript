@@ -1,0 +1,11 @@
+build
+
+etac ("Test --lex") "--lex" {
+    comments.eta;
+    invalidcharacter.eta (Lexical, "Invalid character constant");
+    multilinestring.eta (Lexical, "Multiline string";
+    nonterminatingstring.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter1.eta (Lexical, "Unexpected character");
+    unexpectedcharacter2.eta (Lexical, "Unexpected character");
+    variabledeclarations.eta;
+}
