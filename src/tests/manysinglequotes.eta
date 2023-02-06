@@ -1,0 +1,2 @@
+//this string has many single quotes in a string
+str:int[] = "''''''''''''''''''"
