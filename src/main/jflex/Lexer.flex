@@ -191,7 +191,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Symbol}    { return new SymbolToken(yytext()); }
     {Integer}     { return new IntegerToken(yytext()); }
     {Character}    { return new CharacterToken( yytext()); }
-    "\""        { yybegin(STRING); }
+    "\""        { yypushback(1); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
 // unmatched single quote error?
 }
@@ -200,7 +200,7 @@ CharLiteral = "'"({Character}|"\"")"'"
       [^] { }
 }
 <STRING> {
-    (.|{Unicode})*"\"" { Token t = new StringToken(yytext()); yybegin(YYINITIAL); return t; }
+    "\""({Character}|"'")*"\"" { Token t = new StringToken(yytext()); yybegin(YYINITIAL); return t; }
     [^] {  } // error state
 }
 
