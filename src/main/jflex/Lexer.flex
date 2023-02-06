@@ -55,7 +55,7 @@
 
     /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters
     * from https://stackoverflow.com/questions/6324826/converting-arraylist-of-characters-to-a-string */
-    String getStringRepresentation(ArrayList<Character> list)
+    String getStringRepresentation(java.util.ArrayList<Character> list)
     {
         StringBuilder builder = new StringBuilder(list.size());
         for(Character ch: list)
