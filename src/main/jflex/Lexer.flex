@@ -72,12 +72,13 @@
         String attribute;
         StringToken(String lex)  {
             super(lex);
+            col = column() - 1;
             attribute = parseToStr(lex);
         }
         /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
         * any unicode characters. */ // TODO: the unicode replacement can definitely be done more cleanly
         public String parseToStr(String matched) {
-            String ret = matched.substring(1, matched.length() - 1);
+            String ret = matched.substring(0, matched.length() - 1);
             while (ret.contains("\\x{")) {
                 int unicodeIdx = ret.indexOf("\\x{");
                 int endUnicode = ret.indexOf("}", unicodeIdx);
@@ -189,17 +190,17 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Identifier}  { return new IdToken(yytext()); }
     {Symbol}    { return new SymbolToken(yytext()); }
     {Integer}     { return new IntegerToken(yytext()); }
-    {Character}    { return new CharacterToken( yytext()); }
-    "\""        { yypushback(1); yybegin(STRING); }
+    {CharLiteral}    { return new CharacterToken( yytext()); }
+    "\""        { yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-// unmatched single quote error?
+    "'"           {throw LexicalError(UnexpectedChar);}
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
       [^] { }
 }
 <STRING> {
-    "\""({Character}|"'")*"\"" { Token t = new StringToken(yytext()); yybegin(YYINITIAL); return t; }
+    ({Character}|"'")*"\"" { Token t = new StringToken(yytext()); yybegin(YYINITIAL); return t; }
     [^] {  } // error state
 }
 
