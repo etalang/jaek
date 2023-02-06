@@ -1,0 +1,2 @@
+//This is a bad unicode character test missing starting bracket
+bad_unicode:int = '\x{AAAAH};

@@ -1,0 +1,2 @@
+//This is a bad escape test
+bad_escape:int = '\x';
