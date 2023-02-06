@@ -12,28 +12,29 @@ import kotlin.io.path.Path
 
 class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
-    val lexFiles:List<File> by argument(help="Files to lex.", name="<source files>").file(canBeDir = false).multiple()
-    val print: Boolean by option("--lex",help="Generate output from lexical analysis.").flag()
-    val dOpt = option("-D", metavar = "<folder>",
-        help="Specify where to place generated diagnostic files. " +
-                "Default is the current working directory. The directory is expected to exist.")
-        .default(System.getProperty("user.dir"))
-    val diagnosticRelPath: String by dOpt
+    private val lexFiles: List<File> by argument(help = "Files to lex.", name = "<source files>").file(canBeDir = false)
+        .multiple()
+    private val print: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
+    private val dOpt = option(
+        "-D",
+        metavar = "<folder>",
+        help = "Specify where to place generated diagnostic files. " + "Default is the current working directory. The directory is expected to exist."
+    ).default(System.getProperty("user.dir"))
+    private val diagnosticRelPath: String by dOpt
 
     override fun run() {
         if (!File(diagnosticRelPath).isDirectory) { //output dir must be dir
-            throw BadParameterValue(text="The file output location must be an existing directory.", option = dOpt)
+            throw BadParameterValue(text = "The file output location must be an existing directory.", option = dOpt)
         }
 
-        val diagnosticPath =
-            if (Path(diagnosticRelPath).isAbsolute) {
-                Path(diagnosticRelPath)
-            } else { // create absolute path from current dir and relative path
-                Path(System.getProperty("user.dir"), diagnosticRelPath)
-            }
+        val diagnosticPath = if (Path(diagnosticRelPath).isAbsolute) {
+            Path(diagnosticRelPath)
+        } else { // create absolute path from current dir and relative path
+            Path(System.getProperty("user.dir"), diagnosticRelPath)
+        }
 
-        lexFiles.forEach{
-            if(it.extension == "eta" && it.exists()){
+        lexFiles.forEach {
+            if (it.extension == "eta" && it.exists()) {
                 //We should lex the file in this case
 
                 //Create the new lexer
@@ -41,12 +42,12 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                 //Create the new file name
                 val lexedFileName = it.nameWithoutExtension + ".lexed"
-                val lexedFile = File(diagnosticPath.toString(),lexedFileName)
+                val lexedFile = File(diagnosticPath.toString(), lexedFileName)
 
                 //Create the new file if the file does not already exist
-                if (print){
+                if (print) {
                     // Check if the file already exists and delete it if it does
-                    if (lexedFile.exists() && !lexedFile.isDirectory){
+                    if (lexedFile.exists() && !lexedFile.isDirectory) {
                         lexedFile.delete()
                     }
                     lexedFile.createNewFile()
@@ -71,7 +72,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 }
 
             } else {
-                echo("The file " + it + " is not an eta file or does not exist. Skipping.")
+                echo("The file $it is not an eta file or does not exist. Skipping.")
             }
         }
     }
