@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-gradle6 shadowJar
+gradle6 --no-daemon shadowJar
