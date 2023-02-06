@@ -16,6 +16,24 @@ IntelliJ is able to index, find, and use all the local dependencies in dependenc
 ### Production
 We have a special build.gradle file in production/, along with the downloaded offline dependencies. These are configured to work fully offline!
 
-On the VM: ensure the shared folder has **src/, dependencies/, and build.gradle**. On M1s, the AMD64 image often freezes, but it does finish a nonzero quantity of times.
+On the VM: ensure the shared folder has **src/, dependencies/, and build.gradle**.
+You can use the `make zip` command locally to generate a zip with the necessary files, and then move it to the shared folder.
+On M1s, the AMD64 image often freezes, but it does finish a nonzero quantity of times.
 
-On the VM or locally: run `gradle6 --no-daemon shadowJar`. Then, navigate to `production/build/libs` and run the jar with `java -jar jaek-1.0-all.jar`.
+On the VM or locally: run `gradle6 --no-daemon shadowJar`.
+Then, navigate to `production/build/libs` and run the jar with `java -jar jaek-1.0-all.jar`.
+The production environment has an `etac-build` script that will run this gradle command for you.
+Both environments have an `etac` script that lets you use the jar CLI with format `./etac [OPTIONS] [<source files>]`.
+
+### Testing
+We have made the repository compatible with the `eth` testing harness. The `make zip` command above includes the relevant files. On the VM, we have two existing test suites.
+If the zip is unzipped in the `production` folder, the example tests pre-provided can be run from that directory with 
+```bash
+eth ~/eth/tests/pa1/ethScript -compilerpath ~/shared/production/
+```
+Our personal test cases can be run with
+```bash
+eth src/tests/errorScript -compilerpath ~/shared/production/
+```
+Include the `-p` flag to preserve the `.lexed` output of the lexer. 
+More `eth` flags can be found by accessing the native help page.
