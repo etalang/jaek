@@ -1,0 +1,11 @@
+1:1 id large_positive
+1:15 :
+1:16 int
+1:20 =
+1:22 integer 7766279631452241919
+2:1 id large_negative
+2:15 :
+2:16 int
+2:20 =
+2:22 -
+2:23 integer -7766279631452241919
