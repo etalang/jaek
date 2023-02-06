@@ -1,0 +1,4 @@
+charstring:int   = "'"
+stringchar:int[] = '"'
+stringstring:int[] = """"
+unicode_emote:int[] = "😀"

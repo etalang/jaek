@@ -7,6 +7,7 @@ etac ("Test --lex") "--lex" {
     multilinestring.eta (Lexical, "Multiline string");
     nonterminatingstring1.eta (Lexical, "Non-terminating string");
     nonterminatingstring2.eta (Lexical, "Non-terminating string");
+    nonterminatingstring3.eta (Lexical, "Non-terminating string");
     unexpectedcharacter1.eta (Lexical, "Unexpected character");
     unexpectedcharacter2.eta (Lexical, "Unexpected character");
     unexpectedcharacter3.eta (Lexical, "Unexpected character");
@@ -19,7 +20,11 @@ etac ("Test --lex") "--lex" {
     unexpectedcharacter10.eta (Lexical, "Unexpected character");
     unexpectedcharacter11.eta (Lexical, "Unexpected character");
     unexpectedcharacter12.eta (Lexical, "Unexpected character");
+    unexpectedcharacter13.eta (Lexical, "Unexpected character");
+    unexpectedcharacter14.eta (Lexical, "Unexpected character");
     variabledeclarations.eta;
     largeintegers.eta;
     unicodechars.eta;
+    charstringedgecase.eta;
+
 }
