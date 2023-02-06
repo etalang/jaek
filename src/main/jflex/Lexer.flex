@@ -44,26 +44,16 @@ import java.util.ArrayList;
       }
     }
 
-    /** [isPrintable(n)] checks if n is an integer whose corresponding character is printable. For
-    * ASCII, this is 32-126. Requires n >= 0.  */
-    public boolean isPrintable(int n) {
-        if (n < 32 || n == 127) {
-            return false;
-        }
-        return true;
-    }
-
     /** global character array consisting of characters to be read in for a string */
     ArrayList<Character> charBuffer;
 
-    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters
-    * from https://stackoverflow.com/questions/6324826/converting-arraylist-of-characters-to-a-string */
+    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters*/
     String getStringRepresentation(ArrayList<Character> list)
     {
         StringBuilder builder = new StringBuilder(list.size());
         for(Character ch: list)
         {
-            builder.append(ch);
+            builder.append(formatChar(ch));
         }
         return builder.toString();
     }
@@ -93,6 +83,15 @@ import java.util.ArrayList;
             int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
             return (char) hexNum;
         }
+    }
+
+    /** [formatChar(n)] outputs the printable version of a Character.  */
+    private static String formatChar(Character character) {
+        if (character == '\n') return "\\n";
+        if (character < 32 || character >= 127) {
+            return "\\x{" + Integer.toHexString((int)character)+"}";
+        }
+        return character.toString();
     }
 
     /** A Token consists of the corresponding string lexeme [lexeme], positioning information
