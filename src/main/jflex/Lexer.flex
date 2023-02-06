@@ -72,13 +72,12 @@
         String attribute;
         StringToken(String lex)  {
             super(lex);
-            col = column() - 1; // need this to offset missing quotation
             attribute = parseToStr(lex);
         }
         /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
         * any unicode characters. */ // TODO: the unicode replacement can definitely be done more cleanly
         public String parseToStr(String matched) {
-            String ret = matched.substring(0, matched.length() - 1);
+            String ret = matched.substring(1, matched.length() - 1);
             while (ret.contains("\\x{")) {
                 int unicodeIdx = ret.indexOf("\\x{");
                 int endUnicode = ret.indexOf("}", unicodeIdx);
