@@ -1,0 +1,2 @@
+//This is a bad unicode character test
+bad_unicode:int[] = "This is a bad unicode test: \x{ABCDEFA}";
