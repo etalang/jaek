@@ -2,10 +2,13 @@ build
 
 etac ("Test --lex") "--lex" {
     comments.eta;
-    invalidcharacter.eta (Lexical, "Invalid character constant");
+    invalidcharacter1.eta (Lexical, "Invalid character constant");
+    invalidcharacter2.eta (Lexical, "Invalid character constant");
     multilinestring.eta (Lexical, "Multiline string";
-    nonterminatingstring.eta (Lexical, "Non-terminating string");
+    nonterminatingstring1.eta (Lexical, "Non-terminating string");
+    nonterminatingstring2.eta (Lexical, "Non-terminating string");
     unexpectedcharacter1.eta (Lexical, "Unexpected character");
     unexpectedcharacter2.eta (Lexical, "Unexpected character");
+    unexpectedcharacter3.eta (Lexical, "Unexpected character");
     variabledeclarations.eta;
 }
