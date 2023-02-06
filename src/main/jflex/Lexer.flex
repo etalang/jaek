@@ -50,6 +50,9 @@
         return true;
     }
 
+    /** global character array consisting of characters to be read in for a string */
+    
+
     /** A Token consists of the corresponding string lexeme [lexeme], positioning information
      *  ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
      *  as accurate as possible to the semantic meaning of the string. */
@@ -193,7 +196,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {CharLiteral}    { return new CharacterToken( yytext()); }
     "\""        { yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-    "'"           {throw LexicalError(UnexpectedChar);}
+    "'"           {throw LexicalError(LexErrType.UnexpectedChar);}
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
