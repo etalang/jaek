@@ -18,13 +18,13 @@
 4:15 int
 4:19 =
 4:21 -
-4:22 integer 9223372036854775808
+4:22 integer -9223372036854775808
 5:1 id negative_space
 5:15 :
 5:16 int
 5:20 =
 5:22 -
-5:23 integer 9
+5:24 integer 9
 6:1 id unicode_char_small
 6:19 :
 6:20 int
@@ -38,7 +38,7 @@
 7:21 [
 7:22 ]
 7:24 =
-7:26 string \x{10fff}
+7:26 string \x{10ffff}
 8:1 id unicode_emote
 8:14 :
 8:15 int
@@ -52,11 +52,11 @@
 9:12 [
 9:13 ]
 9:15 =
-9:17 string \'\n"\x{0a}"
+9:17 string \'\n"\n"
 10:1 id printable_ascii
 10:16 :
-10:16 int
-10:19 [
-10:20 ]
-10:22 =
-10:24 string Hi
+10:17 int
+10:20 [
+10:21 ]
+10:23 =
+10:25 string Hi

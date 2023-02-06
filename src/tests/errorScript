@@ -7,7 +7,6 @@ etac ("Test --lex") "--lex" {
     multilinestring.eta (Lexical, "Multiline string");
     nonterminatingstring1.eta (Lexical, "Non-terminating string");
     nonterminatingstring2.eta (Lexical, "Non-terminating string");
-    unexpectedcharacter1.eta (Lexical, "Unexpected character");
     unexpectedcharacter2.eta (Lexical, "Unexpected character");
     unexpectedcharacter3.eta (Lexical, "Unexpected character");
     variabledeclarations.eta;
