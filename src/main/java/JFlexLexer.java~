@@ -359,7 +359,7 @@ public class JFlexLexer {
             while (ret.contains("\\x{")) {
                 int unicodeIdx = ret.indexOf("\\x{");
                 int endUnicode = ret.indexOf("}", unicodeIdx);
-                int codePoint = Integer.parseInt(ret.substring(unicodeIdx + 3, endUnicode), 16);
+                int codePoint = Integer.parseInt(ret.substring(unicodeIdx + 3, endUnicode));
                 if (isPrintable(codePoint)) {
                     ret = ret.substring(0, unicodeIdx) + (char) (codePoint) + ret.substring(endUnicode + 1);
                 }

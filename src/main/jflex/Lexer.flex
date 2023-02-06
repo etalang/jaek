@@ -171,12 +171,13 @@
 Whitespace = [ \t\f\r\n]
 Letter = [a-zA-Z]
 Digit = [0-9]
-Unicode = "\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
+Unicode = "\\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
 Identifier = {Letter}({Digit}|{Letter}|_|')*
 Integer = "0"|[1-9]{Digit}*
-Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
+Character = ([^"\\"]|"\\"("\\"|"\""|"'"|"n")|{Unicode})
+Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
-Character = "'"([^"\\"]|"\\"|"\\n"|"\\'"|{Unicode})"'"
+CharLiteral = "'"({Character}|"\"")"'"
 
 %state COMMENT
 %state STRING
