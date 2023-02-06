@@ -168,7 +168,7 @@ import java.math.BigInteger;
             attribute = parseToChar(lex.substring(1, lex.length() - 1));
         }
         public String toString() {
-            return positionInfo() + " character " + (char) attribute;
+            return positionInfo() + " character " + formatChar(attribute);
         }
     }
 
