@@ -15,4 +15,5 @@ etac ("Test --lex") "--lex" {
     unexpectedcharacter7.eta (Lexical, "Unexpected character");
     variabledeclarations.eta;
     largeintegers.eta;
+    unicodechars.eta;
 }
