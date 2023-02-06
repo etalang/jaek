@@ -40,7 +40,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
               case CharNotEnd:
                   msg = "Unmatched \"'\""; break;
               case MultilineString:
-                  msg = "Newline detected in string constant"; break;
+                  msg = "Multiline string"; break;
               case UnicodeTooBig:
                   msg = "Unicode argument too large"; break;
           }
@@ -217,7 +217,7 @@ CharLiteral = "'"({Character}|"\"")"'"
 <STRING> {
     "\""               { Token t = new StringToken(getStringRepresentation(charBuffer));
                             yybegin(YYINITIAL); return t; }
-    '\n'          {throw new LexicalError(LexErrType.MultilineString);}
+    "\n"          { throw new LexicalError(LexErrType.MultilineString); }
     ({Character}|"'")  { int c = parseToChar(yytext()); charBuffer.add(c); }
     [^]                {throw new LexicalError(LexErrType.StringNotEnd); }
 }
