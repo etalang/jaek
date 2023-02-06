@@ -1,6 +1,6 @@
-/* Here's a multiline string in a comment
-    that spans multiple lines. stringy:int[] = "
-    fun yay" */
+
+
+
 multiline_string: int[] = "
     fun yay";
 this = does not matter

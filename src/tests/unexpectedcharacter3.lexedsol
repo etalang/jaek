@@ -1,7 +1,7 @@
-1:1 id bad_escape
-1:11 :
-1:12 int
-1:15 [
-1:16 ]
-1:18 =
-1:20 error:Unexpected character
+2:1 id bad_escape
+2:11 :
+2:12 int
+2:15 [
+2:16 ]
+2:18 =
+2:20 error:Unexpected character

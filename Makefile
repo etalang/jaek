@@ -10,3 +10,9 @@ zip:
 	cp production/etac-build tempzipdir
 	cd tempzipdir; zip -r ../submission.zip . -x '__MACOSX'
 	rm -rf tempzipdir/
+
+test-vm:
+	make zip
+	mv submission.zip ../shared
+	rm -rf ../shared/production
+	unzip ../shared/submission.zip -d ../shared/production
