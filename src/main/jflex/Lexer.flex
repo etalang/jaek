@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 %%
 
 %public
@@ -6,6 +8,7 @@
 %function nextToken
 %line
 %column
+%yylexthrow LexicalError
 
 %unicode
 %pack
@@ -51,11 +54,11 @@
     }
 
     /** global character array consisting of characters to be read in for a string */
-    java.util.ArrayList<Character> charBuffer;
+    ArrayList<Character> charBuffer;
 
     /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters
     * from https://stackoverflow.com/questions/6324826/converting-arraylist-of-characters-to-a-string */
-    String getStringRepresentation(java.util.ArrayList<Character> list)
+    String getStringRepresentation(ArrayList<Character> list)
     {
         StringBuilder builder = new StringBuilder(list.size());
         for(Character ch: list)
@@ -114,23 +117,9 @@
         String attribute;
         StringToken(String lex)  {
             super(lex);
-            col = column() - lex.length(); // TODO: the column probably needs to change, could be off by 1
+            col = column() - lex.length() - 1;
             attribute = lex;
         }
-//        /** [parseToStr(matched)] removes the end quote matched by the lexer, and cleans up
-//        * any unicode characters. */ // TODO: the unicode replacement can definitely be done more cleanly
-//        public String parseToStr(String matched) {
-//            String ret = matched.substring(0, matched.length() - 1);
-//            while (ret.contains("\\x{")) {
-//                int unicodeIdx = ret.indexOf("\\x{");
-//                int endUnicode = ret.indexOf("}", unicodeIdx);
-//                int codePoint = Integer.parseInt(ret.substring(unicodeIdx + 3, endUnicode), 16);
-//                if (isPrintable(codePoint)) {
-//                    ret = ret.substring(0, unicodeIdx) + (char) (codePoint) + ret.substring(endUnicode + 1);
-//                }
-//            }
-//            return ret;
-//        }
         public String toString() {
             return positionInfo() + " string " + attribute;
         }
@@ -205,9 +194,9 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Symbol}    { return new SymbolToken(yytext()); }
     {Integer}     { return new IntegerToken(yytext()); }
     {CharLiteral}    { return new CharacterToken( yytext()); }
-    "\""        { charBuffer = new java.util.ArrayList<Character>(); yybegin(STRING); }
+    "\""        { charBuffer = new ArrayList<Character>(); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-    // "'"           { throw new LexicalError(LexErrType.UnexpectedChar);}
+    "'"           { throw new LexicalError(LexErrType.UnexpectedChar);}
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
