@@ -1,4 +1,5 @@
 import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
+import java.math.BigInteger;
 
 %%
 
@@ -96,6 +97,18 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
         }
     }
 
+   /** [parseToInt(matched)] truncates matched to fit into a long. If the number is too large, it will
+        * be taken mod 2^64 and shifted to fit into the correct long range. In the specific case */
+        public long parseToInt(String matched) {
+            if (matched.length() <= 18) { // there are 19 digits in 2^63
+                return Long.parseLong(matched);
+            }
+            else {
+                BigInteger bi = new BigInteger(matched);
+                return bi.longValue();
+            }
+        }
+
     /** [formatChar(n)] outputs the printable version of a Character.  */
     private static String formatChar(Integer character) {
         if (character == 10) return "\\n";
@@ -141,7 +154,7 @@ import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
         long attribute;
         IntegerToken(String lex)  {
             super(lex);
-            attribute = Long.parseLong(lex);
+            attribute = parseToInt(lex);
         }
         public String toString() {
             return positionInfo() + " integer " + attribute;
