@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+import org.xml.sax.ext.LexicalHandler;import java.util.ArrayList;
 
 %%
 
@@ -21,7 +21,7 @@ import java.util.ArrayList;
     public int column() { return yycolumn + 1; }
 
     /** Types of possible errors encounterable while lexing */
-    enum LexErrType { StringNotEnd, MultilineString, CharWrong, UnexpectedChar }
+    enum LexErrType { StringNotEnd, MultilineString, CharWrong, CharNotEnd }
 
     /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
     class LexicalError extends Exception {
@@ -37,8 +37,10 @@ import java.util.ArrayList;
                   msg = "Non-terminating string"; break;
               case CharWrong:
                   msg = "Invalid character constant"; break;
-              case UnexpectedChar:
-                  msg = "Unexpected character"; break;
+              case CharNotEnd:
+                  msg = "Unmatched \"'\""; break;
+              case MultilineString:
+                  msg = "Newline detected in string constant"; break;
           }
           lineNum = lineNumber(); col = column();
       }
@@ -61,7 +63,7 @@ import java.util.ArrayList;
     /** [parseToChar(matched)] converts the matched string to the integer representing
     * the character. Throws an LexicalError if the string does not correspond to a
     * character. */
-    public char parseToChar(String matched) {
+    public int parseToChar(String matched) {
         // normal case
         if (matched.length() == 1)  {
             return matched.charAt(0);
@@ -78,10 +80,13 @@ import java.util.ArrayList;
             }
         }
         // unicode case
-        else {
+        else if (matched.length() >= 5 && matched.substring(0, 3) == "\\x{") {
         // has format "\x{<stuff>}"
             int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
-            return (char) hexNum;
+            return hexNum;
+        }
+        else {
+            throw new LexicalError(LexErrType.CharWrong);
         }
     }
 
@@ -195,7 +200,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {CharLiteral}    { return new CharacterToken( yytext()); }
     "\""        { charBuffer = new ArrayList<Character>(); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-    "'"           { throw new LexicalError(LexErrType.UnexpectedChar);}
+    "'"           { throw new LexicalError(LexErrType.CharNotEnd);}
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
@@ -205,7 +210,8 @@ CharLiteral = "'"({Character}|"\"")"'"
     "\""               { Token t = new StringToken(getStringRepresentation(charBuffer));
                             yybegin(YYINITIAL); return t; }
     ({Character}|"'")  { char c = parseToChar(yytext()); charBuffer.add(c); }
-    [^] {  } // error state
+    "\\n"              {throw new LexicalError(LexErrType.MultilineString);}
+    [^]                {throw new LexicalError(LexErrType.StringNotEnd); } // error state
 }
 
 [^] {  } // end of file?
