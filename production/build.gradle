@@ -67,6 +67,7 @@ task jflex(type: Exec) {
 }
 
 build {
+    dependsOn 'jflex'
     mustRunAfter 'jflex'
 }
 

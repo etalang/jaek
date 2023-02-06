@@ -1,0 +1,99 @@
+use io
+use conv
+
+record Point {
+    x,y: int
+}
+
+move(p: Point, dx: int, dy: int) {
+    p.x = p.x + dx
+    p.y = p.y + dy 
+}
+
+coords(p: Point): int, int {
+    return p.x, p.y
+}
+
+add(p1: Point, p2: Point): Point {
+    return Point(p1.x + p2.x, p1.y + p2.y) 
+}
+
+equals(p1: Point, p2: Point): bool {
+    return (p1.x == p2.x) & (p1.y == p2.y)
+}
+
+clone(p: Point): Point {
+    return Point(p.x, p.y)
+}
+
+pointToString(p: Point): int[] { 
+    x: int, y: int = coords(p)
+    str:int[] = "Point at x = " + unparseInt(x) + " and y = " + unparseInt(y)
+    return str
+}
+
+record Color {
+    r,g,b: int
+}
+
+getRGB(c: Color): int, int, int {
+    return c.r, c.g, c.b
+}
+
+colorToString(c: Color): int[] {
+    r: int, g: int, b: int = getRGB(c)
+    str:int[] = "Color with r = " + unparseInt(r) + " and g = " + unparseInt(g) + " and b = " + unparseInt(b)
+    return str
+}
+
+record ColoredPoint {
+    color: Color
+    point: Point
+}
+
+getColor(cp: ColoredPoint): Color {
+    return cp.color
+}
+
+getPoint(cp: ColoredPoint): Point {
+    return cp.point
+}
+
+coloredPointToString(cp: ColoredPoint): int[] {
+    c: Color = getColor(cp)
+    x: int, y: int = coords(getPoint(cp))
+    str:int[] = "ColoredPoint at x = " + unparseInt(x) + " and y = " + unparseInt(y) + " and " + colorToString(c)
+    return str
+}
+
+createColoredPoint(x: int, y: int, r: int, g: int, b: int): ColoredPoint {
+    c: Color = Color(r, g, b)
+    p: Point = Point(x, y)
+    return ColoredPoint(c, p)
+}
+
+main(args: int[][]) {
+    println("Starting point/coloredpoint example");
+
+    p1: Point = Point(100, 200);
+    println(pointToString(p1));
+    println("Should have printed \"Point at x = 100 and y = 200\"");
+    
+    p2: Point = clone(p1)
+    move(p2, 5, 5);
+    println(pointToString(p1));
+    println("Should have printed \"Point at x = 100 and y = 200\"");
+    println(pointToString(p2));
+    println("Should have printed \"Point at x = 105 and y = 205\"");
+
+    cp1: ColoredPoint = createColoredPoint(1000, 1000, 255, 128, 0);
+    println(coloredPointToString(cp1));
+    println("Should have printed \"ColoredPoint at x = 1000 and y = 1000 and Color with r = 255 and g = 128 and b = 0\"");
+    move(cp1.point, 5, 5);
+    println(coloredPointToString(cp1));
+    println("Should have printed \"ColoredPoint at x = 1005 and y = 1005 and Color with r = 255 and g = 128 and b = 0\"");
+
+    p4: Point = add(p2, cp1.point);
+    println(pointToString(p4));
+    println("Should have printed \"Point at x = 1110 and y = 1210\"");
+}

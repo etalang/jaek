@@ -1,0 +1,16 @@
+2:1 use
+2:2 id io
+3:1 use
+3:2 id ack
+5:1 id x
+5:2 :
+5:3 int
+5:7 =
+5:9 integer 1
+5:10 ;
+9:1 id a
+9:2 :
+9:3 int
+9:7 =
+9:9 character a
+9:12 ;

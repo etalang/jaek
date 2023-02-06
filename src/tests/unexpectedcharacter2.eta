@@ -1,0 +1,1 @@
+negative_unicode:int[] = "\x{-000FF}"
