@@ -10,6 +10,11 @@ import com.github.ajalt.clikt.parameters.types.file
 import java.io.File
 import kotlin.io.path.Path
 
+/**
+ * [etac] provides the central command line functionality for the compiler. It is
+ * constructed from the program arguments and then dispatches commands based on that
+ * initialization.
+ */
 class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
     private val lexFiles: List<File> by argument(help = "Files to lex.", name = "<source files>").file(canBeDir = false)
@@ -22,6 +27,10 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     ).default(System.getProperty("user.dir"))
     private val diagnosticRelPath: String by dOpt
 
+    /**
+     * [run] is the main loop of the CLI. All program arguments have already been
+     * preprocessed into vars above.
+     */
     override fun run() {
         if (!File(diagnosticRelPath).isDirectory) { //output dir must be dir
             throw BadParameterValue(text = "The file output location must be an existing directory.", option = dOpt)
