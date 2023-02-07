@@ -4,6 +4,7 @@ zip:
 	mkdir tempzipdir/
 	cp -R src tempzipdir
 	rm -f tempzipdir/src/main/java/JFlexLexer.java
+	rm -f tempzipdir/src/main/java/JFlexLexer.java~
 	cp -R production/dependencies tempzipdir
 	cp production/build.gradle tempzipdir
 	cp production/etac tempzipdir
