@@ -223,7 +223,7 @@ Digit = [0-9]
 Unicode = "\\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
 Identifier = {Letter}({Digit}|{Letter}|_|')*
 Integer = "0"|[1-9]{Digit}*
-Character = ([^"\\"]|"\\"("\\"|"\""|"'"|"n")|{Unicode})
+Character = [^"\\""'"]|"\\"("\\"|"\""|"'"|"n")|{Unicode}
 Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
 CharLiteral = "'"({Character}|"\"")"'"
