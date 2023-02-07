@@ -1,0 +1,3 @@
+string_emote:int[] = "🇩🇪"
+char_emote:int     = '🇩🇪'
+this = does not matter
