@@ -24,6 +24,7 @@ etac ("Test --lex") "--lex" {
     unexpectedcharacter12.eta (Lexical, "Unexpected character");
     unexpectedcharacter13.eta (Lexical, "Unexpected character");
     unexpectedcharacter14.eta (Lexical, "Unexpected character");
+    unexpectedcharacter15.eta (Lexical, "Unexpected character");
     emotetest.eta (Lexical, "Invalid character constant");
     variabledeclarations.eta;
     largeintegers.eta;
