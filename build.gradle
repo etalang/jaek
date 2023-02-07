@@ -117,7 +117,6 @@ task copyPluginJarsToLib(type: Copy) {
 }
 
 task copyDependenciesToLib {
-    project.ext.state = "DOWNLOAD"
     dependsOn 'copyMainDependenciesToLib'
     dependsOn 'copyTestDependenciesToLib'
     dependsOn 'copyCompileOnlyDependenciesToLib'
