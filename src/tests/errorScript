@@ -29,5 +29,4 @@ etac ("Test --lex") "--lex" {
     largeintegers.eta;
     unicodechars.eta;
     charstringedgecase.eta;
-
 }
