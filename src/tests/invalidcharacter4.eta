@@ -1,0 +1,3 @@
+//here is a bad character no closing character
+bad_char:int = ';
+this = does not matter
