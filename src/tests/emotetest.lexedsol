@@ -4,9 +4,9 @@
 1:17 [
 1:18 ]
 1:20 =
-1:22 string \x{1F1E9}\x{1F1EA}
-1:1 id string_emote
-1:13 :
-1:14 int
-1:20 =
-1:22 error:Invalid character constant
+1:22 string \x{1f1e9}\x{1f1ea}
+2:1 id char_emote
+2:11 :
+2:12 int
+2:20 =
+2:22 error:Invalid character constant
