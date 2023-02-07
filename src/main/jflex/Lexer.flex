@@ -57,16 +57,20 @@ import java.math.BigInteger;
     public int parseToChar(String matched) throws LexicalError {
         // normal case
         if (matched.length() == 1) {
-            return (int) matched.charAt(0);
-        }
-        // escaped character
-        else if (matched.length() == 2) {
-            char errorProne = matched.charAt(1); // maybe this is \ or ', "error-prone" escapes
-            // newline case
-            if (errorProne == 'n') {
-                return 0x0A;
-            } else { // extract the character
-                return (int) errorProne;
+            return matched.codePointAt(0);
+        } else if (matched.length() == 2) {
+            if (matched.charAt(0) == '\\') {
+                // escaped character
+                char errorProne = matched.charAt(1); // maybe this is \ or ', "error-prone" escapes
+                // newline case
+                if (errorProne == 'n') {
+                    return 0x0A;
+                } else { // extract the character
+                    return (int) errorProne;
+                }
+            } else {
+                //character made of two characters
+                return matched.codePointAt(0);
             }
         }
         // unicode case
