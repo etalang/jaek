@@ -42,11 +42,7 @@ import java.math.BigInteger;
 
     /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters */
     String getStringRepresentation(ArrayList<Integer> list) {
-        StringBuilder builder = new StringBuilder(list.size());
-        for (Integer ch : list) {
-            builder.append(formatChar(ch));
-        }
-        return builder.toString();
+        return list.stream().map(JFlexLexer::formatChar).collect(java.util.stream.Collectors.joining());
     }
 
     /**
@@ -74,7 +70,7 @@ import java.math.BigInteger;
             }
         }
         // unicode case
-        else if (matched.length() >= 5 && "\\x{".equals(matched.substring(0, 3))) {
+        else if (matched.length() >= 5 && matched.startsWith("\\x{")) {
             // has format "\x{<stuff>}"
             int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
             if (hexNum < 0 || hexNum >= 1 << 24) {
@@ -94,8 +90,7 @@ import java.math.BigInteger;
         if (matched.length() <= 18) { // there are 19 digits in 2^63
             return Long.parseLong(matched);
         } else {
-            BigInteger bi = new BigInteger(matched);
-            return bi.longValue();
+            return new BigInteger(matched).longValue();
         }
     }
 
