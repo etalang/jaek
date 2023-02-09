@@ -20,19 +20,7 @@ import java.math.BigInteger;
 
 %{
     /** global character array consisting of characters to be read in for a string */
-    ArrayList<Integer> charBuffer;
-    int strStart;
-
-    /** [formatChar(n)] outputs the printable version of a Character. */
-    private static String formatChar(Integer character) {
-        if (character == 10) return "\\n";
-        if (character < 32 || character >= 127) {
-            return "\\x{" + Integer.toHexString(character) + "}";
-        }
-        int charTruncated = character % (1 << 16);
-        char asciiChar = (char) charTruncated;
-        return Character.toString(asciiChar);
-    }
+    
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {
@@ -42,11 +30,6 @@ import java.math.BigInteger;
     /** Returns the column the lexer head is currently at in the file, numbered from 1. */
     public int column() {
         return yycolumn + 1;
-    }
-
-    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters */
-    String getStringRepresentation(ArrayList<Integer> list) {
-        return list.stream().map(JFlexLexer::formatChar).collect(java.util.stream.Collectors.joining());
     }
 
     /**
@@ -98,128 +81,6 @@ import java.math.BigInteger;
         }
     }
 
-    /** Types of possible errors encounterable while lexing */
-    enum LexErrType {StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig}
-
-    /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
-    class LexicalError extends Exception {
-        LexErrType errorType;
-        int lineNum;
-        int col;
-        String msg;
-
-        LexicalError(LexErrType lt) {
-            errorType = lt;
-            switch (lt) {
-                case StringNotEnd:
-                    msg = "Non-terminating string";
-                    break;
-                case CharWrong:
-                    msg = "Invalid character constant";
-                    break;
-                case CharNotEnd:
-                    msg = "Unmatched \"'\"";
-                    break;
-                case MultilineString:
-                    msg = "Multiline string";
-                    break;
-                case UnicodeTooBig:
-                    msg = "Unicode argument too large";
-                    break;
-            }
-            lineNum = lineNumber();
-            col = column();
-        }
-    }
-
-    /**
-     * A Token consists of the corresponding string lexeme [lexeme], positioning information
-     * ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
-     * as accurate as possible to the semantic meaning of the string.
-     */
-    abstract class Token extends java_cup.runtime.Symbol{
-        final String lexeme;
-        int lineNum;
-        int col;
-
-        Token(String lex) {
-            //TODO: DO CORRECTLY
-            super(0);
-            lineNum = lineNumber();
-            col = column();
-            lexeme = lex;
-        }
-
-        public String positionInfo() {
-            return "" + lineNum + ":" + col;
-        }
-
-        public String toString() {
-            return positionInfo() + " " + lexeme;
-        }
-    }
-
-    class StringToken extends Token {
-        String attribute;
-
-        StringToken(String lex) {
-            super(lex);
-            col = strStart;
-            attribute = lex;
-        }
-
-        public String toString() {
-            return positionInfo() + " string " + attribute;
-        }
-    }
-
-    class IntegerToken extends Token {
-        long attribute;
-
-        IntegerToken(String lex) {
-            super(lex);
-            attribute = parseToInt(lex);
-        }
-
-        public String toString() {
-            return positionInfo() + " integer " + attribute;
-        }
-    }
-
-    class CharacterToken extends Token {
-        int attribute; // the integer represents the character
-
-        CharacterToken(String lex) throws LexicalError {
-            super(lex);
-            attribute = parseToChar(lex.substring(1, lex.length() - 1));
-        }
-
-        public String toString() {
-            return positionInfo() + " character " + formatChar(attribute);
-        }
-    }
-
-    class KeywordToken extends Token {
-        KeywordToken(String lex) {
-            super(lex);
-        }
-    }
-
-    class IdToken extends Token {
-        IdToken(String lex) {
-            super(lex);
-        }
-
-        public String toString() {
-            return positionInfo() + " id " + lexeme;
-        }
-    }
-
-    class SymbolToken extends Token {
-        SymbolToken(String lex) {
-            super(lex);
-        }
-    }
 %}
 
 Whitespace = [ \t\f\r\n]
@@ -247,18 +108,18 @@ CharLiteral = "'"({Character}|"\"")"'"
     {CharLiteral}    { return new CharacterToken( yytext()); }
     "\""        { charBuffer = new ArrayList<Integer>(); strStart = column(); yybegin(STRING); }
     "//"         { yybegin(COMMENT); }
-    "'"           { throw new LexicalError(LexErrType.CharNotEnd);}
+    "'"           { throw new LexicalError(LexErrType.CharNotEnd, lineNumber(), column());}
 }
 <COMMENT> {
     "\n"  { yybegin(YYINITIAL); }
       [^] { }
 }
 <STRING> {
-    "\""               { Token t = new StringToken(getStringRepresentation(charBuffer));
+    "\""               { Token t = new StringToken(charBuffer);
                             yybegin(YYINITIAL); return t; }
-    "\n"          { throw new LexicalError(LexErrType.MultilineString); }
+    "\n"          { throw new LexicalError(LexErrType.MultilineString, lineNumber(), column()); }
     ({Character}|"'")  { int c = parseToChar(yytext()); charBuffer.add(c); }
-    [^]                {throw new LexicalError(LexErrType.StringNotEnd); }
+    [^]                {throw new LexicalError(LexErrType.StringNotEnd, lineNumber(), column()); }
 }
 
 [^] {  } // end of file?
