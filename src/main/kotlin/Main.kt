@@ -1,4 +1,4 @@
-import JFlexLexer.LexicalError
+
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
+import java_cup.parser
 import java.io.File
 import kotlin.io.path.Path
 
@@ -67,7 +68,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Lex the file
                 while (true) {
                     try {
-                        val t : JFlexLexer.Token = (lex.next_token() ?: break) as JFlexLexer.Token
+                        val t : Token = (lex.next_token() ?: break) as Token
                         //Output to file if flag is set
                         if (print) {
                             lexedFile.appendText(t.toString() + "\n")

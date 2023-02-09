@@ -8,6 +8,7 @@ zip:
 	cp -R production/dependencies tempzipdir
 	cp production/build.gradle tempzipdir
 	cp production/etac tempzipdir
+	cp cup tempzipdir
 	cp production/etac-build tempzipdir
 	cd tempzipdir; zip -r ../submission.zip . -x '__MACOSX'
 	rm -rf tempzipdir/

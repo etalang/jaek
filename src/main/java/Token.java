@@ -31,10 +31,10 @@ public abstract class Token extends java_cup.runtime.Symbol{
 class StringToken extends Token {
     String attribute;
 
-    StringToken(ArrayList<String> charBuffer) {
-        super(getStringRepresentation(charBuffer));
-        col = strStart;
-        attribute = lex;
+    StringToken(ArrayList<Integer> charBuffer, int lineNum, int strStart) {
+        super(LexUtil.getStringRepresentation(charBuffer), lineNum, strStart);
+//        col = strStart;
+        attribute = LexUtil.getStringRepresentation(charBuffer);
     }
 
     public String toString() {
@@ -45,9 +45,9 @@ class StringToken extends Token {
 class IntegerToken extends Token {
     long attribute;
 
-    IntegerToken(String lex) {
-        super(lex);
-        attribute = parseToInt(lex);
+    IntegerToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
+        attribute = LexUtil.parseToInt(lex);
     }
 
     public String toString() {
@@ -58,25 +58,25 @@ class IntegerToken extends Token {
 class CharacterToken extends Token {
     int attribute; // the integer represents the character
 
-    CharacterToken(String lex) throws LexicalError {
-        super(lex);
-        attribute = parseToChar(lex.substring(1, lex.length() - 1));
+    CharacterToken(String lex, int lineNum, int col) throws LexicalError {
+        super(lex, lineNum, col);
+        attribute = LexUtil.parseToChar(lex.substring(1, lex.length() - 1), lineNum, col);
     }
 
     public String toString() {
-        return positionInfo() + " character " + formatChar(attribute);
+        return positionInfo() + " character " + LexUtil.formatChar(attribute);
     }
 }
 
 class KeywordToken extends Token {
-    KeywordToken(String lex) {
-        super(lex);
+    KeywordToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
     }
 }
 
 class IdToken extends Token {
-    IdToken(String lex) {
-        super(lex);
+    IdToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
     }
 
     public String toString() {
@@ -85,7 +85,7 @@ class IdToken extends Token {
 }
 
 class SymbolToken extends Token {
-    SymbolToken(String lex) {
-        super(lex);
+    SymbolToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
     }
 }
