@@ -49,6 +49,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Create the new lexer
                 val lex = JFlexLexer(it.bufferedReader())
 
+                val parser = parser(lex);
+
                 //Create the new file name
                 val lexedFileName = it.nameWithoutExtension + ".lexed"
                 val lexedFile = File(diagnosticPath.toString(), lexedFileName)
@@ -65,7 +67,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Lex the file
                 while (true) {
                     try {
-                        val t: JFlexLexer.Token = lex.nextToken() ?: break
+                        val t : JFlexLexer.Token = (lex.next_token() ?: break) as JFlexLexer.Token
                         //Output to file if flag is set
                         if (print) {
                             lexedFile.appendText(t.toString() + "\n")

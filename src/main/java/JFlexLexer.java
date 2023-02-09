@@ -8,7 +8,7 @@ import java.math.BigInteger;
 
 // See https://github.com/jflex-de/jflex/issues/222
 @SuppressWarnings("FallThrough")
-public class JFlexLexer {
+public class JFlexLexer implements java_cup.runtime.Scanner {
 
   /** This character denotes the end of file. */
   public static final int YYEOF = -1;
@@ -464,12 +464,14 @@ public class JFlexLexer {
      * ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
      * as accurate as possible to the semantic meaning of the string.
      */
-    abstract class Token {
+    abstract class Token extends java_cup.runtime.Symbol{
         final String lexeme;
         int lineNum;
         int col;
 
         Token(String lex) {
+            //TODO: DO CORRECTLY
+            super(0);
             lineNum = lineNumber();
             col = column();
             lexeme = lex;
@@ -799,7 +801,7 @@ public class JFlexLexer {
    * @return the next token.
    * @exception java.io.IOException if any I/O-Error occurs.
    */
-  public Token nextToken() throws java.io.IOException, LexicalError {
+  public java_cup.runtime.Symbol next_token() throws java.io.IOException, LexicalError {
     int zzInput;
     int zzAction;
 

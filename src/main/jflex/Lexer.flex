@@ -12,6 +12,10 @@ import java.math.BigInteger;
 %yylexthrow LexicalError
 
 %unicode
+%implements java_cup.runtime.Scanner
+%function next_token
+%type java_cup.runtime.Symbol
+
 %pack
 
 %{
@@ -133,12 +137,14 @@ import java.math.BigInteger;
      * ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
      * as accurate as possible to the semantic meaning of the string.
      */
-    abstract class Token {
+    abstract class Token extends java_cup.runtime.Symbol{
         final String lexeme;
         int lineNum;
         int col;
 
         Token(String lex) {
+            //TODO: DO CORRECTLY
+            super(0);
             lineNum = lineNumber();
             col = column();
             lexeme = lex;
