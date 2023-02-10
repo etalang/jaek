@@ -19,7 +19,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
     private val lexFiles: List<File> by argument(help = "Files to lex.", name = "<source files>").file(canBeDir = false)
         .multiple()
-    private val print: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
+    private val print_lex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
+    private val print_parse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val dOpt = option(
         "-D",
         metavar = "<folder>",
@@ -56,7 +57,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexedFile = File(diagnosticPath.toString(), lexedFileName)
 
                 //Create the new file if the file does not already exist
-                if (print) {
+                if (print_lex) {
                     // Check if the file already exists and delete it if it does
                     if (lexedFile.exists() && !lexedFile.isDirectory) {
                         lexedFile.delete()
@@ -69,13 +70,13 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     try {
                         val t : JFlexLexer.Token = (lex.next_token() ?: break) as JFlexLexer.Token
                         //Output to file if flag is set
-                        if (print) {
+                        if (print_lex) {
                             lexedFile.appendText(t.toString() + "\n")
                         }
 
                     } catch (e: LexicalError) {
                         //Output to file if flag is set
-                        if (print) {
+                        if (print_lex) {
                             lexedFile.appendText(e.lineNum.toString() + ":" + e.col.toString() + " error:" + e.msg.toString() + "\n")
                         }
                         break
