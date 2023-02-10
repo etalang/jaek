@@ -1,4 +1,4 @@
-import JFlexLexer.LexicalError
+
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -49,7 +49,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Create the new lexer
                 val lex = JFlexLexer(it.bufferedReader())
 
-                val parser = parser(lex);
+//                val parser = parser(lex);
+
+//                print(parser.parse().value)
 
                 //Create the new file name
                 val lexedFileName = it.nameWithoutExtension + ".lexed"
@@ -67,7 +69,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Lex the file
                 while (true) {
                     try {
-                        val t : JFlexLexer.Token = (lex.next_token() ?: break) as JFlexLexer.Token
+                        val t : Token = (lex.next_token() ?: break) as Token
                         //Output to file if flag is set
                         if (print) {
                             lexedFile.appendText(t.toString() + "\n")
@@ -76,7 +78,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     } catch (e: LexicalError) {
                         //Output to file if flag is set
                         if (print) {
-                            lexedFile.appendText(e.lineNum.toString() + ":" + e.col.toString() + " error:" + e.msg.toString() + "\n")
+                            lexedFile.appendText(e.msg + "\n")
                         }
                         break
                     }

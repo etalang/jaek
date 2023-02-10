@@ -1,15 +1,16 @@
-import java.util.ArrayList;
+import java_cup.runtime.Symbol;
 
 /**
  * A Token consists of the corresponding string lexeme [lexeme], positioning information
  * ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
  * as accurate as possible to the semantic meaning of the string.
  */
-public abstract class Token extends java_cup.runtime.Symbol{
-    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters */
+public abstract class Token<T> extends Symbol {
     final String lexeme;
-    int lineNum;
-    int col;
+    private final int lineNum;
+    private final int col;
+
+    protected T attribute;
 
     Token(String lex, int lineNum, int col) {
         //TODO: DO CORRECTLY
@@ -26,14 +27,13 @@ public abstract class Token extends java_cup.runtime.Symbol{
     public String toString() {
         return positionInfo() + " " + lexeme;
     }
+
 }
 
-class StringToken extends Token {
-    String attribute;
+class StringToken extends Token<String> {
 
-    StringToken(ArrayList<String> charBuffer) {
-        super(getStringRepresentation(charBuffer));
-        col = strStart;
+    StringToken(String lex, int lineNum, int strStart) {
+        super(lex, lineNum, strStart);
         attribute = lex;
     }
 
@@ -42,12 +42,10 @@ class StringToken extends Token {
     }
 }
 
-class IntegerToken extends Token {
-    long attribute;
-
-    IntegerToken(String lex) {
-        super(lex);
-        attribute = parseToInt(lex);
+class IntegerToken extends Token<Long> {
+    IntegerToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
+        attribute = LexUtil.parseToInt(lex);
     }
 
     public String toString() {
@@ -55,28 +53,27 @@ class IntegerToken extends Token {
     }
 }
 
-class CharacterToken extends Token {
-    int attribute; // the integer represents the character
+class CharacterToken extends Token<Integer> {
 
-    CharacterToken(String lex) throws LexicalError {
-        super(lex);
-        attribute = parseToChar(lex.substring(1, lex.length() - 1));
+    CharacterToken(String lex, int lineNum, int col) throws LexicalError {
+        super(lex, lineNum, col);
+        attribute = LexUtil.parseToChar(lex.substring(1, lex.length() - 1), lineNum, col);
     }
 
     public String toString() {
-        return positionInfo() + " character " + formatChar(attribute);
+        return positionInfo() + " character " + LexUtil.formatChar(attribute);
     }
 }
 
-class KeywordToken extends Token {
-    KeywordToken(String lex) {
-        super(lex);
+class KeywordToken extends Token<Void> {
+    KeywordToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
     }
 }
 
-class IdToken extends Token {
-    IdToken(String lex) {
-        super(lex);
+class IdToken extends Token<Void> {
+    IdToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
     }
 
     public String toString() {
@@ -84,8 +81,8 @@ class IdToken extends Token {
     }
 }
 
-class SymbolToken extends Token {
-    SymbolToken(String lex) {
-        super(lex);
+class SymbolToken extends Token<Void> {
+    SymbolToken(String lex, int lineNum, int col) {
+        super(lex, lineNum, col);
     }
 }

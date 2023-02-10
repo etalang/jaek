@@ -346,20 +346,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
   private boolean zzEOFDone;
 
   /* user code: */
-    /** global character array consisting of characters to be read in for a string */
-    ArrayList<Integer> charBuffer;
-    int strStart;
-
-    /** [formatChar(n)] outputs the printable version of a Character. */
-    private static String formatChar(Integer character) {
-        if (character == 10) return "\\n";
-        if (character < 32 || character >= 127) {
-            return "\\x{" + Integer.toHexString(character) + "}";
-        }
-        int charTruncated = character % (1 << 16);
-        char asciiChar = (char) charTruncated;
-        return Character.toString(asciiChar);
-    }
+    private LexUtil.StringTokenBuilder currentString;
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {
@@ -369,183 +356,6 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
     /** Returns the column the lexer head is currently at in the file, numbered from 1. */
     public int column() {
         return yycolumn + 1;
-    }
-
-    /** [getStringRepresentation(list)] returns the string representation of an ArrayList of characters */
-    String getStringRepresentation(ArrayList<Integer> list) {
-        return list.stream().map(JFlexLexer::formatChar).collect(java.util.stream.Collectors.joining());
-    }
-
-    /**
-     * [parseToChar(matched)] converts the matched string to the integer representing
-     * the character. Throws an LexicalError if the string does not correspond to a
-     * character.
-     */
-    public int parseToChar(String matched) throws LexicalError {
-        // normal case
-        if (matched.length() == 1) {
-            return matched.codePointAt(0);
-        } else if (matched.length() == 2) {
-            if (matched.charAt(0) == '\\') {
-                // escaped character
-                char errorProne = matched.charAt(1); // maybe this is \ or ', "error-prone" escapes
-                // newline case
-                if (errorProne == 'n') {
-                    return 0x0A;
-                } else { // extract the character
-                    return (int) errorProne;
-                }
-            } else {
-                //character made of two characters
-                return matched.codePointAt(0);
-            }
-        }
-        // unicode case
-        else if (matched.length() >= 5 && matched.startsWith("\\x{")) {
-            // has format "\x{<stuff>}"
-            int hexNum = Integer.parseInt(matched.substring(3, matched.length() - 1), 16);
-            if (hexNum < 0 || hexNum >= 1 << 24) {
-                throw new LexicalError(LexErrType.UnicodeTooBig);
-            }
-            return hexNum;
-        } else {
-            throw new LexicalError(LexErrType.CharWrong);
-        }
-    }
-
-    /**
-     * [parseToInt(matched)] truncates matched to fit into a long. If the number is too large, it will
-     * be taken mod 2^64 and shifted to fit into the correct long range. In the specific case
-     */
-    public long parseToInt(String matched) {
-        if (matched.length() <= 18) { // there are 19 digits in 2^63
-            return Long.parseLong(matched);
-        } else {
-            return new BigInteger(matched).longValue();
-        }
-    }
-
-    /** Types of possible errors encounterable while lexing */
-    enum LexErrType {StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig}
-
-    /** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
-    class LexicalError extends Exception {
-        LexErrType errorType;
-        int lineNum;
-        int col;
-        String msg;
-
-        LexicalError(LexErrType lt) {
-            errorType = lt;
-            switch (lt) {
-                case StringNotEnd:
-                    msg = "Non-terminating string";
-                    break;
-                case CharWrong:
-                    msg = "Invalid character constant";
-                    break;
-                case CharNotEnd:
-                    msg = "Unmatched \"'\"";
-                    break;
-                case MultilineString:
-                    msg = "Multiline string";
-                    break;
-                case UnicodeTooBig:
-                    msg = "Unicode argument too large";
-                    break;
-            }
-            lineNum = lineNumber();
-            col = column();
-        }
-    }
-
-    /**
-     * A Token consists of the corresponding string lexeme [lexeme], positioning information
-     * ([lineNum], [col]), and if applicable, the literal value [attribute]. The attribute should be
-     * as accurate as possible to the semantic meaning of the string.
-     */
-    abstract class Token extends java_cup.runtime.Symbol{
-        final String lexeme;
-        int lineNum;
-        int col;
-
-        Token(String lex) {
-            //TODO: DO CORRECTLY
-            super(0);
-            lineNum = lineNumber();
-            col = column();
-            lexeme = lex;
-        }
-
-        public String positionInfo() {
-            return "" + lineNum + ":" + col;
-        }
-
-        public String toString() {
-            return positionInfo() + " " + lexeme;
-        }
-    }
-
-    class StringToken extends Token {
-        String attribute;
-
-        StringToken(String lex) {
-            super(lex);
-            col = strStart;
-            attribute = lex;
-        }
-
-        public String toString() {
-            return positionInfo() + " string " + attribute;
-        }
-    }
-
-    class IntegerToken extends Token {
-        long attribute;
-
-        IntegerToken(String lex) {
-            super(lex);
-            attribute = parseToInt(lex);
-        }
-
-        public String toString() {
-            return positionInfo() + " integer " + attribute;
-        }
-    }
-
-    class CharacterToken extends Token {
-        int attribute; // the integer represents the character
-
-        CharacterToken(String lex) throws LexicalError {
-            super(lex);
-            attribute = parseToChar(lex.substring(1, lex.length() - 1));
-        }
-
-        public String toString() {
-            return positionInfo() + " character " + formatChar(attribute);
-        }
-    }
-
-    class KeywordToken extends Token {
-        KeywordToken(String lex) {
-            super(lex);
-        }
-    }
-
-    class IdToken extends Token {
-        IdToken(String lex) {
-            super(lex);
-        }
-
-        public String toString() {
-            return positionInfo() + " id " + lexeme;
-        }
-    }
-
-    class SymbolToken extends Token {
-        SymbolToken(String lex) {
-            super(lex);
-        }
     }
 
 
@@ -952,27 +762,27 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 17: break;
           case 3:
-            { return new SymbolToken(yytext());
+            { return new SymbolToken(yytext(), lineNumber(), column());
             }
             // fall through
           case 18: break;
           case 4:
-            { charBuffer = new ArrayList<Integer>(); strStart = column(); yybegin(STRING);
+            { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING);
             }
             // fall through
           case 19: break;
           case 5:
-            { throw new LexicalError(LexErrType.CharNotEnd);
+            { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());
             }
             // fall through
           case 20: break;
           case 6:
-            { return new IntegerToken(yytext());
+            { return new IntegerToken(yytext(), lineNumber(), column());
             }
             // fall through
           case 21: break;
           case 7:
-            { return new IdToken(yytext());
+            { return new IdToken(yytext(), lineNumber(), column());
             }
             // fall through
           case 22: break;
@@ -982,23 +792,22 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 23: break;
           case 9:
-            { int c = parseToChar(yytext()); charBuffer.add(c);
+            { currentString.append(LexUtil.parseToChar(yytext(), lineNumber(), column()));
             }
             // fall through
           case 24: break;
           case 10:
-            { throw new LexicalError(LexErrType.MultilineString);
+            { throw new LexicalError(LexicalError.errType.MultilineString, lineNumber(), column());
             }
             // fall through
           case 25: break;
           case 11:
-            { Token t = new StringToken(getStringRepresentation(charBuffer));
-                            yybegin(YYINITIAL); return t;
+            { StringToken t= currentString.complete(); yybegin(YYINITIAL); return t;
             }
             // fall through
           case 26: break;
           case 12:
-            { throw new LexicalError(LexErrType.StringNotEnd);
+            { throw new LexicalError(LexicalError.errType.StringNotEnd, lineNumber(), column());
             }
             // fall through
           case 27: break;
@@ -1008,12 +817,12 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 28: break;
           case 14:
-            { return new KeywordToken(yytext());
+            { return new KeywordToken(yytext(), lineNumber(), column());
             }
             // fall through
           case 29: break;
           case 15:
-            { return new CharacterToken( yytext());
+            { return new CharacterToken(yytext(), lineNumber(), column());
             }
             // fall through
           case 30: break;
