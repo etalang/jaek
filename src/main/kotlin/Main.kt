@@ -69,7 +69,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Lex the file
                 while (true) {
                     try {
-                        val t : Token = (lex.next_token() ?: break) as Token
+                        val t = (lex.next_token() ?: break)
                         //Output to file if flag is set
                         if (print) {
                             lexedFile.appendText(t.toString() + "\n")

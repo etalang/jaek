@@ -64,7 +64,7 @@ CharLiteral = "'"({Character}|"\"")"'"
       [^] { }
 }
 <STRING> {
-    "\""               { StringToken t= currentString.complete(); yybegin(YYINITIAL); return t;}
+    "\""               { StringToken t = currentString.complete(); yybegin(YYINITIAL); return t;}
     "\n"          { throw new LexicalError(LexicalError.errType.MultilineString, lineNumber(), column()); }
     ({Character}|"'")  { currentString.append(LexUtil.parseToChar(yytext(), lineNumber(), column())); }
     [^]                {throw new LexicalError(LexicalError.errType.StringNotEnd, lineNumber(), column()); }
