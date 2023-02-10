@@ -7,7 +7,6 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
-import java_cup.parser
 import java.io.File
 import kotlin.io.path.Path
 
@@ -50,7 +49,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 //Create the new lexer
                 val lex = JFlexLexer(it.bufferedReader())
 
-                val parser = parser(lex);
+//                val parser = parser(lex);
+
+//                print(parser.parse().value)
 
                 //Create the new file name
                 val lexedFileName = it.nameWithoutExtension + ".lexed"

@@ -712,15 +712,15 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             }
           case 17: break;
           case 3: 
-            { return new IdToken(yytext(), lineNumber(), column());
+            { return new IdTokenK(yytext(), lineNumber(), column());
             }
           case 18: break;
           case 4: 
-            { return new IntegerToken(yytext(), lineNumber(), column());
+            { return new IntegerTokenK(yytext(), lineNumber(), column());
             }
           case 19: break;
           case 5: 
-            { return new SymbolToken(yytext(), lineNumber(), column());
+            { return new SymbolTokenK(yytext(), lineNumber(), column());
             }
           case 20: break;
           case 6: 
@@ -736,7 +736,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             }
           case 23: break;
           case 9: 
-            { int c = parseToChar(yytext(), lineNumber(), column()); charBuffer.add(c);
+            { int c = LexUtil.parseToChar(yytext(), lineNumber(), column()); charBuffer.add(c);
             }
           case 24: break;
           case 10: 
@@ -744,7 +744,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             }
           case 25: break;
           case 11: 
-            { Token t = new StringToken(charBuffer, lineNumber(), strStart);
+            { Token t = new StringTokenK(charBuffer, lineNumber(), strStart);
                             yybegin(YYINITIAL); return t;
             }
           case 26: break;
@@ -757,11 +757,11 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             }
           case 28: break;
           case 14: 
-            { return new KeywordToken(yytext(), lineNumber(), column());
+            { return new KeywordTokenK(yytext(), lineNumber(), column());
             }
           case 29: break;
           case 15: 
-            { return new CharacterToken(yytext(), lineNumber(), column());
+            { return new CharacterTokenK(yytext(), lineNumber(), column());
             }
           case 30: break;
           default:

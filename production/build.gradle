@@ -65,19 +65,19 @@ sourceCompatibility = 1.8
 
 task jflex(type: Exec) {
     commandLine "jflex", "-q", "-d src/main/java", "src/main/jflex/Lexer.flex"
-    dependsOn 'cup'
-    mustRunAfter 'cup'
+//    dependsOn 'cup'
+//    mustRunAfter 'cup'
 }
 
-task cup(type: Exec) {
-    commandLine "./cup", "-destdir", "src/main/java", "src/main/cup/eta.cup"
-}
+//task cup(type: Exec) {
+//    commandLine "./cup", "-destdir", "src/main/java", "src/main/cup/eta.cup"
+//}
 
 build {
     dependsOn 'jflex'
     mustRunAfter 'jflex'
-    dependsOn 'cup'
-    mustRunAfter 'cup'
+//    dependsOn 'cup'
+//    mustRunAfter 'cup'
 }
 
 
