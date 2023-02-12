@@ -15,7 +15,7 @@ terminal INT, BOOL;
 terminal IF, ELSE, WHILE, BREAK, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
   DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL, GETS,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS, ID;
 
 terminal INTERFACE, PROGRAM;
 
@@ -39,7 +39,6 @@ nonterminal fnblock;
 nonterminal block;
 nonterminal statement;
 nonterminal elseopt;
-nonterminal expr;
 nonterminal binop;
 nonterminal unop;
 nonterminal expr;
@@ -52,6 +51,7 @@ nonterminal idxlst;
 nonterminal target;
 nonterminal targets;
 nonterminal semi;
+nonterminal fncall;
 
 
 /* Precedences */
@@ -111,10 +111,10 @@ binop           ::= PLUS |
                     MODULO |
                     LT |
                     LEQ |
-                    GE |
+                    GT |
                     GEQ |
                     EQUAL |
-                    NEQ |
+                    NOT_EQUAL |
                     AND |
                     OR;
 return          ::= RETURN semi |
@@ -133,8 +133,8 @@ nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
 expr            ::= expr binop expr |
                     unop expr |
                     IDENTIFIER |
-                    IDENTIFIER OPEN_PAREN vallst CLOSEPAREN  |
-                    IDENTIFIER OPEN_PAREN CLOSEPAREN |
+                    IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN  |
+                    IDENTIFIER OPEN_PAREN CLOSE_PAREN |
                     STRING_LITERAL |
                     INTEGER_LITERAL |
                     FALSE |
