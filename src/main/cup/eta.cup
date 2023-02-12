@@ -89,7 +89,7 @@ typelst         ::= type |
                     type COMMA typelst;
 statementlst    ::= statement | statement statementlst;
 if              ::= IF expr block elseopt |
-                    if OPEN_PAREN expr CLOSE_PAREN block elseopt;
+                    IF OPEN_PAREN expr CLOSE_PAREN block elseopt;
 fnblock         ::= OPEN_BRACKET statementlst CLOSE_BRACKET |
                     OPEN_BRACKET statementlst return CLOSE_BRACKET |
                     OPEN_BRACKET CLOSE_BRACKET;
