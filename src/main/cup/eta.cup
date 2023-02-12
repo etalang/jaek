@@ -15,7 +15,7 @@ terminal INT, BOOL;
 terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
   DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS, ID;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
 terminal INTERFACE, PROGRAM;
 
@@ -35,6 +35,7 @@ nonterminal method;
 nonterminal typelst;
 nonterminal statementlst;
 nonterminal if;
+nonterminal while;
 nonterminal fnblock;
 nonterminal block;
 nonterminal statement;
@@ -62,7 +63,7 @@ precedence left LT, LEQ, GT, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
-precedence nonassoc COMMA, OPEN_BRACKET, CLOSE_BRACKET;
+precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET;
 
 /* Grammar Definition */
 file            ::= INTERFACE interface |
@@ -91,13 +92,15 @@ typelst         ::= type |
 statementlst    ::= statement | statement statementlst;
 if              ::= IF expr block elseopt |
                     IF OPEN_PAREN expr CLOSE_PAREN block elseopt;
+while           ::= WHILE OPEN_PAREN expr CLOSE_PAREN block |
+                    WHILE expr block;
 fnblock         ::= OPEN_BRACKET statementlst CLOSE_BRACKET |
                     OPEN_BRACKET statementlst return CLOSE_BRACKET |
                     OPEN_BRACKET CLOSE_BRACKET;
 block           ::= statement |
                     fnblock;
-statement       ::= IF |
-                    WHILE |
+statement       ::= if |
+                    while |
                     decl semi |
                     assign semi |
                     fncall semi;
@@ -142,7 +145,7 @@ expr            ::= expr binop expr |
                     FALSE |
                     TRUE |
                     OPEN_BRACE vallst CLOSE_BRACE |
-                    ID idxlst |
+                    IDENTIFIER idxlst |
                     LENGTH OPEN_PAREN expr CLOSE_PAREN;
 idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
                     OPEN_BRACKET expr CLOSE_BRACKET idxlst;
