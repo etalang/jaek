@@ -111,8 +111,7 @@ nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
 expr            ::= expr binop expr |
                     unop expr |
                     IDENTIFIER |
-                    IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN  |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN |
+                    fncall |
                     STRING_LITERAL |
                     INTEGER_LITERAL |
                     CHARACTER_LITERAL |
