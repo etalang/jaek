@@ -43,6 +43,7 @@ test {
 }
 
 dependencies {
+    implementation fileTree(dir: 'dependencies/custom', include: '*.jar')
     //EXCLUDE FOR DOWNLOAD
     implementation fileTree(dir: 'dependencies/main', include: '*.jar')
     implementation fileTree(dir: 'dependencies/test', include: '*.jar')
