@@ -76,6 +76,8 @@ statement       ::= if |
                     decl semi |
                     assign semi |
                     fncall semi;
+fncall          ::= IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN |
+                    IDENTIFIER OPEN_PAREN CLOSE_PAREN;
 elseopt         ::= | ELSE block;
 unop            ::= UMINUS |
                     NOT;
