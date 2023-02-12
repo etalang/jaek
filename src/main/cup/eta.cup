@@ -4,7 +4,7 @@ import java_cup.runtime.*;
 //init with {: scanner.init();              :};
 scan with {: return getScanner().next_token(); :};
 
-// You might want to add types to these declarations.
+/* Terminals */
 terminal IDENTIFIER;
 terminal STRING_LITERAL;
 terminal CHARACTER_LITERAL;
@@ -12,22 +12,119 @@ terminal INTEGER_LITERAL;
 terminal TRUE, FALSE;
 terminal INT, BOOL;
 
-terminal IF, ELSE, WHILE, BREAK, RETURN, USE, LENGTH, PLUS, MINUS, TIMES,
-  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL, GETS,
+terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
+  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
-// You might want to add types to these declarations.
-nonterminal program;
-// Add more nonterminals here...
+terminal INTERFACE, PROGRAM;
 
-start with program;
+/* Nonterminals */
+nonterminal file, interface, abs_meth, method, program, imports, use;
+nonterminal defns, definition, decl, decls;
+nonterminal assign, target, targets, type, typelst;
+nonterminal statement, statementlst, if, while, fnblock, block, elseopt, semi;
+nonterminal binop, unop, expr, fncall;
+nonterminal return, vallst, bracketlst, nullbrackets, idxlst;
 
-// Recognizes "Hello World!", but not much else.
-//program ::= USE IDENTIFIER IDENTIFIER OPEN_PAREN IDENTIFIER COLON
-//  INT OPEN_BRACKET CLOSE_BRACKET OPEN_BRACKET CLOSE_BRACKET CLOSE_PAREN
-//  OPEN_BRACE IDENTIFIER OPEN_PAREN STRING_LITERAL CLOSE_PAREN CLOSE_BRACE;
-program ::= STRING_LITERAL:a {:
-System.out.println("STRING: "+a);
-:}
-;
+/* Precedences */
+precedence left OR;
+precedence left AND;
+precedence left EQB, NEQB;
+precedence left LT, LEQ, GT, GEQ;
+precedence left PLUS, MINUS;
+precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
+precedence left UMINUS, NOT;
+precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
+
+/* Grammar Definition */
+file            ::= INTERFACE interface |
+                    PROGRAM program;
+interface       ::= | abs_meth interface ;
+abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
+                    IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
+                    IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
+                    IDENTIFIER OPEN_PAREN CLOSE_PAREN;
+program         ::= imports defns;
+imports          ::= use imports |
+                     ;
+use             ::= USE IDENTIFIER semi;
+defns            ::= definition defns |
+                    ;
+decls           ::= decl |
+                    decls COMMA decls;
+decl            ::= IDENTIFIER COLON type;
+assign          ::= targets EQUALS vallst;
+definition      ::= method |
+                    decl semi |
+                    assign semi;
+method          ::= abs_meth fnblock;
+typelst         ::= type |
+                    type COMMA typelst;
+statementlst    ::= statement | statement statementlst;
+if              ::= IF expr block elseopt |
+                    IF OPEN_PAREN expr CLOSE_PAREN block elseopt;
+while           ::= WHILE OPEN_PAREN expr CLOSE_PAREN block |
+                    WHILE expr block;
+fnblock         ::= OPEN_BRACKET statementlst CLOSE_BRACKET |
+                    OPEN_BRACKET statementlst return CLOSE_BRACKET |
+                    OPEN_BRACKET CLOSE_BRACKET;
+block           ::= statement |
+                    fnblock;
+statement       ::= if |
+                    while |
+                    decl semi |
+                    assign semi |
+                    fncall semi;
+fncall          ::= IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN |
+                    IDENTIFIER OPEN_PAREN CLOSE_PAREN;
+elseopt         ::= | ELSE block;
+unop            ::= UMINUS |
+                    NOT;
+binop           ::= PLUS |
+                    MINUS |
+                    TIMES |
+                    HIGHTIMES |
+                    DIVIDE |
+                    MODULO |
+                    LT |
+                    LEQ |
+                    GT |
+                    GEQ |
+                    EQB |
+                    NEQB |
+                    AND |
+                    OR;
+return          ::= RETURN semi |
+                    RETURN vallst semi ;
+vallst         ::= expr |
+                    expr COMMA vallst;
+type            ::= BOOL |
+                    INT |
+                    BOOL bracketlst |
+                    INT bracketlst;
+bracketlst      ::= nullbrackets |
+                    OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET |
+                    OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET bracketlst;
+nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
+                    OPEN_BRACKET CLOSE_BRACKET nullbrackets;
+expr            ::= expr binop expr |
+                    unop expr |
+                    IDENTIFIER |
+                    fncall |
+                    STRING_LITERAL |
+                    INTEGER_LITERAL |
+                    CHARACTER_LITERAL |
+                    FALSE |
+                    TRUE |
+                    OPEN_BRACE vallst CLOSE_BRACE |
+                    IDENTIFIER idxlst |
+                    LENGTH OPEN_PAREN expr CLOSE_PAREN;
+idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
+                    OPEN_BRACKET expr CLOSE_BRACKET idxlst;
+target          ::= decl |
+                    UNDERSCORE;
+targets         ::= target |
+                    target COMMA targets;
+semi            ::= SEMICOLON |
+                    ;
