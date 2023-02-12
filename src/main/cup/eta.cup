@@ -62,6 +62,7 @@ precedence left LT, LEQ, GT, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
+precedence nonassoc COMMA, OPEN_BRACKET, CLOSE_BRACKET;
 
 /* Grammar Definition */
 file            ::= INTERFACE interface |
