@@ -12,8 +12,8 @@ terminal INTEGER_LITERAL;
 terminal TRUE, FALSE;
 terminal INT, BOOL;
 
-terminal IF, ELSE, WHILE, BREAK, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
-  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL, GETS,
+terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
+  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
   COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS, ID;
 
@@ -137,10 +137,12 @@ expr            ::= expr binop expr |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN |
                     STRING_LITERAL |
                     INTEGER_LITERAL |
+                    CHARACTER_LITERAL |
                     FALSE |
                     TRUE |
                     OPEN_BRACE vallst CLOSE_BRACE |
-                    ID idxlst;
+                    ID idxlst |
+                    LENGTH OPEN_PAREN expr CLOSE_PAREN;
 idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
                     OPEN_BRACKET expr CLOSE_BRACKET idxlst;
 target          ::= decl |
