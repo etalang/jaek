@@ -80,7 +80,7 @@ defns            ::= definition defns |
 decls           ::= decl |
                     decls COMMA decls;
 decl            ::= IDENTIFIER COLON type;
-assign          ::= targets EQUAL vallist;
+assign          ::= targets EQUAL vallst;
 definition      ::= method |
                     decl semi |
                     assign semi;
@@ -118,9 +118,9 @@ binop           ::= PLUS |
                     AND |
                     OR;
 return          ::= RETURN semi |
-                    RETURN vallist semi ;
-vallist         ::= expr |
-                    expr COMMA vallist;
+                    RETURN vallst semi ;
+vallst         ::= expr |
+                    expr COMMA vallst;
 type            ::= BOOL |
                     INT |
                     BOOL bracketlst |
@@ -134,13 +134,13 @@ nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
 expr            ::= expr binop expr |
                     unop expr |
                     IDENTIFIER |
-                    IDENTIFIER OPEN_PAREN vallist CLOSEPAREN  |
+                    IDENTIFIER OPEN_PAREN vallst CLOSEPAREN  |
                     IDENTIFIER OPEN_PAREN CLOSEPAREN |
                     STRING_LITERAL |
                     INTEGER_LITERAL |
                     FALSE |
                     TRUE |
-                    OPEN_BRACE vallist CLOSE_BRACE |
+                    OPEN_BRACE vallst CLOSE_BRACE |
                     ID idxlst;
 idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
                     OPEN_BRACKET expr CLOSE_BRACKET idxlst;
