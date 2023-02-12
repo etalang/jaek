@@ -13,7 +13,7 @@ terminal TRUE, FALSE;
 terminal INT, BOOL;
 
 terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
-  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL,
+  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
   COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
@@ -30,7 +30,7 @@ nonterminal return, vallst, bracketlst, nullbrackets, idxlst;
 /* Precedences */
 precedence left OR;
 precedence left AND;
-precedence left EQUAL, NOT_EQUAL;
+precedence left EQB, NEQB;
 precedence left LT, LEQ, GT, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
@@ -54,7 +54,7 @@ defns            ::= definition defns |
 decls           ::= decl |
                     decls COMMA decls;
 decl            ::= IDENTIFIER COLON type;
-assign          ::= targets EQUAL vallst;
+assign          ::= targets EQUALS vallst;
 definition      ::= method |
                     decl semi |
                     assign semi;
@@ -91,8 +91,8 @@ binop           ::= PLUS |
                     LEQ |
                     GT |
                     GEQ |
-                    EQUAL |
-                    NOT_EQUAL |
+                    EQB |
+                    NEQB |
                     AND |
                     OR;
 return          ::= RETURN semi |
