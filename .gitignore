@@ -26,7 +26,6 @@ replay_pid*
 /.gradle/
 /gradle/
 
-# JFlex Output
 /production/.gradle/
 /production/build/
 /production/src/
