@@ -125,7 +125,6 @@ type            ::= BOOL |
                     INT |
                     BOOL bracketlst |
                     INT bracketlst;
-
 bracketlst      ::= nullbrackets |
                     OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET |
                     OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET bracketlst;
