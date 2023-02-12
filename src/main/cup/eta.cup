@@ -41,9 +41,9 @@ precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 file            ::= INTERFACE interface |
                     PROGRAM program;
 interface       ::= | abs_meth interface ;
-abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN typelst |
+abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN typelst |
+                    IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
 program         ::= imports defns;
 imports          ::= use imports |
