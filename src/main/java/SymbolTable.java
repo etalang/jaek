@@ -4,7 +4,7 @@
 //----------------------------------------------------
 
 /** CUP generated class containing symbol constants. */
-public class sym {
+public class SymbolTable {
   /* terminals */
   public static final int UNDERSCORE = 41;
   public static final int LENGTH = 16;

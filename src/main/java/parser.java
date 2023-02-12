@@ -12,7 +12,7 @@ public class parser
 
   @Override
   public final Class<?> getSymbolContainer() {
-    return sym.class;
+    return SymbolTable.class;
   }
 
   /** Default constructor. */
@@ -29,7 +29,7 @@ public class parser
   /** Production table. */
   protected static final short _production_table[][] = 
     unpackFromStrings(new String[] {
-    "\000\002\000\002\002\004\000\002\002\024" });
+    "\000\002\000\002\002\004\000\002\002\003" });
 
   /** Access to production table. */
   @Override
@@ -38,16 +38,9 @@ public class parser
   /** Parse-action table. */
   protected static final short[][] _action_table = 
     unpackFromStrings(new String[] {
-    "\000\025\000\004\021\004\001\002\000\004\004\007\001" +
+    "\000\004\000\004\005\004\001\002\000\004\002\000\001" +
     "\002\000\004\002\006\001\002\000\004\002\001\001\002" +
-    "\000\004\004\010\001\002\000\004\044\011\001\002\000" +
-    "\004\004\012\001\002\000\004\050\013\001\002\000\004" +
-    "\012\014\001\002\000\004\042\015\001\002\000\004\043" +
-    "\016\001\002\000\004\042\017\001\002\000\004\043\020" +
-    "\001\002\000\004\045\021\001\002\000\004\046\022\001" +
-    "\002\000\004\004\023\001\002\000\004\044\024\001\002" +
-    "\000\004\005\025\001\002\000\004\045\026\001\002\000" +
-    "\004\047\027\001\002\000\004\002\000\001\002" });
+    "" });
 
   /** Access to parse-action table. */
   @Override
@@ -56,13 +49,8 @@ public class parser
   /** {@code reduce_goto} table. */
   protected static final short[][] _reduce_table = 
     unpackFromStrings(new String[] {
-    "\000\025\000\004\002\004\001\001\000\002\001\001\000" +
-    "\002\001\001\000\002\001\001\000\002\001\001\000\002" +
-    "\001\001\000\002\001\001\000\002\001\001\000\002\001" +
-    "\001\000\002\001\001\000\002\001\001\000\002\001\001" +
-    "\000\002\001\001\000\002\001\001\000\002\001\001\000" +
-    "\002\001\001\000\002\001\001\000\002\001\001\000\002" +
-    "\001\001\000\002\001\001\000\002\001\001" });
+    "\000\004\000\004\002\004\001\001\000\002\001\001\000" +
+    "\002\001\001\000\002\001\001" });
 
   /** Access to {@code reduce_goto} table. */
   @Override
@@ -151,11 +139,16 @@ class CUP$parser$actions {
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
-        case 1: // program ::= USE IDENTIFIER IDENTIFIER OPEN_PAREN IDENTIFIER COLON INT OPEN_BRACKET CLOSE_BRACKET OPEN_BRACKET CLOSE_BRACKET CLOSE_PAREN OPEN_BRACE IDENTIFIER OPEN_PAREN STRING_LITERAL CLOSE_PAREN CLOSE_BRACE 
+        case 1: // program ::= STRING_LITERAL 
             {
                 Object RESULT = null;
+                int aleft = CUP$parser$stack.peek().left;
+                int aright = CUP$parser$stack.peek().right;
+                Object a = CUP$parser$stack.peek().<Object> value();
+                
+System.out.println("STRING: "+a);
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("program",0, CUP$parser$stack.elementAt(CUP$parser$top-17), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("program",0, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
