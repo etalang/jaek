@@ -22,7 +22,7 @@ terminal INTERFACE, PROGRAM;
 /* Nonterminals */
 nonterminal file;
 nonterminal interface;
-nonterminal absmeth;
+nonterminal abs_meth;
 nonterminal program;
 nonterminal imports;
 nonterminal use;
