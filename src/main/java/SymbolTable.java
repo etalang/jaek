@@ -16,13 +16,12 @@ public class SymbolTable {
   public static final int MINUS = 17;
   public static final int DIVIDE = 20;
   public static final int RETURN = 13;
-  public static final int INTERFACE = 43;
+  public static final int INTERFACE = 42;
   public static final int OPEN_BRACE = 35;
   public static final int CLOSE_BRACE = 36;
   public static final int SEMICOLON = 39;
   public static final int ELSE = 11;
   public static final int IDENTIFIER = 2;
-  public static final int ID = 42;
   public static final int EOF = 0;
   public static final int IF = 10;
   public static final int COMMA = 38;
@@ -49,7 +48,7 @@ public class SymbolTable {
   public static final int FALSE = 7;
   public static final int WHILE = 12;
   public static final int CLOSE_PAREN = 34;
-  public static final int PROGRAM = 44;
+  public static final int PROGRAM = 43;
   public static final int PLUS = 16;
   public static final String[] terminalNames = new String[] {
   "EOF",
@@ -94,7 +93,6 @@ public class SymbolTable {
   "SEMICOLON",
   "UNDERSCORE",
   "UMINUS",
-  "ID",
   "INTERFACE",
   "PROGRAM"
   };
