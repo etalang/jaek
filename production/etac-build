@@ -1,2 +1,6 @@
 #!/usr/bin/env bash
-gradle6 --no-daemon shadowJar
+if [ "$(uname -m)" != "aarch64\n" ]; then
+  gradle7 --no-daemon shadowJar
+else
+  gradle6 --no-daemon shadowJar
+fi
