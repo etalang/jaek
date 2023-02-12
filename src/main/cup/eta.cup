@@ -20,40 +20,12 @@ terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
 terminal INTERFACE, PROGRAM;
 
 /* Nonterminals */
-nonterminal file;
-nonterminal interface;
-nonterminal abs_meth;
-nonterminal program;
-nonterminal imports;
-nonterminal use;
-nonterminal defns;
-nonterminal decl;
-nonterminal decls;
-nonterminal assign;
-nonterminal definition;
-nonterminal method;
-nonterminal typelst;
-nonterminal statementlst;
-nonterminal if;
-nonterminal while;
-nonterminal fnblock;
-nonterminal block;
-nonterminal statement;
-nonterminal elseopt;
-nonterminal binop;
-nonterminal unop;
-nonterminal expr;
-nonterminal return;
-nonterminal vallst;
-nonterminal type;
-nonterminal bracketlst;
-nonterminal nullbrackets;
-nonterminal idxlst;
-nonterminal target;
-nonterminal targets;
-nonterminal semi;
-nonterminal fncall;
-
+nonterminal file, interface, abs_meth, method, program, imports, use;
+nonterminal defns, definition, decl, decls;
+nonterminal assign, target, targets, type, typelst;
+nonterminal statement, statementlst, if, while, fnblock, block, elseopt, semi;
+nonterminal binop, unop, expr, fncall;
+nonterminal return, vallst, bracketlst, nullbrackets, idxlst;
 
 /* Precedences */
 precedence left OR;

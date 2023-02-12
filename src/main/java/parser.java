@@ -32,32 +32,32 @@ public class parser
     "\000\135\000\002\002\004\000\002\002\004\000\002\002" +
     "\004\000\002\003\002\000\002\003\004\000\002\004\007" +
     "\000\002\004\006\000\002\004\006\000\002\004\005\000" +
-    "\002\005\004\000\002\006\004\000\002\006\002\000\002" +
-    "\007\005\000\002\010\004\000\002\010\002\000\002\012" +
-    "\003\000\002\012\005\000\002\011\005\000\002\013\005" +
-    "\000\002\014\003\000\002\014\004\000\002\014\004\000" +
-    "\002\015\004\000\002\016\003\000\002\016\005\000\002" +
-    "\017\003\000\002\017\004\000\002\020\006\000\002\020" +
-    "\010\000\002\021\007\000\002\021\005\000\002\022\005" +
-    "\000\002\022\006\000\002\022\004\000\002\023\003\000" +
-    "\002\023\003\000\002\024\003\000\002\024\003\000\002" +
-    "\024\004\000\002\024\004\000\002\024\004\000\002\025" +
-    "\002\000\002\025\004\000\002\027\003\000\002\027\003" +
-    "\000\002\026\003\000\002\026\003\000\002\026\003\000" +
-    "\002\026\003\000\002\026\003\000\002\026\003\000\002" +
-    "\026\003\000\002\026\003\000\002\026\003\000\002\026" +
-    "\003\000\002\026\003\000\002\026\003\000\002\026\003" +
-    "\000\002\026\003\000\002\031\004\000\002\031\005\000" +
-    "\002\032\003\000\002\032\005\000\002\033\003\000\002" +
-    "\033\003\000\002\033\004\000\002\033\004\000\002\034" +
-    "\003\000\002\034\005\000\002\034\006\000\002\035\004" +
-    "\000\002\035\005\000\002\030\005\000\002\030\004\000" +
-    "\002\030\003\000\002\030\006\000\002\030\005\000\002" +
-    "\030\003\000\002\030\003\000\002\030\003\000\002\030" +
-    "\003\000\002\030\003\000\002\030\005\000\002\030\004" +
-    "\000\002\030\006\000\002\036\005\000\002\036\006\000" +
-    "\002\037\003\000\002\037\003\000\002\040\003\000\002" +
-    "\040\005\000\002\041\003\000\002\041\002" });
+    "\002\006\004\000\002\007\004\000\002\007\002\000\002" +
+    "\010\005\000\002\011\004\000\002\011\002\000\002\014" +
+    "\003\000\002\014\005\000\002\013\005\000\002\015\005" +
+    "\000\002\012\003\000\002\012\004\000\002\012\004\000" +
+    "\002\005\004\000\002\021\003\000\002\021\005\000\002" +
+    "\023\003\000\002\023\004\000\002\024\006\000\002\024" +
+    "\010\000\002\025\007\000\002\025\005\000\002\026\005" +
+    "\000\002\026\006\000\002\026\004\000\002\027\003\000" +
+    "\002\027\003\000\002\022\003\000\002\022\003\000\002" +
+    "\022\004\000\002\022\004\000\002\022\004\000\002\030" +
+    "\002\000\002\030\004\000\002\033\003\000\002\033\003" +
+    "\000\002\032\003\000\002\032\003\000\002\032\003\000" +
+    "\002\032\003\000\002\032\003\000\002\032\003\000\002" +
+    "\032\003\000\002\032\003\000\002\032\003\000\002\032" +
+    "\003\000\002\032\003\000\002\032\003\000\002\032\003" +
+    "\000\002\032\003\000\002\036\004\000\002\036\005\000" +
+    "\002\037\003\000\002\037\005\000\002\020\003\000\002" +
+    "\020\003\000\002\020\004\000\002\020\004\000\002\040" +
+    "\003\000\002\040\005\000\002\040\006\000\002\041\004" +
+    "\000\002\041\005\000\002\034\005\000\002\034\004\000" +
+    "\002\034\003\000\002\034\006\000\002\034\005\000\002" +
+    "\034\003\000\002\034\003\000\002\034\003\000\002\034" +
+    "\003\000\002\034\003\000\002\034\005\000\002\034\004" +
+    "\000\002\034\006\000\002\042\005\000\002\042\006\000" +
+    "\002\016\003\000\002\016\003\000\002\017\003\000\002" +
+    "\017\005\000\002\031\003\000\002\031\002" });
 
   /** Access to production table. */
   @Override
@@ -319,74 +319,74 @@ public class parser
   protected static final short[][] _reduce_table = 
     unpackFromStrings(new String[] {
     "\000\224\000\004\002\003\001\001\000\002\001\001\000" +
-    "\006\003\223\004\221\001\001\000\010\005\011\006\006" +
-    "\007\007\001\001\000\022\004\021\010\022\011\020\013" +
-    "\027\014\023\015\017\037\026\040\025\001\001\000\006" +
-    "\006\015\007\007\001\001\000\002\001\001\000\002\001" +
-    "\001\000\004\041\014\001\001\000\002\001\001\000\002" +
+    "\006\003\223\004\221\001\001\000\010\006\011\007\006" +
+    "\010\007\001\001\000\022\004\021\005\017\011\022\012" +
+    "\023\013\020\015\027\016\026\017\025\001\001\000\006" +
+    "\007\015\010\007\001\001\000\002\001\001\000\002\001" +
+    "\001\000\004\031\014\001\001\000\002\001\001\000\002" +
     "\001\001\000\002\001\001\000\002\001\001\000\002\001" +
-    "\001\000\004\041\220\001\001\000\004\022\150\001\001" +
-    "\000\002\001\001\000\022\004\021\010\146\011\020\013" +
-    "\027\014\023\015\017\037\026\040\025\001\001\000\002" +
-    "\001\001\000\002\001\001\000\002\001\001\000\004\041" +
-    "\030\001\001\000\002\001\001\000\010\011\032\037\026" +
-    "\040\034\001\001\000\002\001\001\000\002\001\001\000" +
-    "\002\001\001\000\004\033\037\001\001\000\006\034\052" +
-    "\035\043\001\001\000\002\001\001\000\006\034\041\035" +
+    "\001\000\004\031\220\001\001\000\004\026\150\001\001" +
+    "\000\002\001\001\000\022\004\021\005\017\011\146\012" +
+    "\023\013\020\015\027\016\026\017\025\001\001\000\002" +
+    "\001\001\000\002\001\001\000\002\001\001\000\004\031" +
+    "\030\001\001\000\002\001\001\000\010\013\032\016\026" +
+    "\017\034\001\001\000\002\001\001\000\002\001\001\000" +
+    "\002\001\001\000\004\020\037\001\001\000\006\040\052" +
+    "\041\043\001\001\000\002\001\001\000\006\040\041\041" +
     "\043\001\001\000\002\001\001\000\002\001\001\000\002" +
-    "\001\001\000\004\035\050\001\001\000\002\001\001\000" +
-    "\006\034\047\035\043\001\001\000\002\001\001\000\002" +
-    "\001\001\000\002\001\001\000\002\001\001\000\010\027" +
-    "\061\030\065\032\056\001\001\000\002\001\001\000\002" +
+    "\001\001\000\004\041\050\001\001\000\002\001\001\000" +
+    "\006\040\047\041\043\001\001\000\002\001\001\000\002" +
+    "\001\001\000\002\001\001\000\002\001\001\000\010\033" +
+    "\061\034\065\037\056\001\001\000\002\001\001\000\002" +
     "\001\001\000\002\001\001\000\002\001\001\000\002\001" +
-    "\001\000\006\027\061\030\126\001\001\000\002\001\001" +
-    "\000\002\001\001\000\010\027\061\030\065\032\124\001" +
-    "\001\000\004\026\113\001\001\000\002\001\001\000\002" +
-    "\001\001\000\004\036\072\001\001\000\010\027\061\030" +
-    "\065\032\117\001\001\000\002\001\001\000\006\027\061" +
-    "\030\074\001\001\000\004\026\113\001\001\000\002\001" +
+    "\001\000\006\033\061\034\126\001\001\000\002\001\001" +
+    "\000\002\001\001\000\010\033\061\034\065\037\124\001" +
+    "\001\000\004\032\113\001\001\000\002\001\001\000\002" +
+    "\001\001\000\004\042\072\001\001\000\010\033\061\034" +
+    "\065\037\117\001\001\000\002\001\001\000\006\033\061" +
+    "\034\074\001\001\000\004\032\113\001\001\000\002\001" +
     "\001\000\002\001\001\000\002\001\001\000\002\001\001" +
-    "\000\002\001\001\000\004\036\116\001\001\000\002\001" +
+    "\000\002\001\001\000\004\042\116\001\001\000\002\001" +
     "\001\000\002\001\001\000\002\001\001\000\002\001\001" +
     "\000\002\001\001\000\002\001\001\000\002\001\001\000" +
-    "\002\001\001\000\006\027\061\030\115\001\001\000\002" +
-    "\001\001\000\004\026\113\001\001\000\002\001\001\000" +
+    "\002\001\001\000\006\033\061\034\115\001\001\000\002" +
+    "\001\001\000\004\032\113\001\001\000\002\001\001\000" +
     "\002\001\001\000\002\001\001\000\002\001\001\000\010" +
-    "\027\061\030\065\032\123\001\001\000\002\001\001\000" +
-    "\002\001\001\000\002\001\001\000\004\026\113\001\001" +
-    "\000\006\027\061\030\130\001\001\000\004\026\113\001" +
-    "\001\000\002\001\001\000\006\011\133\012\134\001\001" +
-    "\000\002\001\001\000\002\001\001\000\006\016\136\033" +
-    "\137\001\001\000\002\001\001\000\002\001\001\000\006" +
-    "\016\141\033\137\001\001\000\002\001\001\000\006\011" +
-    "\133\012\145\001\001\000\006\016\144\033\137\001\001" +
+    "\033\061\034\065\037\123\001\001\000\002\001\001\000" +
+    "\002\001\001\000\002\001\001\000\004\032\113\001\001" +
+    "\000\006\033\061\034\130\001\001\000\004\032\113\001" +
+    "\001\000\002\001\001\000\006\013\133\014\134\001\001" +
+    "\000\002\001\001\000\002\001\001\000\006\020\137\021" +
+    "\136\001\001\000\002\001\001\000\002\001\001\000\006" +
+    "\020\137\021\141\001\001\000\002\001\001\000\006\013" +
+    "\133\014\145\001\001\000\006\020\137\021\144\001\001" +
     "\000\002\001\001\000\002\001\001\000\002\001\001\000" +
-    "\024\011\151\013\162\017\161\020\157\021\154\024\155" +
-    "\037\026\040\025\042\153\001\001\000\002\001\001\000" +
-    "\004\041\217\001\001\000\002\001\001\000\004\041\216" +
-    "\001\001\000\002\001\001\000\024\011\151\013\162\017" +
-    "\215\020\157\021\154\024\155\037\026\040\025\042\153" +
-    "\001\001\000\006\027\061\030\210\001\001\000\002\001" +
-    "\001\000\006\027\061\030\174\001\001\000\004\031\166" +
-    "\001\001\000\004\041\163\001\001\000\002\001\001\000" +
-    "\012\027\061\030\065\032\170\041\171\001\001\000\002" +
-    "\001\001\000\002\001\001\000\002\001\001\000\004\041" +
+    "\024\013\151\015\162\016\026\017\025\022\155\023\161" +
+    "\024\157\025\154\035\153\001\001\000\002\001\001\000" +
+    "\004\031\217\001\001\000\002\001\001\000\004\031\216" +
+    "\001\001\000\002\001\001\000\024\013\151\015\162\016" +
+    "\026\017\025\022\155\023\215\024\157\025\154\035\153" +
+    "\001\001\000\006\033\061\034\210\001\001\000\002\001" +
+    "\001\000\006\033\061\034\174\001\001\000\004\036\166" +
+    "\001\001\000\004\031\163\001\001\000\002\001\001\000" +
+    "\012\031\171\033\061\034\065\037\170\001\001\000\002" +
+    "\001\001\000\002\001\001\000\002\001\001\000\004\031" +
     "\172\001\001\000\002\001\001\000\002\001\001\000\006" +
-    "\027\061\030\203\001\001\000\030\011\151\013\162\020" +
-    "\157\021\154\022\175\023\177\024\176\026\113\037\026" +
-    "\040\025\042\153\001\001\000\002\001\001\000\002\001" +
-    "\001\000\004\025\201\001\001\000\026\011\151\013\162" +
-    "\020\157\021\154\022\175\023\202\024\176\037\026\040" +
-    "\025\042\153\001\001\000\002\001\001\000\002\001\001" +
-    "\000\004\026\113\001\001\000\026\011\151\013\162\020" +
-    "\157\021\154\022\175\023\205\024\176\037\026\040\025" +
-    "\042\153\001\001\000\004\025\206\001\001\000\002\001" +
-    "\001\000\006\027\061\030\212\001\001\000\030\011\151" +
-    "\013\162\020\157\021\154\022\175\023\211\024\176\026" +
-    "\113\037\026\040\025\042\153\001\001\000\002\001\001" +
-    "\000\004\026\113\001\001\000\026\011\151\013\162\020" +
-    "\157\021\154\022\175\023\214\024\176\037\026\040\025" +
-    "\042\153\001\001\000\002\001\001\000\002\001\001\000" +
+    "\033\061\034\203\001\001\000\030\013\151\015\162\016" +
+    "\026\017\025\022\176\024\157\025\154\026\175\027\177" +
+    "\032\113\035\153\001\001\000\002\001\001\000\002\001" +
+    "\001\000\004\030\201\001\001\000\026\013\151\015\162" +
+    "\016\026\017\025\022\176\024\157\025\154\026\175\027" +
+    "\202\035\153\001\001\000\002\001\001\000\002\001\001" +
+    "\000\004\032\113\001\001\000\026\013\151\015\162\016" +
+    "\026\017\025\022\176\024\157\025\154\026\175\027\205" +
+    "\035\153\001\001\000\004\030\206\001\001\000\002\001" +
+    "\001\000\006\033\061\034\212\001\001\000\030\013\151" +
+    "\015\162\016\026\017\025\022\176\024\157\025\154\026" +
+    "\175\027\211\032\113\035\153\001\001\000\002\001\001" +
+    "\000\004\032\113\001\001\000\026\013\151\015\162\016" +
+    "\026\017\025\022\176\024\157\025\154\026\175\027\214" +
+    "\035\153\001\001\000\002\001\001\000\002\001\001\000" +
     "\002\001\001\000\002\001\001\000\002\001\001\000\006" +
     "\003\224\004\221\001\001\000\002\001\001\000\002\001" +
     "\001\000\002\001\001\000\002\001\001" });
@@ -554,7 +554,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("program",3, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("program",4, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -563,7 +563,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",4, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",5, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -572,7 +572,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",4, CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",5, CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -581,7 +581,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("use",5, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("use",6, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -590,7 +590,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",6, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",7, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -599,7 +599,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",6, CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",7, CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -608,7 +608,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("decls",8, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("decls",10, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -617,7 +617,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("decls",8, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("decls",10, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -626,7 +626,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("decl",7, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("decl",9, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -635,7 +635,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("assign",9, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("assign",11, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -644,7 +644,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",10, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",8, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -653,7 +653,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",10, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",8, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -662,7 +662,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",10, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",8, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -671,7 +671,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("method",11, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("method",3, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -680,7 +680,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("typelst",12, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("typelst",15, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -689,7 +689,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("typelst",12, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("typelst",15, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -698,7 +698,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statementlst",13, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statementlst",17, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -707,7 +707,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statementlst",13, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statementlst",17, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -716,7 +716,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("if",14, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("if",18, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -725,7 +725,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("if",14, CUP$parser$stack.elementAt(CUP$parser$top-5), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("if",18, CUP$parser$stack.elementAt(CUP$parser$top-5), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -734,7 +734,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("while",15, CUP$parser$stack.elementAt(CUP$parser$top-4), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("while",19, CUP$parser$stack.elementAt(CUP$parser$top-4), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -743,7 +743,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("while",15, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("while",19, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -752,7 +752,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("fnblock",16, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("fnblock",20, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -761,7 +761,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("fnblock",16, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("fnblock",20, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -770,7 +770,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("fnblock",16, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("fnblock",20, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -779,7 +779,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("block",17, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("block",21, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -788,7 +788,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("block",17, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("block",21, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -797,7 +797,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",18, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",16, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -806,7 +806,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",18, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",16, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -815,7 +815,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",18, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",16, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -824,7 +824,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",18, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",16, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -833,7 +833,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",18, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("statement",16, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -842,7 +842,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("elseopt",19, CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("elseopt",22, CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -851,7 +851,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("elseopt",19, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("elseopt",22, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -860,7 +860,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("unop",21, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("unop",25, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -869,7 +869,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("unop",21, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("unop",25, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -878,7 +878,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -887,7 +887,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -896,7 +896,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -905,7 +905,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -914,7 +914,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -923,7 +923,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -932,7 +932,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -941,7 +941,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -950,7 +950,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -959,7 +959,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -968,7 +968,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -977,7 +977,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -986,7 +986,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -995,7 +995,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",20, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("binop",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1004,7 +1004,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("return",23, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("return",28, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1013,7 +1013,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("return",23, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("return",28, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1022,7 +1022,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("vallst",24, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("vallst",29, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1031,7 +1031,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("vallst",24, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("vallst",29, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1040,7 +1040,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",25, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",14, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1049,7 +1049,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",25, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",14, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1058,7 +1058,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",25, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",14, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1067,7 +1067,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",25, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("type",14, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1076,7 +1076,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("bracketlst",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("bracketlst",30, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1085,7 +1085,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("bracketlst",26, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("bracketlst",30, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1094,7 +1094,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("bracketlst",26, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("bracketlst",30, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1103,7 +1103,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("nullbrackets",27, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("nullbrackets",31, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1112,7 +1112,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("nullbrackets",27, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("nullbrackets",31, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1121,7 +1121,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1130,7 +1130,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1139,7 +1139,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1148,7 +1148,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1157,7 +1157,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1166,7 +1166,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1175,7 +1175,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1184,7 +1184,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1193,7 +1193,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1202,7 +1202,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1211,7 +1211,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1220,7 +1220,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1229,7 +1229,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",22, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("expr",26, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1238,7 +1238,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("idxlst",28, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("idxlst",32, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1247,7 +1247,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("idxlst",28, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("idxlst",32, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1256,7 +1256,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("target",29, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("target",12, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1265,7 +1265,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("target",29, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("target",12, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1274,7 +1274,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("targets",30, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("targets",13, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1283,7 +1283,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("targets",30, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("targets",13, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1292,7 +1292,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("semi",31, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("semi",23, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -1301,7 +1301,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("semi",31, CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("semi",23, CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
