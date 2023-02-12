@@ -15,7 +15,7 @@ terminal INT, BOOL;
 terminal IF, ELSE, WHILE, BREAK, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
   DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUAL, NOT_EQUAL, GETS,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
 terminal INTERFACE, PROGRAM;
 
@@ -30,10 +30,8 @@ nonterminal defns;
 nonterminal decl;
 nonterminal decls;
 nonterminal assign;
-nonterminal decllst;
 nonterminal definition;
 nonterminal method;
-nonterminal absmethod;
 nonterminal typelst;
 nonterminal statementlst;
 nonterminal if;
@@ -66,10 +64,9 @@ precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
 
 /* Grammar Definition */
-file            ::= INTERFSCE interface |
+file            ::= INTERFACE interface |
                     PROGRAM program;
-interface       ::= | abs_meth interface |
-                    ;
+interface       ::= | abs_meth interface ;
 abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN typelst |
@@ -82,16 +79,12 @@ defns            ::= definition defns |
                     ;
 decls           ::= decl |
                     decls COMMA decls;
-decl            ::= IDENTIFIER COLON type |
-                    UNDERSCORE;
-assign          ::= decllst EQUAL vallist;
-decllst         ::= decl |
-                    decl COMMA decllst;
+decl            ::= IDENTIFIER COLON type;
+assign          ::= targets EQUAL vallist;
 definition      ::= method |
                     decl semi |
                     assign semi;
-method          ::= absmethd fnblock;
-absmethod       ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN;
+method          ::= abs_meth fnblock;
 typelst         ::= type |
                     type COMMA typelst;
 statementlst    ::= statement | statement statementlst;
@@ -107,7 +100,7 @@ statement       ::= IF |
                     decl semi |
                     assign semi |
                     fncall semi;
-elseopt         ::= ELSE block;
+elseopt         ::= | ELSE block;
 unop            ::= UMINUS |
                     NOT;
 binop           ::= PLUS |
@@ -124,10 +117,8 @@ binop           ::= PLUS |
                     NEQ |
                     AND |
                     OR;
-return          ::= RETURN |
-                    RETURN SEMICOLON |
-                    RETURN vallist |
-                    RETURN vallist SEMICOLON;
+return          ::= RETURN semi |
+                    RETURN vallist semi ;
 vallist         ::= expr |
                     expr COMMA vallist;
 type            ::= BOOL |
@@ -143,7 +134,6 @@ nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
 expr            ::= expr binop expr |
                     unop expr |
                     IDENTIFIER |
-                    IDENTIFER |
                     IDENTIFIER OPEN_PAREN vallist CLOSEPAREN  |
                     IDENTIFIER OPEN_PAREN CLOSEPAREN |
                     STRING_LITERAL |
