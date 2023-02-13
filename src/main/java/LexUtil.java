@@ -7,7 +7,13 @@ public class LexUtil {
     /** [formatChar(n)] outputs the printable version of a Character. */
     public static String formatChar(Integer character) {
         if (character == 10) return "\\n";
-        if (character < 32 || character >= 127) {
+        if (character == 9) return "\\t";
+        if (character == 13) return "\\r";
+        if (character == 92) return "\\\\";
+        if (character == 34) return "\\\"";
+//        Do we escape the single quote here???
+        if (character == 39) return "\\'";
+        else if (character < 32 || character >= 127) {
             return "\\x{" + Integer.toHexString(character) + "}";
         }
         int charTruncated = character % (1 << 16);
