@@ -11,7 +11,6 @@ public class LexUtil {
         if (character == 13) return "\\r";
         if (character == 92) return "\\\\";
         if (character == 34) return "\\\"";
-//        Do we escape the single quote here???
         if (character == 39) return "\\'";
         else if (character < 32 || character >= 127) {
             return "\\x{" + Integer.toHexString(character) + "}";
@@ -66,11 +65,15 @@ public class LexUtil {
      * [parseToInt(matched)] truncates matched to fit into a long. If the number is too large, it will
      * be taken mod 2^64 and shifted to fit into the correct long range. In the specific case
      */
-    public static long parseToInt(String matched) {
-        if (matched.length() <= 18) { // there are 19 digits in 2^63
-            return Long.parseLong(matched);
+    public static String parseToInt(String matched, int lineNum, int col) throws LexicalError{
+        BigInteger intVal = new BigInteger(matched);
+        BigInteger minVal = new BigInteger("-9223372036854775808");
+        BigInteger maxVal = new BigInteger("9223372036854775807");
+
+        if (intVal.compareTo(minVal) >= 0 && intVal.compareTo(maxVal) <= 0) {
+            return intVal.toString();
         } else {
-            return new BigInteger(matched).longValue();
+            throw new LexicalError(LexicalError.errType.InvalidInteger, lineNum, col);
         }
     }
 
@@ -136,11 +139,11 @@ public class LexUtil {
         }
 
         public int lineNumber() {
-            return this.line;
+            return line;
         }
 
         public int column() {
-            return this.col;
+            return col;
         }
 
         public Token.StringToken complete() {

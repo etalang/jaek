@@ -30,11 +30,13 @@ public class LexicalError extends Exception {
                 return "Unicode argument too large";
             case InvalidId:
                 return "Not a valid identifier";
+            case InvalidInteger:
+                return "Not a valid integer";
             default:
                 return "";
         }
     }
 
     /** Types of possible errors encounterable while lexing */
-    public enum errType {StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId}
+    public enum errType {StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId, InvalidInteger}
 }
