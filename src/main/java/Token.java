@@ -75,7 +75,7 @@ public abstract class Token<T> extends Symbol {
 
     static class IdToken extends Token<String> {
         public IdToken(String attribute, int lineNum, int col) {
-            super(attribute, LexUtil.getSym(attribute), lineNum, col);
+            super(attribute, SymbolTable.IDENTIFIER, lineNum, col);
         }
 
         @Override

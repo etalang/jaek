@@ -103,7 +103,7 @@ public class LexUtil {
             case ":": return SymbolTable.COLON;
             case ";": return SymbolTable.SEMICOLON;
             default:
-                return -1;
+                return 1;
         }
     }
 
