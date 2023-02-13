@@ -12,7 +12,7 @@ public class LexUtil {
         if (character == 92) return "\\\\";
         if (character == 34) return "\\\"";
         if (character == 39) return "\\'";
-        else if (character < 32 || character >= 127) {
+        if (character < 32 || character >= 127) {
             return "\\x{" + Integer.toHexString(character) + "}";
         }
         int charTruncated = character % (1 << 16);
