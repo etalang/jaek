@@ -1,0 +1,25 @@
+
+function1 (n : int){
+    if n <= 0 return n
+    else return function2(n-1)
+}
+
+function2 (n: int){
+   if n <= 0 return n
+   else return function1(n-2)
+}
+
+main(args: int[][]) {
+// this is our main function
+
+    n : int = 1239465379
+    m : int = 1783242874
+
+    if n < m {
+        return function1(n)
+    } else {
+        return function2(m)
+    }
+
+    return
+}
