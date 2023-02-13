@@ -80,7 +80,7 @@ statement       ::= if |
 fncall          ::= IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
 elseopt         ::= | ELSE block;
-unop            ::= MINUS %prec UMINUS |
+unop            ::= MINUS %prec UMINUS | // cannot differentiate identical token but need diff prec
                     NOT;
 binop           ::= PLUS |
                     MINUS |
