@@ -108,8 +108,8 @@ type            ::= BOOL |
                     BOOL bracketlst |
                     INT bracketlst;
 bracketlst      ::= nullbrackets |
-                    OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET |
-                    OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET bracketlst;
+                    OPEN_BRACKET expr CLOSE_BRACKET |
+                    OPEN_BRACKET expr CLOSE_BRACKET bracketlst;
 nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
                     OPEN_BRACKET CLOSE_BRACKET nullbrackets;
 expr            ::= expr binop expr |
@@ -127,7 +127,9 @@ expr            ::= expr binop expr |
 idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
                     OPEN_BRACKET expr CLOSE_BRACKET idxlst;
 target          ::= decl |
-                    UNDERSCORE;
+                    UNDERSCORE |
+                    IDENTIFIER |
+                    IDENTIFIER idxlst; // array element
 targets         ::= target |
                     target COMMA targets;
 semi            ::= SEMICOLON |
