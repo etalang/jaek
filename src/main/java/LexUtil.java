@@ -135,6 +135,14 @@ public class LexUtil {
             chars.add(lexeme);
         }
 
+        public int lineNumber() {
+            return this.line;
+        }
+
+        public int column() {
+            return this.col;
+        }
+
         public Token.StringToken complete() {
             return new Token.StringToken(getStringRepresentation(chars), line, col);
         }

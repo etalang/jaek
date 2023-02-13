@@ -62,17 +62,17 @@ CharLiteral = "'"({Character}|"\"")"'"
     "\""              { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING); }
     "//"              { yybegin(COMMENT); }
     "'"               { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());}
-    [^]               {throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());}
+    [^]               { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());}
 }
 <COMMENT> {
     "\n"              { yybegin(YYINITIAL); }
-      [^]             { }
+    [^]               { }
 }
 <STRING> {
     "\""              { Token.StringToken t = currentString.complete(); yybegin(YYINITIAL); return t;}
-    "\n"              { throw new LexicalError(LexicalError.errType.MultilineString, lineNumber(), column()); }
-    ({Character}|"'") { currentString.append(LexUtil.parseToChar(yytext(), lineNumber(), column())); }
-    [^]               {throw new LexicalError(LexicalError.errType.StringNotEnd, lineNumber(), column()); }
+    "\n"              { throw new LexicalError(LexicalError.errType.MultilineString, currentString.lineNumber(), currentString.column()); }
+    ({Character}|"'") { currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
+    [^]               { throw new LexicalError(LexicalError.errType.StringNotEnd, currentString.lineNumber(), currentString.column()); }
 }
 
 [^] {  } // end of file?
