@@ -66,42 +66,42 @@ public class LexUtil {
 
     public static int getSym(String attribute) {
         switch (attribute) {
-            case "if":
-            case "return":
-            case "else":
-            case "use":
-            case "while":
-            case "length":
-            case "int":
-            case "bool":
-            case "true":
-            case "false":
-            case "-":
-            case "!":
-            case "*":
-            case "*>>":
-            case "/":
-            case "%":
-            case "+":
-            case "_":
-            case "<":
-            case "<=":
-            case ">=":
-            case ",":
-            case ">":
-            case "==":
-            case "!=":
-            case "=":
-            case "&":
-            case "|":
-            case "(":
-            case ")":
-            case "[":
-            case "]":
-            case "{":
-            case "}":
-            case ":":
-            case ";":
+            case "if": return SymbolTable.IF;
+            case "return": return SymbolTable.RETURN;
+            case "else": return SymbolTable.ELSE;
+            case "use": return SymbolTable.USE;
+            case "while": return SymbolTable.WHILE;
+            case "length": return SymbolTable.LENGTH;
+            case "int": return SymbolTable.INT;
+            case "bool": return SymbolTable.BOOL;
+            case "true": return SymbolTable.TRUE;
+            case "false": return SymbolTable.FALSE;
+            case "-": return SymbolTable.MINUS;
+            case "!": return SymbolTable.NOT;
+            case "*": return SymbolTable.TIMES;
+            case "*>>": return SymbolTable.HIGHTIMES;
+            case "/": return SymbolTable.DIVIDE;
+            case "%": return SymbolTable.MODULO;
+            case "+": return SymbolTable.PLUS;
+            case "_": return SymbolTable.UNDERSCORE;
+            case "<": return SymbolTable.LT;
+            case "<=": return SymbolTable.LEQ;
+            case ">=": return SymbolTable.GEQ;
+            case ",": return SymbolTable.COMMA;
+            case ">": return SymbolTable.GT;
+            case "==": return SymbolTable.EQB;
+            case "!=": return SymbolTable.NEQB;
+            case "=": return SymbolTable.EQUALS;
+            case "&": return SymbolTable.AND;
+            case "|": return SymbolTable.OR;
+            case "(": return SymbolTable.OPEN_PAREN;
+            case ")": return SymbolTable.CLOSE_PAREN;
+            case "[": return SymbolTable.OPEN_BRACKET;
+            case "]": return SymbolTable.CLOSE_BRACKET;
+            case "{": return SymbolTable.OPEN_BRACE;
+            case "}": return SymbolTable.CLOSE_BRACE;
+            case ":": return SymbolTable.COLON;
+            case ";": return SymbolTable.SEMICOLON;
             default:
                 return -1;
         }
