@@ -1,5 +1,5 @@
 import java_cup.runtime.*;
-import ast.*;
+//import ast.*;
 
 /* Preliminaries to set up and use the scanner.  */
 //init with {: scanner.init();              :};
@@ -39,14 +39,14 @@ precedence left UMINUS, NOT;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 
 /* Grammar Definition */
-file            ::= INTERFACE interface {: System.out.println("got here"); RESULT = new Node(5); :}
+file            ::= INTERFACE interface {: System.out.println("got here"); :}
                     | PROGRAM program;
 interface       ::= | abs_meth interface ;
 abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-program         ::= imports defns {: System.out.println("got here"); RESULT = new Node(5); :};
+program         ::= imports defns {: System.out.println("got here"); :};
 imports          ::= use imports |
                      ;
 use             ::= USE IDENTIFIER semi;
