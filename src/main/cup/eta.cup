@@ -71,6 +71,7 @@ while           ::= WHILE OPEN_PAREN expr CLOSE_PAREN block |
                     WHILE expr block;
 fnblock         ::= OPEN_BRACE statementlst CLOSE_BRACE |
                     OPEN_BRACE statementlst return CLOSE_BRACE |
+                    OPEN_BRACE return CLOSE_BRACE |
                     OPEN_BRACE CLOSE_BRACE;
 block           ::= statement |
                     fnblock;
