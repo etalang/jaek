@@ -37,6 +37,10 @@ public class LexUtil {
                 // newline case
                 if (errorProne == 'n') {
                     return 0x0A;
+                } else if (errorProne == 't'){
+                    return 0x09;
+                } else if  (errorProne == 'r'){
+                    return 0x0D;
                 } else { // extract the character
                     return (int) errorProne;
                 }
