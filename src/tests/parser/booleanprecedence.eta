@@ -1,0 +1,7 @@
+use io
+
+a : bool = false
+b : bool = true
+
+print(a & b | b != (a == b) | a)
+print((-100 > 2) == (5 < 2))

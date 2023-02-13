@@ -1,0 +1,24 @@
+use io
+use booleanprecedence
+
+main(args: int[][]) {
+    b1 : bool = true;
+    b2 : bool = false;
+    a : int[][];
+
+    if (b1) {
+        if (b2){
+           x : int = 1;
+        } else {
+           x : int = 2;
+        }
+    }
+
+    while b1 | !b2 {
+        b2 = true;
+        b1 = false;
+    }
+
+    println("Hello, World!")
+
+}
