@@ -1,18 +1,24 @@
 package ast
 
-sealed class Statement : Node {
-    data class If (val guard : Expr, val thenBlock : Statement, val elseBlock : Statement?)
+import edu.cornell.cs.cs4120.util.SExpPrinter
 
-    data class While (val guard : Expr, val body : Statement)
+sealed class Statement : Node() {
+    class If(val guard: Expr, val thenBlock: Statement, val elseBlock: Statement?) : Statement()
 
-    data class Return (val args : ArrayList<Expr>)
+    class While(val guard: Expr, val body: Statement) : Statement()
 
-    data class VarDecl(val id : Expr)
+    class Return(val args: ArrayList<Expr>) : Statement()
 
-    data class Block(val stmts : ArrayList<Statement>)
+    class Assignment(val id: String, val expr: Expr) : Statement()
 
-    data class CallProc(val id : Expr, val args : ArrayList<Expr>)
+    class DeclareAssign(val decl: Declaration, val assign: Assignment) : Statement() //not entirely sure if I love this
 
-    data class Decl (val id : Expr, val type : Type)
+    class Block(val stmts: ArrayList<Statement>) : Statement()
+
+    class CallProc(val id: Expr, val args: ArrayList<Expr>) : Statement()
+
+    override fun write(printer: SExpPrinter) {
+        TODO("Not yet implemented")
+    }
 
 }

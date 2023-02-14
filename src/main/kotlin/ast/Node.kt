@@ -1,3 +1,7 @@
 package ast
 
-sealed interface Node
+import edu.cornell.cs.cs4120.util.SExpPrinter
+
+sealed class Node {
+    abstract fun write(printer: SExpPrinter)
+}

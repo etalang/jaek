@@ -1,7 +1,18 @@
 package ast
 
-sealed class Definition : Node {
-    data class Method(val name : Expr, val args : ArrayList<Statement>, val returnTypes : ArrayList<Type>, val body : Statement?)
+import edu.cornell.cs.cs4120.util.SExpPrinter
 
-    data class Global(val decl : Statement)
+sealed class Definition() : Node() {
+    class Method(
+        val name: Expr,
+        val args: ArrayList<Statement>,
+        val returnTypes: ArrayList<Type>,
+        val body: Statement.Block?
+    ) :
+        Definition() {
+        override fun write(printer: SExpPrinter) {
+            TODO("Not yet implemented")
+        }
+    }
+
 }
