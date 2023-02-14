@@ -1,3 +1,4 @@
+import UltimateLexer.HeaderToken
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -8,6 +9,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import java_cup.runtime.Symbol
 import java.io.File
+import java.io.PrintWriter
 import kotlin.io.path.Path
 
 /**
@@ -17,8 +19,9 @@ import kotlin.io.path.Path
  */
 class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
-    private val lexFiles: List<File> by argument(help = "Files to lex.", name = "<source files>").file(canBeDir = false)
-        .multiple()
+    private val files: List<File> by argument(
+        help = "Input files to compiler.", name = "<source files>"
+    ).file(canBeDir = false).multiple()
     private val print_lex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val print_parse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val dOpt = option(
@@ -43,50 +46,69 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             Path(System.getProperty("user.dir"), diagnosticRelPath)
         }
 
-        lexFiles.forEach {
-            if (it.extension == "eta" && it.exists()) {
-                //We should lex the file in this case
-
-                //Create the new lexer
-                val lex = JFlexLexer(it.bufferedReader())
-
-                val parser = parser(lex)
-//                parser.debug_parse()
-
-                //Create the new file name
-                val lexedFileName = it.nameWithoutExtension + ".lexed"
-                val lexedFile = File(diagnosticPath.toString(), lexedFileName)
-
-                //Create the new file if the file does not already exist
-                if (print_lex) {
-                    // Check if the file already exists and delete it if it does
-                    if (lexedFile.exists() && !lexedFile.isDirectory) {
-                        lexedFile.delete()
+        files.forEach {
+            if (it.exists()) {
+                if (print_parse) {
+                    val fileType: HeaderToken? = when (it.extension) {
+                        "eta" -> HeaderToken.PROGRAM;
+                        "eti" -> HeaderToken.INTERFACE;
+                        else -> null;
                     }
-                    lexedFile.createNewFile()
-                }
 
-                //Lex the file
-                while (true) {
-                    try {
-                        val t : Symbol = (lex.next_token() ?: break)
-                        if (t.sym == SymbolTable.EOF) break
-                        //Output to file if flag is set
+                    var output: PrintWriter? = null;
+                    if (print_lex) {
+                        val lexedFileName = it.nameWithoutExtension + ".lexed"
+                        val lexedFile = File(diagnosticPath.toString(), lexedFileName)
+
+                        // Check if the file already exists and delete it if it does
+                        if (lexedFile.exists() && !lexedFile.isDirectory) {
+                            lexedFile.delete()
+                        }
+                        lexedFile.createNewFile()
+
+                        output = PrintWriter(lexedFile);
+                    }
+                    val lexer = UltimateLexer(it.bufferedReader(), fileType, output, print_lex)
+                    val parser = parser(lexer)
+                    parser.parse()
+                } else {
+                    if (it.extension == "eta" && it.exists()) {
+                        val lex = JFlexLexer(it.bufferedReader())
+                        val lexedFileName = it.nameWithoutExtension + ".lexed"
+                        val lexedFile = File(diagnosticPath.toString(), lexedFileName)
+
+                        //Create the new file if the file does not already exist
                         if (print_lex) {
-                            lexedFile.appendText((t as Token<*>).lexInfo() + "\n")
+                            // Check if the file already exists and delete it if it does
+                            if (lexedFile.exists() && !lexedFile.isDirectory) {
+                                lexedFile.delete()
+                            }
+                            lexedFile.createNewFile()
                         }
 
-                    } catch (e: LexicalError) {
-                        //Output to file if flag is set
-                        if (print_lex) {
-                            lexedFile.appendText("${e.msg}\n")
-                        }
-                        break
-                    }
-                }
+                        //Lex the file
+                        while (true) {
+                            try {
+                                val t: Symbol = (lex.next_token() ?: break)
+                                if (t.sym == SymbolTable.EOF) break
+                                //Output to file if flag is set
+                                if (print_lex) {
+                                    lexedFile.appendText((t as Token<*>).lexInfo() + "\n")
+                                }
 
+                            } catch (e: LexicalError) {
+                                //Output to file if flag is set
+                                if (print_lex) {
+                                    lexedFile.appendText("${e.msg}\n")
+                                }
+                                break
+                            }
+                        }
+                    }
+
+                }
             } else {
-                echo("The file $it is not an eta file or does not exist. Skipping.")
+                echo("Skipping.")
             }
         }
     }
