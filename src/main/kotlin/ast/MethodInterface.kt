@@ -2,14 +2,13 @@ package ast
 
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
-class Method(
+class MethodInterface(
     val id: String,
     val args: ArrayList<Statement>,
-    val returnTypes: ArrayList<Type>,
-    val body: Statement.Block
-) : Definition() {
-    //TODO: not sure if should be Block or Statement
-    override fun write(printer: SExpPrinter) { // this is redundant code, should
+    val returnTypes: ArrayList<Type>) : Node() {
+
+    override fun write(printer: SExpPrinter) {
+        // TODO: Very similar code to Method, could be refactored?
         printer.startList()
         printer.printAtom(id)
         printer.startList()
@@ -18,7 +17,6 @@ class Method(
         printer.startList()
         returnTypes.forEach {type -> type.write(printer)}
         printer.endList()
-        body.write(printer)
         printer.endList()
     }
 }

@@ -1,5 +1,5 @@
 import java_cup.runtime.*;
-//import ast.*;
+import ast.*;
 
 /* Preliminaries to set up and use the scanner.  */
 //init with {: scanner.init();              :};
@@ -48,7 +48,7 @@ abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-program         ::= imports defns ;
+program         ::= imports defns ; // {:RESULT = new Program();:};
 imports          ::= use imports |
                      ;
 use             ::= USE IDENTIFIER semi;

@@ -7,7 +7,16 @@ sealed class UnaryOp(val arg: Expr) : Expr() {
     class BoolNeg(arg: Expr) : UnaryOp(arg)
 
     override fun write(printer: SExpPrinter) {
-        TODO("Not yet implemented")
+        printer.startList()
+        printer.printAtom(
+            when (this) {
+                is IntNeg -> "-"
+                is BoolNeg -> "!"
+            })
+        printer.startList()
+        this.arg.write(printer)
+        printer.endList()
+        printer.endList()
     }
 }
 
