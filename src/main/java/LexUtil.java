@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class LexUtil {
     /** [formatChar(n)] outputs the printable version of a Character. */
     public static String formatChar(Integer character) {
+
         if (character == 10) return "\\n";
         if (character == 9) return "\\t";
         if (character == 13) return "\\r";
@@ -114,7 +115,7 @@ public class LexUtil {
             case ":": return SymbolTable.COLON;
             case ";": return SymbolTable.SEMICOLON;
             default:
-                return -1;
+                return 1;
         }
     }
 
