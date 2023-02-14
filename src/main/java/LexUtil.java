@@ -67,10 +67,9 @@ public class LexUtil {
      */
     public static String parseToInt(String matched, int lineNum, int col) throws LexicalError{
         BigInteger intVal = new BigInteger(matched);
-        BigInteger minVal = new BigInteger("-9223372036854775808");
-        BigInteger maxVal = new BigInteger("9223372036854775807");
+        BigInteger maxVal = new BigInteger("9223372036854775808");
 
-        if (intVal.compareTo(minVal) >= 0 && intVal.compareTo(maxVal) <= 0) {
+        if (intVal.compareTo(maxVal) <= 0) {
             return intVal.toString();
         } else {
             throw new LexicalError(LexicalError.errType.InvalidInteger, lineNum, col);
