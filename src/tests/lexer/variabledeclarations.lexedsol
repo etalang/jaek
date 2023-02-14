@@ -18,7 +18,7 @@
 4:15 int
 4:19 =
 4:21 -
-4:22 integer -9223372036854775808
+4:22 integer 9223372036854775808
 5:1 id negative_space
 5:15 :
 5:16 int
@@ -52,7 +52,7 @@
 9:12 [
 9:13 ]
 9:15 =
-9:17 string \'\n"\n"
+9:17 string \\'\n\"\n\"
 10:1 id printable_ascii
 10:16 :
 10:17 int
