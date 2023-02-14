@@ -61,6 +61,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {CharLiteral}     { return new Token.CharacterToken(yytext(), lineNumber(), column()); }
     "\""              { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING); }
     "//"              { yybegin(COMMENT); }
+    "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column());}
     "'"               { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());}
     [^]               { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());}
 }

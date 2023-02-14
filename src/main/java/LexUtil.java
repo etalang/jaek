@@ -11,7 +11,6 @@ public class LexUtil {
         if (character == 13) return "\\r";
         if (character == 92) return "\\\\";
         if (character == 34) return "\\\"";
-        if (character == 39) return "\\'";
         if (character < 32 || character >= 127) {
             return "\\x{" + Integer.toHexString(character) + "}";
         }
