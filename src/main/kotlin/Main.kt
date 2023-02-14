@@ -51,7 +51,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lex = JFlexLexer(it.bufferedReader())
 
                 val parser = parser(lex)
-//                parser.debug_parse()
+                parser.debug_parse()
 
                 //Create the new file name
                 val lexedFileName = it.nameWithoutExtension + ".lexed"

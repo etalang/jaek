@@ -7,16 +7,16 @@ sealed class Statement : Node() {
 
     class While(val guard: Expr, val body: Statement) : Statement()
 
-    class Return(val args: ArrayList<Expr>) : Statement()
+    class Return(val args: List<Expr>) : Statement()
 
     class Assignment(val id: Expr, val expr: Expr) : Statement() // changed this to be an expression, i.e. a[1] for instance
 
     class DeclareAssign(val decl: Declaration, val expr: Expr) : Statement() //not entirely sure if I love this
     // changed the RHS to be an expression instead
 
-    class Block(val stmts: ArrayList<Statement>) : Statement()
+    class Block(val stmts: List<Statement>) : Statement()
 
-    class CallProc(val id: Expr, val args: ArrayList<Expr>) : Statement()
+    class CallProc(val id: Expr, val args: List<Expr>) : Statement()
 
     override fun write(printer: SExpPrinter) {
         printer.startList()

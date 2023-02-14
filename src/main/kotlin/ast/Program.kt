@@ -3,14 +3,14 @@ package ast
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
 class Program(
-    val imports: ArrayList<Use>,
-    val definitions: ArrayList<Definition>
+    val imports: Imports,
+    val definitions: Definitions
 ) : Node() {
 
     override fun write(printer: SExpPrinter) {
         printer.startList()
-        imports.forEach { use -> use.write(printer) }
-        definitions.forEach { defn -> defn.write(printer) }
+        imports.write(printer)
+        definitions.write(printer)
         printer.endList()
     }
 }

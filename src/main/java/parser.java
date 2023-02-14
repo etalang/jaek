@@ -4,6 +4,7 @@
 //----------------------------------------------------
 
 import java_cup.runtime.*;
+import ast.*;
 
 /** CUP v0.11b 20150326 generated parser.
   */
@@ -29,12 +30,12 @@ public class parser
   /** Production table. */
   protected static final short _production_table[][] = 
     unpackFromStrings(new String[] {
-    "\000\135\000\002\002\004\000\002\004\010\000\002\004" +
-    "\006\000\002\004\007\000\002\004\005\000\002\006\004" +
-    "\000\002\007\004\000\002\007\002\000\002\010\005\000" +
-    "\002\011\004\000\002\011\002\000\002\014\003\000\002" +
-    "\014\005\000\002\013\005\000\002\015\005\000\002\012" +
-    "\003\000\002\012\004\000\002\012\004\000\002\005\004" +
+    "\000\135\000\002\002\004\000\002\011\010\000\002\011" +
+    "\006\000\002\011\007\000\002\011\005\000\002\002\004" +
+    "\000\002\003\004\000\002\003\002\000\002\004\005\000" +
+    "\002\005\004\000\002\005\002\000\002\014\003\000\002" +
+    "\014\005\000\002\013\005\000\002\015\005\000\002\006" +
+    "\003\000\002\006\004\000\002\006\004\000\002\012\004" +
     "\000\002\021\003\000\002\021\005\000\002\023\003\000" +
     "\002\023\004\000\002\024\006\000\002\024\010\000\002" +
     "\025\007\000\002\025\005\000\002\026\005\000\002\026" +
@@ -328,14 +329,14 @@ public class parser
   /** {@code reduce_goto} table. */
   protected static final short[][] _reduce_table = 
     unpackFromStrings(new String[] {
-    "\000\225\000\010\006\006\007\003\010\004\001\001\000" +
-    "\022\004\017\005\015\011\020\012\021\013\016\015\025" +
-    "\016\024\017\023\001\001\000\006\007\013\010\004\001" +
+    "\000\225\000\010\002\006\003\003\004\004\001\001\000" +
+    "\022\005\020\006\021\011\017\012\015\013\016\015\025" +
+    "\016\024\017\023\001\001\000\006\003\013\004\004\001" +
     "\001\000\002\001\001\000\002\001\001\000\002\001\001" +
     "\000\004\031\012\001\001\000\002\001\001\000\002\001" +
     "\001\000\002\001\001\000\002\001\001\000\002\001\001" +
     "\000\004\031\226\001\001\000\004\026\153\001\001\000" +
-    "\002\001\001\000\022\004\017\005\015\011\151\012\021" +
+    "\002\001\001\000\022\005\151\006\021\011\017\012\015" +
     "\013\016\015\025\016\024\017\023\001\001\000\004\042" +
     "\033\001\001\000\002\001\001\000\002\001\001\000\004" +
     "\031\026\001\001\000\002\001\001\000\010\013\030\016" +
@@ -482,7 +483,7 @@ class CUP$parser$actions {
                 Object RESULT = null;
                 int start_valleft = CUP$parser$stack.elementAt(CUP$parser$top-1).left;
                 int start_valright = CUP$parser$stack.elementAt(CUP$parser$top-1).right;
-                Object start_val = CUP$parser$stack.elementAt(CUP$parser$top-1).<Object> value();
+                Program start_val = CUP$parser$stack.elementAt(CUP$parser$top-1).<Program> value();
                 RESULT = start_val;
                 CUP$parser$result = parser.getSymbolFactory().newSymbol("$START",0, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
@@ -495,7 +496,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",2, CUP$parser$stack.elementAt(CUP$parser$top-5), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",7, CUP$parser$stack.elementAt(CUP$parser$top-5), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -504,7 +505,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",2, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",7, CUP$parser$stack.elementAt(CUP$parser$top-3), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -513,7 +514,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",2, CUP$parser$stack.elementAt(CUP$parser$top-4), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",7, CUP$parser$stack.elementAt(CUP$parser$top-4), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -522,61 +523,82 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",2, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("abs_meth",7, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 5: // program ::= imports defns 
             {
-                Object RESULT = null;
-
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("program",4, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                Program RESULT = null;
+                int Isleft = CUP$parser$stack.elementAt(CUP$parser$top-1).left;
+                int Isright = CUP$parser$stack.elementAt(CUP$parser$top-1).right;
+                Imports Is = CUP$parser$stack.elementAt(CUP$parser$top-1).<Imports> value();
+                int Dsleft = CUP$parser$stack.peek().left;
+                int Dsright = CUP$parser$stack.peek().right;
+                Definitions Ds = CUP$parser$stack.peek().<Definitions> value();
+                RESULT = new Program(Is, Ds); 
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("program",0, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 6: // imports ::= use imports 
             {
-                Object RESULT = null;
-
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",5, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                Imports RESULT = null;
+                int uleft = CUP$parser$stack.elementAt(CUP$parser$top-1).left;
+                int uright = CUP$parser$stack.elementAt(CUP$parser$top-1).right;
+                Use u = CUP$parser$stack.elementAt(CUP$parser$top-1).<Use> value();
+                int Itleft = CUP$parser$stack.peek().left;
+                int Itright = CUP$parser$stack.peek().right;
+                Imports It = CUP$parser$stack.peek().<Imports> value();
+                It.prependImport(u); RESULT = It; 
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",1, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 7: // imports ::= 
             {
-                Object RESULT = null;
-
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",5, CUP$parser$stack.peek(), RESULT);
+                Imports RESULT = null;
+                RESULT = new Imports(); 
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("imports",1, CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 8: // use ::= USE IDENTIFIER semi 
             {
-                Object RESULT = null;
-
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("use",6, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
+                Use RESULT = null;
+                int idleft = CUP$parser$stack.elementAt(CUP$parser$top-1).left;
+                int idright = CUP$parser$stack.elementAt(CUP$parser$top-1).right;
+                Token<String> id = CUP$parser$stack.elementAt(CUP$parser$top-1).<Token<String>> value();
+                RESULT = new Use(id.attribute); 
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("use",2, CUP$parser$stack.elementAt(CUP$parser$top-2), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 9: // defns ::= definition defns 
             {
-                Object RESULT = null;
-
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",7, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                Definitions RESULT = null;
+                int dleft = CUP$parser$stack.elementAt(CUP$parser$top-1).left;
+                int dright = CUP$parser$stack.elementAt(CUP$parser$top-1).right;
+                Definition d = CUP$parser$stack.elementAt(CUP$parser$top-1).<Definition> value();
+                int Dtleft = CUP$parser$stack.peek().left;
+                int Dtright = CUP$parser$stack.peek().right;
+                Definitions Dt = CUP$parser$stack.peek().<Definitions> value();
+                Dt.prependDefn(d); RESULT = Dt; 
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",3, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 10: // defns ::= 
             {
-                Object RESULT = null;
-
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",7, CUP$parser$stack.peek(), RESULT);
+                Definitions RESULT = null;
+                RESULT = new Definitions(); 
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("defns",3, CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -619,27 +641,27 @@ class CUP$parser$actions {
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 15: // definition ::= method 
             {
-                Object RESULT = null;
+                Definition RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",8, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",4, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 16: // definition ::= decl semi 
             {
-                Object RESULT = null;
+                Definition RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",8, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",4, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
         /*. . . . . . . . . . . . . . . . . . . .*/
         case 17: // definition ::= assign semi 
             {
-                Object RESULT = null;
+                Definition RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",8, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("definition",4, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 
@@ -648,7 +670,7 @@ class CUP$parser$actions {
             {
                 Object RESULT = null;
 
-                CUP$parser$result = parser.getSymbolFactory().newSymbol("method",3, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
+                CUP$parser$result = parser.getSymbolFactory().newSymbol("method",8, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
 

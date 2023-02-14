@@ -6,7 +6,7 @@ import ast.*;
 scan with {: return getScanner().next_token(); :};
 
 /* Terminals */
-terminal IDENTIFIER;
+terminal Token<String> IDENTIFIER;
 terminal STRING_LITERAL;
 terminal CHARACTER_LITERAL;
 terminal INTEGER_LITERAL;
@@ -21,8 +21,13 @@ terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
 terminal INTERFACE, PROGRAM;
 
 /* Nonterminals */
-nonterminal file, interface, abs_meth, method, program, imports, use;
-nonterminal defns, definition, decl, decls;
+nonterminal Program program;
+nonterminal Imports imports;
+nonterminal Use use;
+nonterminal Definitions defns;
+nonterminal Definition definition;
+nonterminal file, interface, abs_meth, method;
+nonterminal decl, decls;
 nonterminal assign, target, targets, type, typelst;
 nonterminal statement, statementlst, if, while, fnblock, block, elseopt, semi;
 nonterminal binop, unop, expr, fncall;
@@ -48,12 +53,12 @@ abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-program         ::= imports defns ; // {:RESULT = new Program();:};
-imports          ::= use imports |
-                     ;
-use             ::= USE IDENTIFIER semi;
-defns            ::= definition defns |
-                    ;
+program         ::= imports:Is defns:Ds {:RESULT = new Program(Is, Ds); :};
+imports          ::= use:u imports:It {:It.prependImport(u); RESULT = It; :}
+                    | {:RESULT = new Imports(); :}                    ;
+use             ::= USE IDENTIFIER:id semi {:RESULT = new Use(id.attribute); :};
+defns            ::= definition:d defns:Dt {:Dt.prependDefn(d); RESULT = Dt; :}
+                    | {:RESULT = new Definitions(); :};
 decls           ::= decl |
                     decls COMMA decls;
 decl            ::= IDENTIFIER COLON type;
