@@ -1,0 +1,62 @@
+1:1 id integer_char
+1:13 :
+1:14 int
+1:18 =
+1:20 character h
+2:1 id weird_name123'
+2:15 :
+2:16 int
+2:20 =
+2:22 integer 1
+3:1 id large_integer
+3:14 :
+3:15 int
+3:19 =
+3:21 integer 9223372036854775807
+4:1 id small_integer
+4:14 :
+4:15 int
+4:19 =
+4:21 -
+4:22 integer 9223372036854775808
+5:1 id negative_space
+5:15 :
+5:16 int
+5:20 =
+5:22 -
+5:24 integer 9
+6:1 id unicode_char_small
+6:19 :
+6:20 int
+6:23 [
+6:24 ]
+6:26 =
+6:28 string \x{0}
+7:1 id unicode_char_big
+7:17 :
+7:18 int
+7:21 [
+7:22 ]
+7:24 =
+7:26 string \x{10ffff}
+8:1 id unicode_emote
+8:14 :
+8:15 int
+8:18 [
+8:19 ]
+8:21 =
+8:23 string \x{1f602}
+9:1 id escapes
+9:8 :
+9:9 int
+9:12 [
+9:13 ]
+9:15 =
+9:17 string \\'\n\"\n\"
+10:1 id printable_ascii
+10:16 :
+10:17 int
+10:20 [
+10:21 ]
+10:23 =
+10:25 string Hi

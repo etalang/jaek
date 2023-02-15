@@ -1,0 +1,5 @@
+1:1 id negative_unicode
+1:17 :
+1:18 int
+1:22 =
+1:24 error:Invalid character constant

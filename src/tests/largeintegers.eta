@@ -1,2 +1,0 @@
-large_positive:int = 99999999999999999999
-large_negative:int = -99999999999999999999
