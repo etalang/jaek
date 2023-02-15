@@ -1,8 +1,10 @@
 ( ((use io))
 
-    ((:global global_int int 4)
-    (:global global_bool bool true)
-    (:global uninit_int int)
-    (:global uninit_bool bool)
-    (:global global_array ([] ([] ([] int)))))
+    (
+        (:global global_int int 4)
+        (:global global_bool bool true)
+        (:global uninit_int int)
+        (:global uninit_bool bool)
+        (:global global_array ([] ([] ([] int))))
+    )
 )
