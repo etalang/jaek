@@ -29,14 +29,15 @@ nonterminal Definition definition;
 nonterminal MethodInterface abs_meth;
 nonterminal Method method;
 nonterminal Declaration decl;
+nonterminal Declaration globalDecl;
 nonterminal Declarations decls;
 nonterminal TypeList typelst;
 nonterminal Type type;
 
-nonterminal file, interface;
+nonterminal file, interface, globalAssign;
 nonterminal assign, target, targets;
 nonterminal statement, statementlst, if, while, fnblock, block, elseopt, semi;
-nonterminal binop, unop, expr, fncall;
+nonterminal binop, unop, expr, fncall, arrayinit;
 nonterminal return, vallst, bracketlst, nullbrackets, idxlst;
 
 /* Precedences */
@@ -56,26 +57,34 @@ precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 start with program;
 
 program         ::= imports:Is defns:Ds {: RESULT = new Program(Is, Ds); :};
-imports          ::= use:u imports:It {: It.prependImport(u); RESULT = It; :}
+imports         ::= use:u imports:It {: It.prependImport(u); RESULT = It; :}
                     | {: RESULT = new Imports(); :}                    ;
 use             ::= USE IDENTIFIER:id semi {: RESULT = new Use(id); :};
-defns            ::= definition:d defns:Dt {: Dt.prependDefn(d); RESULT = Dt; :}
+defns           ::= definition:d defns:Dt {: Dt.prependDefn(d); RESULT = Dt; :}
                     | {: RESULT = new Definitions(); :};
-decls           ::= decl:d {: Declarations Ds = new Declarations(); Ds.prependDecl(d); RESULT = Ds; :}
-                        // TODO might be able to write a constructor that handles this more smoothly?
-                    | decl:d COMMA decls:Ds {: Ds.prependDecl(d); RESULT = Ds; :};
-decl            ::= IDENTIFIER:id COLON type:t {: RESULT = new Declaration(id, t); :};
 definition      ::= method:m {: RESULT = m; :}
-                    | decl:d semi {: RESULT = d; :} // globaldefn
-                    | assign:a semi {: RESULT = a; :};
+                | globalDecl:gD semi {: RESULT = gD; :}
+                | assign:a semi {: RESULT = a; :};
 abs_meth        ::= IDENTIFIER:id OPEN_PAREN decls:Ds CLOSE_PAREN COLON typelst:Ts
-                        {: RESULT = new MethodInterface(id, Ds, Ts); :}
+                    {: RESULT = new MethodInterface(id, Ds, Ts); :}
                     | IDENTIFIER:id OPEN_PAREN decls:Ds CLOSE_PAREN
-                        {: RESULT = new MethodInterface(id, Ds, new TypeList()); :}
+                    {: RESULT = new MethodInterface(id, Ds, new TypeList()); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts
-                        {: RESULT = new MethodInterface(id, new Declarations(), Ts); :}
+                    {: RESULT = new MethodInterface(id, new Declarations(), Ts); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN
-                        {: RESULT = new MethodInterface(id, new Declarations(), new TypeList()); :};
+                    {: RESULT = new MethodInterface(id, new Declarations(), new TypeList()); :};
+decls           ::= decl:d {: Declarations Ds = new Declarations(); Ds.prependDecl(d); RESULT = Ds; :}
+                    | decl:d COMMA decls:Ds {: Ds.prependDecl(d); RESULT = Ds; :};
+arrayinit       ::= IDENTIFIER:id COLON bracketlst;
+bracketlst      ::= OPEN_BRACKET expr CLOSE_BRACKET |
+                    OPEN_BRACKET expr CLOSE_BRACKET bracketlst |
+                    OPEN_BRACKET expr CLOSE_BRACKET n;
+nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
+                    OPEN_BRACKET CLOSE_BRACKET nullbrackets;
+globalDecl      ::= IDENTIFIER:id COLON type:t {: RESULT = new Declaration(id, t); :};
+decl            ::= globalDecl:gD {:RESULT = gD;:}
+                    | arrayinit:a {:RESULT = a;:} ;
+globalAssign    ::= globalTargets EQUALS litLst;
 assign          ::= targets EQUALS vallst;
 method          ::= abs_meth:am fnblock:b {: RESULT = new Method(am, b); :};
 typelst         ::= type |
@@ -119,14 +128,9 @@ return          ::= RETURN semi |
                     RETURN vallst semi ;
 vallst         ::= expr |
                     expr COMMA vallst;
-type            ::= BOOL {:RESULT = Bool();:}
-                    | INT {:RESULT = Int();:}
-                    | BOOL bracketlst | INT bracketlst; // I think this is problematic and we should fix
-bracketlst      ::= nullbrackets |
-                    OPEN_BRACKET expr CLOSE_BRACKET |
-                    OPEN_BRACKET expr CLOSE_BRACKET bracketlst;
-nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
-                    OPEN_BRACKET CLOSE_BRACKET nullbrackets;
+type            ::= BOOL {:RESULT = BOOL();:}
+                    | INT {:RESULT = INT();:}
+                    | type:t  OPEN_BRACKET CLOSE_BRACKET {:RESULT = Array(t);:}; // I think this is problematic and we should fix
 expr            ::= expr binop expr |
                     unop expr |
                     IDENTIFIER |

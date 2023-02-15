@@ -2,7 +2,7 @@ package ast
 
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
-class Declaration(val id: String, val type: Type) : Statement() {
+class Declaration(val id: String, val type: Type) : Definition() {
     override fun write(printer: SExpPrinter) {
         printer.startList()
         printer.printAtom(id)

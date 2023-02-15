@@ -1,12 +1,9 @@
 package ast
 
 import edu.cornell.cs.cs4120.util.SExpPrinter
-import javax.lang.model.type.PrimitiveType
 
 sealed class Type : Node() {
-    object Int : Type()
-    object Bool : Type()
-    data class Array(val t: Type) : Type() //sorta see where you're going with this?
+    data class Array(val t: Type) : Type()
 
     override fun write(printer: SExpPrinter) {
         when (this) {
@@ -14,8 +11,8 @@ sealed class Type : Node() {
                 t.write(printer)
                 printer.printAtom("[]")
             }
-            is Int -> printer.printAtom("int")
-            is Bool -> printer.printAtom("bool")
+            else -> printer.printAtom("")
+
         }
     }
 }
