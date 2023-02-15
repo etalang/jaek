@@ -9,10 +9,17 @@ sealed class Statement : Node() {
 
     class Return(val args: List<Expr>) : Statement()
 
-    class Assignment(val id: Expr, val expr: Expr) : Statement() // changed this to be an expression, i.e. a[1] for instance
-
-    class DeclareAssign(val decl: VarDecl, val expr: Expr) : Statement() //not entirely sure if I love this
-    // changed the RHS to be an expression instead
+    // probably could change typing to make this check better
+    sealed class DeclareInit {
+        class Declare(val decl : VarDecl) : DeclareInit()
+        class Init(val init: ArrayInit) : DeclareInit()
+    }
+    class DeclareInits(val declOrInit : List<DeclareInit>) : Statement()
+    /* this is handled by MultiAssignBuilder, I think */
+//    class Assignment(val id: Expr, val expr: Expr) : Statement() // changed this to be an expression, i.e. a[1] for instance
+//
+//    class DeclareAssign(val decl: VarDecl, val expr: Expr) : Statement() //not entirely sure if I love this
+//    // changed the RHS to be an expression instead
 
     class Block(val stmts: List<Statement>) : Statement()
 
@@ -46,24 +53,24 @@ sealed class Statement : Node() {
                 printer.printAtom("return")
                 args.forEach {expr -> expr.write(printer)}
             }
-            is Assignment -> {
-                printer.printAtom("=")
-                printer.startList()
-                id.write(printer)
-                printer.endList()
-                printer.startList()
-                expr.write(printer)
-                printer.endList()
-            }
-            is DeclareAssign -> {
-                printer.printAtom("=")
-                printer.startList()
-                decl.write(printer)
-                printer.endList()
-                printer.startList()
-                expr.write(printer)
-                printer.endList()
-            }
+//            is Assignment -> {
+//                printer.printAtom("=")
+//                printer.startList()
+//                id.write(printer)
+//                printer.endList()
+//                printer.startList()
+//                expr.write(printer)
+//                printer.endList()
+//            }
+//            is DeclareAssign -> {
+//                printer.printAtom("=")
+//                printer.startList()
+//                decl.write(printer)
+//                printer.endList()
+//                printer.startList()
+//                expr.write(printer)
+//                printer.endList()
+//            }
             is Block -> {
                 printer.startList()
                 stmts.forEach { stmt -> stmt.write(printer) }

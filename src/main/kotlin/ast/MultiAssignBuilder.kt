@@ -1,8 +1,8 @@
 package ast
 
 class MultiAssignBuilder(
-    val decls : MutableList<GlobalDecl>,
-    val vals : MutableList<Literal>?) : Statement()  {
+    val targets : MutableList<AssignTarget>,
+    val vals : MutableList<Expr>) : Statement()  {
     fun toStatementList() :ArrayList<Statement> {
         return ArrayList();}
 }

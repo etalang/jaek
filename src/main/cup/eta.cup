@@ -44,7 +44,7 @@ nonterminal Statement.While while;
 nonterminal Statement return;
 nonterminal Expr expr;
 nonterminal ArrayList<GlobalDecl> methodArgs;
-nonterminal Statement returnableBlock, block;
+nonterminal Statement.Block returnableBlock, block;
 nonterminal ArrayList<Statement> statementList;
 nonterminal Statement statement;
 nonterminal Statement.Block elseOptional; // might have to add empty list in empty case to type check?
@@ -52,17 +52,17 @@ nonterminal Statement.Procedure procedureCall;
 nonterminal Expr.FunctionCall functionCall;
 nonterminal MultiAssignBuilder multiAssign;
 nonterminal ArrayList<Expr> exprList;
-nonterminal Statement multiDeclOrArrayInit;
+nonterminal ArrayList<Statement.DeclareInit> multiDeclOrArrayInit; // this is wrong
 nonterminal ArrayInit arrayinit, arrayNonBlank;
-
-nonterminal methodArg;
-nonterminal assignable, assignables;
-nonterminal varDecl;
+nonterminal AssignTarget assignable;
+nonterminal ArrayList<AssignTarget> assignables;
+nonterminal GlobalDecl methodArg;
+nonterminal VarDecl varDecl;
 //nonterminal varDeclOrArrayInit;
 nonterminal semi;
 nonterminal BinaryOp.Operation binop;
 nonterminal UnaryOp.Operation unop;
-nonterminal arrayAccess;
+nonterminal Expr arrayAccess, indexable;
 
 /* Precedences */
 precedence left OR;
@@ -110,9 +110,9 @@ methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>()); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<GlobalDecl>(), Ts); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<GlobalDecl>(), new ArrayList<Type>()); :};
-methodArg       ::= IDENTIFIER:id COLON type:t ;
-methodArgs      ::= methodArg:ma                                                    {::}
-                    | methodArg:ma COMMA methodArgs;
+methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new GlobalDecl(id, t); :};
+methodArgs      ::= methodArg:ma                                                    {:RESULT = ParseUtil.singleton(ma); :}
+                    | methodArg:ma COMMA methodArgs:mal                             {:mal.add(0, ma); RESULT = mal;:};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
@@ -121,7 +121,7 @@ statementList   ::= statement:s                                                 
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
-                    | multiDeclOrArrayInit:d semi                                   {: RESULT = d; :}
+                    | multiDeclOrArrayInit:d semi                                   {: RESULT = new Statement.DeclareInits(d); :}
                     | procedureCall:fn semi                                          {: RESULT = fn; :};
 if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
                     | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
@@ -135,7 +135,7 @@ returnableBlock ::= OPEN_BRACE statementList:sLst CLOSE_BRACE                   
 procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>());:};
 elseOptional         ::=
-                    | ELSE block:b                                             {: RESULT = ParseUtil.singleton(new Statement.Block(b)); :};
+                    | ELSE block:b                                             {: RESULT = new Statement.Block(ParseUtil.singleton(b)); :};
 semi            ::= SEMICOLON | ;
 return          ::= RETURN semi                                                     {: RESULT = new Statement.Return(new ArrayList<Expr>()); :}
                     | RETURN exprList:exprLst semi                                  {: RESULT = new Statement.Return(exprLst); :};
@@ -144,9 +144,10 @@ return          ::= RETURN semi                                                 
 
 /* =============> [MULTI] No Assignment <============= */
 // RESULTS: Declaration No Init OR Array Init
-multiDeclOrArrayInit ::= varDecl
-                        | arrayinit:ai {:RESULT = ai;:}
-                        | varDecl COMMA multiDeclOrArrayInit | arrayinit COMMA multiDeclOrArrayInit;
+multiDeclOrArrayInit ::= varDecl:vd     {:RESULT = ParseUtil.singleton(new Statement.DeclareInit.Declare(vd));:}
+                        | arrayinit:ai  {:RESULT = ParseUtil.singleton(new Statement.DeclareInit.Init(ai));:}
+                        | varDecl:vd COMMA multiDeclOrArrayInit:mdai {:Statement.DeclareInit di = new Statement.DeclareInit.Declare(vd); mdai.add(0, di); RESULT = mdai; :}
+                        | arrayinit:ai COMMA multiDeclOrArrayInit:mdai {:Statement.DeclareInit di = new Statement.DeclareInit.Init(ai); mdai.add(0, di); RESULT = mdai;:} ;
 //varDeclOrArrayInit ::= varDecl | arrayinit;
 
 /* =============> [MULTI] With Assignment <============= */
@@ -154,12 +155,12 @@ multiDeclOrArrayInit ::= varDecl
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
 
 varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl(id, t); :};
-assignable          ::= arrayAccess:e1                                 {: RESULT = e1; :}
-                    | varDecl:vd                                   {: RESULT = vd; :}
-                    | UNDERSCORE                                   {: RESULT = "TODO"; //TODO :};
-assignables         ::= assignable:t                                       {: RESULT = "TODO"; //TODO :}
-                    | assignable COMMA assignables                         {: RESULT = "TODO"; //TODO :} ;
-multiAssign     ::= assignables:tg EQUALS exprList:exprs               {: RESULT = new MultiAssignBuilder(tg, exprs);:};
+assignable          ::= arrayAccess:e1                             {: RESULT = new AssignTarget.ExprAssign(e1); :}
+                    | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
+                    | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :};
+assignables         ::= assignable:at                              {: RESULT = ParseUtil.singleton(at); :}
+                    | assignable:at COMMA assignables:atl          {: atl.add(0, at); RESULT = atl; :} ;
+multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = new MultiAssignBuilder(tg, exprs);:};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
@@ -168,8 +169,8 @@ arrayinit       ::= arrayNonBlank:anb                                           
 arrayNonBlank   ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
                     | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET           {: RESULT = new ArrayInit.Dim(anb, e); :};
 method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
-typelst         ::= type |
-                    type COMMA typelst;
+typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
+                    | type:t COMMA typelst:tl                                       {: tl.add(0, t); RESULT = tl;:};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
@@ -180,10 +181,14 @@ expr            ::= expr:l binop:op expr:r                         {: RESULT = n
                     | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
-                    | expr:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1,e2); :}
+                    | arrayAccess:aa                               {: RESULT = aa; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = e; :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
                     | expr:e COMMA exprList:l                      {: l.add(0,e); RESULT = l; :};
+arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1,e2); :};
+indexable         ::= functionCall:fc                              {: RESULT = fc; :}
+                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
+                    | arrayAccess:aa                               {: RESULT = aa; :};
 primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = new Literal.IntLit(Long.parseLong(n)); :}
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
                     | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
@@ -214,4 +219,4 @@ binop           ::= PLUS                                           {: RESULT = B
 primType        ::= BOOL                                           {:RESULT = new Primitive.BOOL(); :}
                     | INT                                          {:RESULT = new Primitive.INT(); :};
 type            ::= primType:pt                                    {:RESULT = pt; :}
-                    | type:t  OPEN_BRACKET CLOSE_BRACKET           {:RESULT = Array(t);:};
+                    | type:t  OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};
