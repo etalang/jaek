@@ -39,11 +39,10 @@ precedence left UMINUS, NOT;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 
 /* Grammar Definition */
-//file            ::= INTERFACE interface {: System.out.println("got here"); :}
-//                    | PROGRAM program;
-//interface       ::= | abs_meth interface ;
-start with program;
-
+start with file;
+file            ::= INTERFACE interface {: System.out.println("got here"); :}
+                    | PROGRAM program;
+interface       ::= | abs_meth interface ;
 abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
