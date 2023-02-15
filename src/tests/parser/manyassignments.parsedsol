@@ -1,0 +1,19 @@
+( ()
+    (:global a int)
+    (:global b int)
+
+    (:global ((c int) (e int)) ('x' 'y'))
+    (:global d ([] int))
+
+    (:global large_integer int 9223372036854775807)
+    (:global small_integer int (- 9223372036854775808))
+
+
+    (loop () ()
+        (while (n > 0)
+            (= n (- n 1))
+            (= ([] a n) n)
+            (= (h ([] ([] int))) ((1 0) (0 1)))
+        )
+    )
+)

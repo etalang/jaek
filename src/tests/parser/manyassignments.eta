@@ -1,26 +1,18 @@
 //here are some global declarations
 
-a : int =  5 * 3;
-b : int = 5 / 2 + 3;
+a : int;
+b : int;
 
-//not sure if this type of assignment and variable declaration is allowed
-c : int, a = a, b;
-d : int = a + c;
-e : int = 'x';
+//more declarations
+c : int, e : int = 'x', 'y';
+d: int[];
+large_integer:int = 9223372036854775807
+small_integer:int = -9223372036854775808
 
-_, _ = a, c;
-
-
-n: int = 3
-a: int[n]
-
-while n > 0 {
-    n = n - 1
-    a[n] = n
+loop () {
+    while n > 0 {
+        n = n - 1
+        a[n] = n
+        h: int[][] = {{1, 0}, {0, 1}}
+    }
 }
-
-h: int[][] = {{1, 0}, {0, 1}}
-
-
-large_integer:int = 9223372036854775807 * 3
-small_integer:int = -9223372036854775808 - 2

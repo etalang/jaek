@@ -1,0 +1,9 @@
+( ((use io))
+
+    (:global a bool false)
+    (:global b bool true)
+
+    (print (| (| (& a b)  (!= b  (== a b)))  a))
+    (print (== (> (- 100) 2) (< 5 2)))
+
+)
