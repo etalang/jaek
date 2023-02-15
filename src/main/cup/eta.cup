@@ -1,32 +1,68 @@
 import java_cup.runtime.*;
-//import ast.*;
+import ast.*;
+import kotlin.collections.CollectionsKt;
+import kotlin.jvm.internal.markers.*;
+import java.util.*;
 
-/* Preliminaries to set up and use the scanner.  */
-//init with {: scanner.init();              :};
 scan with {: return getScanner().next_token(); :};
 
 /* Terminals */
-terminal IDENTIFIER;
-terminal STRING_LITERAL;
-terminal CHARACTER_LITERAL;
-terminal INTEGER_LITERAL;
+terminal String IDENTIFIER;
+terminal String STRING_LITERAL;
+terminal Character CHARACTER_LITERAL;
+terminal String INTEGER_LITERAL;
 terminal TRUE, FALSE;
 terminal INT, BOOL;
+terminal BinaryOp.Operation PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB;
 
-terminal IF, ELSE, WHILE, RETURN, USE, LENGTH, PLUS, MINUS, TIMES, HIGHTIMES,
-  DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB,
+terminal IF, ELSE, WHILE, RETURN, USE, LENGTH,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
   COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
 terminal INTERFACE, PROGRAM;
 
 /* Nonterminals */
-nonterminal file, interface, abs_meth, method, program, imports, use;
-nonterminal defns, definition, decl, decls;
-nonterminal assign, target, targets, type, typelst;
-nonterminal statement, statementlst, if, while, fnblock, block, elseopt, semi;
-nonterminal binop, unop, expr, fncall;
-nonterminal return, vallst, bracketlst, nullbrackets, idxlst;
+nonterminal Eta file;
+nonterminal Interface interface;
+nonterminal Program program;
+nonterminal ArrayList<Use> imports;
+nonterminal Use use;
+nonterminal ArrayList<Definition> allDefinitions;
+nonterminal ArrayList<Definition> definition;
+nonterminal Method methodHeader;
+nonterminal Method method;
+nonterminal GlobalDecl globalDecl;
+nonterminal ArrayList<GlobalDecl> globalDecls;
+nonterminal Definition globalMultiDeclaration;
+nonterminal ArrayList<Type> typelst;
+nonterminal Primitive primType;
+nonterminal Type type;
+nonterminal Literal primitiveLiteral;
+nonterminal ArrayList<Literal> primLitLst;
+nonterminal Statement.If if;
+nonterminal Statement.While while;
+nonterminal Statement return;
+nonterminal Expr expr;
+nonterminal ArrayList<GlobalDecl> methodArgs;
+nonterminal Statement.Block returnableBlock, block;
+nonterminal ArrayList<Statement> statementList;
+nonterminal Statement statement;
+nonterminal Statement.Block elseOptional; // might have to add empty list in empty case to type check?
+nonterminal Statement.Procedure procedureCall;
+nonterminal Expr.FunctionCall functionCall;
+nonterminal MultiAssignBuilder multiAssign;
+nonterminal ArrayList<Expr> exprList;
+nonterminal ArrayList<Statement.DeclareInit> multiDeclOrArrayInit; // this is wrong
+nonterminal ArrayInit arrayinit, arrayNonBlank;
+nonterminal AssignTarget assignable;
+nonterminal ArrayList<AssignTarget> assignables;
+nonterminal GlobalDecl methodArg;
+nonterminal VarDecl varDecl;
+//nonterminal varDeclOrArrayInit;
+nonterminal semi;
+nonterminal BinaryOp.Operation binop;
+nonterminal UnaryOp.Operation unop;
+nonterminal Expr arrayAccess, indexable;
 
 /* Precedences */
 precedence left OR;
@@ -38,98 +74,149 @@ precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 
-/* Grammar Definition */
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Root */
 start with file;
-file            ::= INTERFACE interface {: System.out.println("got here"); :}
-                    | PROGRAM program;
-interface       ::= | abs_meth interface ;
-abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
-                    IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-program         ::= imports defns ;
-imports          ::= use imports |
-                     ;
-use             ::= USE IDENTIFIER semi;
-defns            ::= definition defns |
-                    ;
-decls           ::= decl |
-                    decls COMMA decls;
-decl            ::= IDENTIFIER COLON type;
-assign          ::= targets EQUALS vallst;
-definition      ::= method |
-                    decl semi |
-                    assign semi;
-method          ::= abs_meth fnblock;
-typelst         ::= type |
-                    type COMMA typelst;
-statementlst    ::= statement | statement statementlst;
-if              ::= IF expr block elseopt |
-                    IF OPEN_PAREN expr CLOSE_PAREN block elseopt;
-while           ::= WHILE OPEN_PAREN expr CLOSE_PAREN block |
-                    WHILE expr block;
-fnblock         ::= OPEN_BRACE statementlst CLOSE_BRACE |
-                    OPEN_BRACE statementlst return CLOSE_BRACE |
-                    OPEN_BRACE return CLOSE_BRACE |
-                    OPEN_BRACE CLOSE_BRACE;
-block           ::= statement |
-                    fnblock;
-statement       ::= if |
-                    while |
-                    decl semi |
-                    assign semi |
-                    fncall semi;
-fncall          ::= IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-elseopt         ::= | ELSE block;
-unop            ::= MINUS %prec UMINUS | // cannot differentiate identical token but need diff prec
-                    NOT;
-binop           ::= PLUS |
-                    MINUS |
-                    TIMES |
-                    HIGHTIMES |
-                    DIVIDE |
-                    MODULO |
-                    LT |
-                    LEQ |
-                    GT |
-                    GEQ |
-                    EQB |
-                    NEQB |
-                    AND |
-                    OR;
-return          ::= RETURN semi |
-                    RETURN vallst semi ;
-vallst         ::= expr |
-                    expr COMMA vallst;
-type            ::= BOOL |
-                    INT |
-                    BOOL bracketlst |
-                    INT bracketlst;
-bracketlst      ::= nullbrackets |
-                    OPEN_BRACKET expr CLOSE_BRACKET |
-                    OPEN_BRACKET expr CLOSE_BRACKET bracketlst;
-nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
-                    OPEN_BRACKET CLOSE_BRACKET nullbrackets;
-expr            ::= expr binop expr |
-                    unop expr |
-                    IDENTIFIER |
-                    fncall |
-                    STRING_LITERAL |
-                    INTEGER_LITERAL:l |
-                    CHARACTER_LITERAL |
-                    FALSE |
-                    TRUE |
-                    OPEN_BRACE vallst CLOSE_BRACE |
-                    IDENTIFIER idxlst |
-                    LENGTH OPEN_PAREN expr CLOSE_PAREN;
-idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
-                    OPEN_BRACKET expr CLOSE_BRACKET idxlst;
-target          ::= decl |
-                    UNDERSCORE |
-                    IDENTIFIER |
-                    IDENTIFIER idxlst; // array element
-targets         ::= target |
-                    target COMMA targets;
-semi            ::= SEMICOLON |
-                    ;
+file            ::= INTERFACE interface:It                      {: RESULT = It; :}
+                    | PROGRAM program:P                         {: RESULT = P;  :};
+interface       ::= methodHeader:am interface:it                {: ArrayList<Method> ml = it.getMethodHeaders(); ml.add(0, am); RESULT = new Interface(ml); :}
+                    |                                           {: RESULT = new Interface(new ArrayList<Method>());:};
+program         ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Imports */
+imports         ::= use:u imports:It                            {: It.add(0, u); RESULT = It; :}
+                    |                                           {: RESULT = new ArrayList<Use>(); :};
+use             ::= USE IDENTIFIER:id semi                      {: RESULT = new Use(id); :};
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Top Level Declarations */
+allDefinitions  ::= definition:d allDefinitions:Dt              {: Dt.addAll(d); RESULT = Dt; :} //could be sketch
+                    |                                           {: RESULT = new ArrayList<Definition>(); :};
+definition      ::= method:m                                    {: RESULT = ParseUtil.singleton(m); :}
+                    | globalMultiDeclaration:dc semi            {: RESULT = ParseUtil.singleton(dc); :};
+
+/* =============> Global Variables <============= */
+// a : int[6] ILLEGAL
+// b : int[] = 5
+globalMultiDeclaration ::= globalDecls:gD                      {: RESULT = new GlobalDeclarationBuilder(gD, null); :}
+                        | globalDecls:gD EQUALS primLitLst:pl  {: RESULT = new GlobalDeclarationBuilder(gD, pl); :};
+globalDecls     ::=  globalDecl:d                              {: RESULT = ParseUtil.singleton(d); :}
+                    | globalDecl:d COMMA globalDecls:Ds        {: Ds.add(0, d); RESULT = Ds; :};
+globalDecl      ::= IDENTIFIER:id COLON type:t                 {: RESULT = new GlobalDecl(id, t); :}; //note this technically allows int[] with an = but whatever
+
+/* =============> [Global] Methods <============= */
+methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts); :}
+                    | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>()); :}
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<GlobalDecl>(), Ts); :}
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<GlobalDecl>(), new ArrayList<Type>()); :};
+methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new GlobalDecl(id, t); :};
+methodArgs      ::= methodArg:ma                                                    {:RESULT = ParseUtil.singleton(ma); :}
+                    | methodArg:ma COMMA methodArgs:mal                             {:mal.add(0, ma); RESULT = mal;:};
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Statements */
+statementList   ::= statement:s                                                     {:RESULT = ParseUtil.singleton(s);:}
+                    | statement:s statementList:sl                                  {:sl.add(0, s); RESULT = sl;:};
+statement       ::= if:i                                                            {: RESULT = i; :}
+                    | while:w                                                       {: RESULT = w; :}
+                    | multiAssign:a semi                                            {: RESULT = a; :}
+                    | multiDeclOrArrayInit:d semi                                   {: RESULT = new Statement.DeclareInits(d); :}
+                    | procedureCall:fn semi                                          {: RESULT = fn; :};
+if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
+                    | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
+while           ::= WHILE OPEN_PAREN expr:e CLOSE_PAREN block:b                     {: RESULT = new Statement.While(e, b); :}
+                    | WHILE expr:e block:b                                          {: RESULT = new Statement.While(e, b); :};
+block           ::= statement:s                                                     {: RESULT = new Statement.Block(ParseUtil.singleton(s)); :}
+                    | returnableBlock:rb                                            {: RESULT = rb; :};
+returnableBlock ::= OPEN_BRACE statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst); :}
+                    | OPEN_BRACE statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst); :} // is this being added to the end??
+                    | OPEN_BRACE return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r)); :};
+procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl);:} // these should be statements!
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>());:};
+elseOptional         ::=
+                    | ELSE block:b                                             {: RESULT = new Statement.Block(ParseUtil.singleton(b)); :};
+semi            ::= SEMICOLON | ;
+return          ::= RETURN semi                                                     {: RESULT = new Statement.Return(new ArrayList<Expr>()); :}
+                    | RETURN exprList:exprLst semi                                  {: RESULT = new Statement.Return(exprLst); :};
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Local Variables */
+
+/* =============> [MULTI] No Assignment <============= */
+// RESULTS: Declaration No Init OR Array Init
+multiDeclOrArrayInit ::= varDecl:vd     {:RESULT = ParseUtil.singleton(new Statement.DeclareInit.Declare(vd));:}
+                        | arrayinit:ai  {:RESULT = ParseUtil.singleton(new Statement.DeclareInit.Init(ai));:}
+                        | varDecl:vd COMMA multiDeclOrArrayInit:mdai {:Statement.DeclareInit di = new Statement.DeclareInit.Declare(vd); mdai.add(0, di); RESULT = mdai; :}
+                        | arrayinit:ai COMMA multiDeclOrArrayInit:mdai {:Statement.DeclareInit di = new Statement.DeclareInit.Init(ai); mdai.add(0, di); RESULT = mdai;:} ;
+//varDeclOrArrayInit ::= varDecl | arrayinit;
+
+/* =============> [MULTI] With Assignment <============= */
+// includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
+// RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
+
+varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl(id, t); :};
+assignable          ::= arrayAccess:e1                             {: RESULT = new AssignTarget.ExprAssign(e1); :}
+                    | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
+                    | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :};
+assignables         ::= assignable:at                              {: RESULT = ParseUtil.singleton(at); :}
+                    | assignable:at COMMA assignables:atl          {: atl.add(0, at); RESULT = atl; :} ;
+multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = new MultiAssignBuilder(tg, exprs);:};
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Initializations */
+arrayinit       ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
+                    | arrayinit:ai OPEN_BRACKET CLOSE_BRACKET                       {: RESULT = new ArrayInit.Dim(ai, null); :};
+arrayNonBlank   ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
+                    | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET           {: RESULT = new ArrayInit.Dim(anb, e); :};
+method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
+typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
+                    | type:t COMMA typelst:tl                                       {: tl.add(0, t); RESULT = tl;:};
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Expressions */
+expr            ::= expr:l binop:op expr:r                         {: RESULT = new BinaryOp(op, l, r); :}
+                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :}
+                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
+                    | functionCall:fc                              {: RESULT = fc; :}
+                    | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
+                    | primitiveLiteral:pl                          {: RESULT = pl; :}
+                    | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
+                    | arrayAccess:aa                               {: RESULT = aa; :}
+                    | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = e; :};
+exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
+                    | expr:e COMMA exprList:l                      {: l.add(0,e); RESULT = l; :};
+arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1,e2); :};
+indexable         ::= functionCall:fc                              {: RESULT = fc; :}
+                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
+                    | arrayAccess:aa                               {: RESULT = aa; :};
+primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = new Literal.IntLit(Long.parseLong(n)); :}
+                    | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
+                    | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
+                    | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
+primLitLst      ::= primitiveLiteral:pl                            {: RESULT = ParseUtil.singleton(pl); :}
+                    | primitiveLiteral:pl primLitLst:pll           {: pll.add(0, pl); RESULT = pll;:};
+functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<Expr>());:};
+unop            ::= MINUS %prec UMINUS |                           {: RESULT = UnaryOp.Operation.NEG; :}// cannot differentiate identical token but need diff prec
+                    NOT                                            {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
+binop           ::= PLUS                                           {: RESULT = BinaryOp.Operation.PLUS; :}
+                    | MINUS                                        {: RESULT = BinaryOp.Operation.MINUS; :}
+                    | TIMES                                        {: RESULT = BinaryOp.Operation.TIMES; :}
+                    | HIGHTIMES                                    {: RESULT = BinaryOp.Operation.HIGHTIMES; :}
+                    | DIVIDE                                       {: RESULT = BinaryOp.Operation.DIVIDE; :}
+                    | MODULO                                       {: RESULT = BinaryOp.Operation.MODULO; :}
+                    | LT                                           {: RESULT = BinaryOp.Operation.LT; :}
+                    | LEQ                                          {: RESULT = BinaryOp.Operation.LEQ; :}
+                    | GT                                           {: RESULT = BinaryOp.Operation.GT; :}
+                    | GEQ                                          {: RESULT = BinaryOp.Operation.GEQ; :}
+                    | EQB                                          {: RESULT = BinaryOp.Operation.EQB; :}
+                    | NEQB                                         {: RESULT = BinaryOp.Operation.NEQB; :}
+                    | AND                                          {: RESULT = BinaryOp.Operation.AND; :}
+                    | OR                                           {: RESULT = BinaryOp.Operation.OR; :};
+
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/* Types */
+primType        ::= BOOL                                           {:RESULT = new Primitive.BOOL(); :}
+                    | INT                                          {:RESULT = new Primitive.INT(); :};
+type            ::= primType:pt                                    {:RESULT = pt; :}
+                    | type:t  OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};

@@ -56,7 +56,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         } else { // create absolute path from current dir and relative path
             Path(System.getProperty("user.dir"), diagnosticRelPath)
         }
-
         val absSourcepath = if (Path(sourcepath).isAbsolute) {
             Path(sourcepath)
         } else { // create absolute path from current dir and relative path
