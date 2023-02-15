@@ -16,7 +16,7 @@ sealed class Statement : Node() {
 
     class Block(val stmts: List<Statement>) : Statement()
 
-    class CallProc(val id: Expr, val args: List<Expr>) : Statement()
+    class Procedure(val id: Expr, val args: List<Expr>) : Statement()
 
     override fun write(printer: SExpPrinter) {
         printer.startList()
@@ -69,7 +69,7 @@ sealed class Statement : Node() {
                 stmts.forEach { stmt -> stmt.write(printer) }
                 printer.endList()
             }
-            is CallProc -> {
+            is Procedure -> {
                 printer.startList()
                 id.write(printer)
                 printer.startList()

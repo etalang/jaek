@@ -5,7 +5,7 @@ import edu.cornell.cs.cs4120.util.SExpPrinter
 class Program(
     val imports: MutableList<Use>,
     val definitions: MutableList<Definition>
-) : Node() {
+) : Eta() {
 
     override fun write(printer: SExpPrinter) {
         printer.startList()

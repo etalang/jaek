@@ -4,9 +4,6 @@ import edu.cornell.cs.cs4120.util.SExpPrinter
 
 class GlobalDecl(val id: String, val type: Type) : Definition() {
     var value: Literal? = null
-        set(v) {
-            field = v
-        }
 
     override fun write(printer: SExpPrinter) {
         printer.startList()
