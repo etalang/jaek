@@ -71,19 +71,19 @@ sealed class Statement : Node() {
 //                expr.write(printer)
 //                printer.endList()
 //            }
-            is Block -> {
-                printer.startList()
-                stmts.forEach { stmt -> stmt.write(printer) }
-                printer.endList()
-            }
-            is Procedure -> {
-                printer.startList()
-                printer.printAtom(id)
-                printer.startList()
-                args.forEach {expr -> expr.write(printer)}
-                printer.endList()
-                printer.endList()
-            }
+//            is Block -> {
+//                printer.startList()
+//                stmts.forEach { stmt -> stmt.write(printer) }
+//                printer.endList()
+//            }
+//            is Procedure -> {
+//                printer.startList()
+//                printer.printAtom(id)
+//                printer.startList()
+//                args.forEach {expr -> expr.write(printer)}
+//                printer.endList()
+//                printer.endList()
+//            }
             else -> {
                 printer.printAtom("")
             }

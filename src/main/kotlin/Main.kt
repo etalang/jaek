@@ -1,4 +1,6 @@
+
 import UltimateLexer.HeaderToken
+import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -7,8 +9,10 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
+import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import java_cup.runtime.Symbol
 import java.io.File
+import java.io.PrintWriter
 import kotlin.io.path.Path
 
 /**
@@ -97,7 +101,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexer = UltimateLexer(it.bufferedReader(), fileType)
                 val parser = parser(lexer)
                 val out = parser.parse()
-                if (print_parse) print(out.value) // will need to cast this according to example
+                // remember to delete and regenerate if needed
+                val writer = CodeWriterSExpPrinter(PrintWriter("output.txt"))
+                if (print_parse) ((out.value as Node).write(writer)) // will need to cast this according to example
+                writer.flush()
+                writer.close()
             } else {
                 echo("Skipping $it due to invalid file.")
             }

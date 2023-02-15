@@ -91,7 +91,7 @@ use             ::= USE IDENTIFIER:id semi                      {: RESULT = new 
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
-allDefinitions  ::= definition:d allDefinitions:Dt              {: Dt.addAll(d); RESULT = Dt; :} //could be sketch
+allDefinitions  ::= definition:d allDefinitions:Dt              {: Dt.add(d); RESULT = Dt; :} //could be sketch
                     |                                           {: RESULT = new ArrayList<Definition>(); :};
 definition      ::= method:m                                    {: RESULT = ParseUtil.singleton(m); :}
                     | globalMultiDeclaration:dc semi            {: RESULT = ParseUtil.singleton(dc); :};
@@ -110,7 +110,7 @@ methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>()); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<GlobalDecl>(), Ts); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<GlobalDecl>(), new ArrayList<Type>()); :};
-methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new GlobalDecl(id, t); :};
+methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new VarDecl(id, t); :};
 methodArgs      ::= methodArg:ma                                                    {:RESULT = ParseUtil.singleton(ma); :}
                     | methodArg:ma COMMA methodArgs:mal                             {:mal.add(0, ma); RESULT = mal;:};
 
