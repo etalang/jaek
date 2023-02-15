@@ -67,41 +67,34 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         folderFiles.forEach {
             //the only files accepts must exist at sourcepath, be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
-                if (print_lex) { //"double-lex" to guarantee lexing completion even if parse fails
+                if (print_lex) {
+                    //"double-lex" to guarantee lexing completion even if parse fails
                     val lexedFileName = it.nameWithoutExtension + ".lexed"
                     val lexedFile = File(diagnosticPath.toString(), lexedFileName)
-
-                    // Check if the file already exists and delete it if it does
                     if (lexedFile.exists() && !lexedFile.isDirectory) {
                         lexedFile.delete()
                     }
                     lexedFile.createNewFile()
                     val lex = JFlexLexer(it.bufferedReader())
-                    //Lex the file
+                    
+                    //truly awful
                     while (true) {
                         try {
                             val t: Symbol = (lex.next_token() ?: break)
                             if (t.sym == SymbolTable.EOF) break
-                            //Output to file if flag is set
-                            if (print_lex) {
-                                lexedFile.appendText((t as Token<*>).lexInfo() + "\n")
-                            }
-
+                            lexedFile.appendText((t as Token<*>).lexInfo() + "\n")
                         } catch (e: LexicalError) {
-                            //Output to file if flag is set
-                            if (print_lex) {
-                                lexedFile.appendText("${e.msg}\n")
-                            }
+                            lexedFile.appendText("${e.msg}\n")
                             break
                         }
                     }
                 }
+                
                 val fileType: HeaderToken? = when (it.extension) {
                     "eta" -> HeaderToken.PROGRAM;
                     "eti" -> HeaderToken.INTERFACE;
                     else -> null;
                 }
-
                 val lexer = UltimateLexer(it.bufferedReader(), fileType)
                 val parser = parser(lexer)
                 val out = parser.parse()
