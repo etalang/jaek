@@ -6,7 +6,7 @@ import ast.*;
 scan with {: return getScanner().next_token(); :};
 
 /* Terminals */
-terminal Token<String> IDENTIFIER;
+terminal String IDENTIFIER;
 terminal STRING_LITERAL;
 terminal CHARACTER_LITERAL;
 terminal INTEGER_LITERAL;
@@ -26,9 +26,15 @@ nonterminal Imports imports;
 nonterminal Use use;
 nonterminal Definitions defns;
 nonterminal Definition definition;
-nonterminal file, interface, abs_meth, method;
-nonterminal decl, decls;
-nonterminal assign, target, targets, type, typelst;
+nonterminal MethodInterface abs_meth;
+nonterminal Method method;
+nonterminal Declaration decl;
+nonterminal Declarations decls;
+nonterminal TypeList typelst;
+nonterminal Type type;
+
+nonterminal file, interface;
+nonterminal assign, target, targets;
 nonterminal statement, statementlst, if, while, fnblock, block, elseopt, semi;
 nonterminal binop, unop, expr, fncall;
 nonterminal return, vallst, bracketlst, nullbrackets, idxlst;
@@ -49,24 +55,29 @@ precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 //interface       ::= | abs_meth interface ;
 start with program;
 
-abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
-                    IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
-                    IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-program         ::= imports:Is defns:Ds {:RESULT = new Program(Is, Ds); :};
-imports          ::= use:u imports:It {:It.prependImport(u); RESULT = It; :}
-                    | {:RESULT = new Imports(); :}                    ;
-use             ::= USE IDENTIFIER:id semi {:RESULT = new Use(id.attribute); :};
-defns            ::= definition:d defns:Dt {:Dt.prependDefn(d); RESULT = Dt; :}
-                    | {:RESULT = new Definitions(); :};
-decls           ::= decl |
-                    decls COMMA decls;
-decl            ::= IDENTIFIER COLON type;
+program         ::= imports:Is defns:Ds {: RESULT = new Program(Is, Ds); :};
+imports          ::= use:u imports:It {: It.prependImport(u); RESULT = It; :}
+                    | {: RESULT = new Imports(); :}                    ;
+use             ::= USE IDENTIFIER:id semi {: RESULT = new Use(id); :};
+defns            ::= definition:d defns:Dt {: Dt.prependDefn(d); RESULT = Dt; :}
+                    | {: RESULT = new Definitions(); :};
+decls           ::= decl:d {: Declarations Ds = new Declarations(); Ds.prependDecl(d); RESULT = Ds; :}
+                        // TODO might be able to write a constructor that handles this more smoothly?
+                    | decl:d COMMA decls:Ds {: Ds.prependDecl(d); RESULT = Ds; :};
+decl            ::= IDENTIFIER:id COLON type:t {: RESULT = new Declaration(id, t); :};
+definition      ::= method:m {: RESULT = m; :}
+                    | decl:d semi {: RESULT = d; :} // globaldefn
+                    | assign:a semi {: RESULT = a; :};
+abs_meth        ::= IDENTIFIER:id OPEN_PAREN decls:Ds CLOSE_PAREN COLON typelst:Ts
+                        {: RESULT = new MethodInterface(id, Ds, Ts); :}
+                    | IDENTIFIER:id OPEN_PAREN decls:Ds CLOSE_PAREN
+                        {: RESULT = new MethodInterface(id, Ds, new TypeList()); :}
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts
+                        {: RESULT = new MethodInterface(id, new Declarations(), Ts); :}
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN
+                        {: RESULT = new MethodInterface(id, new Declarations(), new TypeList()); :};
 assign          ::= targets EQUALS vallst;
-definition      ::= method |
-                    decl semi |
-                    assign semi;
-method          ::= abs_meth fnblock;
+method          ::= abs_meth:am fnblock:b {: RESULT = new Method(am, b); :};
 typelst         ::= type |
                     type COMMA typelst;
 statementlst    ::= statement | statement statementlst;
@@ -108,10 +119,9 @@ return          ::= RETURN semi |
                     RETURN vallst semi ;
 vallst         ::= expr |
                     expr COMMA vallst;
-type            ::= BOOL |
-                    INT |
-                    BOOL bracketlst |
-                    INT bracketlst;
+type            ::= BOOL {:RESULT = Bool();:}
+                    | INT {:RESULT = Int();:}
+                    | BOOL bracketlst | INT bracketlst; // I think this is problematic and we should fix
 bracketlst      ::= nullbrackets |
                     OPEN_BRACKET expr CLOSE_BRACKET |
                     OPEN_BRACKET expr CLOSE_BRACKET bracketlst;
@@ -124,8 +134,8 @@ expr            ::= expr binop expr |
                     STRING_LITERAL |
                     INTEGER_LITERAL:l |
                     CHARACTER_LITERAL |
-                    FALSE |
-                    TRUE |
+                    FALSE {:RESULT = BoolLit(false);:} |
+                    TRUE {:RESULT = BoolLit(true);:} |
                     OPEN_BRACE vallst CLOSE_BRACE |
                     IDENTIFIER idxlst |
                     LENGTH OPEN_PAREN expr CLOSE_PAREN;
