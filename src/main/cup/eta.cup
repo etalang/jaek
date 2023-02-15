@@ -73,6 +73,7 @@ precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
+precedence left OPEN_PAREN, CLOSE_PAREN;
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Root */
@@ -182,6 +183,7 @@ expr            ::= expr:l binop:op expr:r                         {: RESULT = n
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
                     | arrayAccess:aa                               {: RESULT = aa; :}
+                    | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = e; :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
                     | expr:e COMMA exprList:l                      {: l.add(0,e); RESULT = l; :};
