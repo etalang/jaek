@@ -18,21 +18,23 @@ public class LexicalError extends Exception {
 
     private String details() {
         switch (errorType) {
-            case StringNotEnd:
-                return "Non-terminating string";
+            case BadString:
+                return "Non-terminating string or multiline string";
             case CharWrong:
                 return "Invalid character constant";
             case CharNotEnd:
                 return "Unmatched \"'\"";
-            case MultilineString:
-                return "Multiline string";
             case UnicodeTooBig:
                 return "Unicode argument too large";
+            case InvalidId:
+                return "Not a valid identifier";
+            case InvalidInteger:
+                return "Not a valid integer";
             default:
                 return "";
         }
     }
 
     /** Types of possible errors encounterable while lexing */
-    public enum errType {StringNotEnd, MultilineString, CharWrong, CharNotEnd, UnicodeTooBig}
+    public enum errType {BadString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId, InvalidInteger}
 }

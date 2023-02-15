@@ -1,0 +1,2 @@
+large_integer:int = 9223372036854775807
+small_integer:int = -9223372036854775808
