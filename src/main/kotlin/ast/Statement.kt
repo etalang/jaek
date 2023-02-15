@@ -9,12 +9,12 @@ sealed class Statement : Node() {
 
     class Return(val args: List<Expr>) : Statement()
 
-    // probably could change typing to make this check better
-    sealed class DeclareInit {
-        class Declare(val decl : VarDecl) : DeclareInit()
-        class Init(val init: ArrayInit) : DeclareInit()
-    }
-    class DeclareInits(val declOrInit : List<DeclareInit>) : Statement()
+//    // probably could change typing to make this check better
+//    sealed class DeclareInit {
+//        class Declare(val decl : VarDecl) : DeclareInit()
+//        class Init(val init: ArrayInit) : DeclareInit()
+//    }
+//    class DeclareInits(val declOrInit : List<DeclareInit>) : Statement()
     /* this is handled by MultiAssignBuilder, I think */
 //    class Assignment(val id: Expr, val expr: Expr) : Statement() // changed this to be an expression, i.e. a[1] for instance
 //
