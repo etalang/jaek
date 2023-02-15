@@ -31,7 +31,6 @@ nonterminal ArrayList<Definition> allDefinitions;
 nonterminal ArrayList<Definition> definition;
 nonterminal Method methodHeader;
 nonterminal Method method;
-nonterminal GlobalDecl decl;
 nonterminal GlobalDecl globalDecl;
 nonterminal ArrayList<GlobalDecl> globalDecls;
 nonterminal ArrayList<Definition> globalMultiDeclaration;
@@ -46,7 +45,8 @@ nonterminal Statement return;
 
 nonterminal methodArg, methodArgs;
 nonterminal multiAssign, assignable, assignables;
-nonterminal varDecl,varDeclOrArrayInit, multiDeclOrArrayInit;
+nonterminal varDecl, multiDeclOrArrayInit;
+//nonterminal varDeclOrArrayInit;
 nonterminal statement, statementList, returnableBlock, block, elseOptional, semi;
 nonterminal binop, unop, expr, functionCall, arrayinit;
 nonterminal exprList, arrayAccess, arrayNonBlank;
@@ -106,7 +106,7 @@ statementList   ::= statement | statement statementList;
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
-//                    | multiDeclOrArrayInit:d semi                                   {: RESULT = d; :}
+                    | multiDeclOrArrayInit:d semi                                   {: RESULT = d; :}
                     | functionCall:fn semi                                          {: RESULT = fn; :};
 if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
                     | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
@@ -127,8 +127,9 @@ return          ::= RETURN semi                                                 
 
 /* =============> [MULTI] No Assignment <============= */
 // RESULTS: Declaration No Init OR Array Init
-multiDeclOrArrayInit ::= varDeclOrArrayInit | varDeclOrArrayInit COMMA multiDeclOrArrayInit;
-varDeclOrArrayInit ::= varDecl | arrayinit;
+multiDeclOrArrayInit ::= varDecl | arrayinit
+                        | varDecl COMMA multiDeclOrArrayInit | arrayinit COMMA multiDeclOrArrayInit;
+//varDeclOrArrayInit ::= varDecl | arrayinit;
 
 /* =============> [MULTI] With Assignment <============= */
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
