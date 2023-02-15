@@ -3,12 +3,20 @@ package ast
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
 class Method(
-    val methodHeader : MethodInterface,
-    val body: Statement.Block?
+    val id: String,
+    val args: ArrayList<GlobalDecl>,
+    val returnTypes: ArrayList<Type>
 ) : Definition() {
+    var body : Statement.Block? = null
+        set(b) {
+            field = b
+        }
+
     override fun write(printer: SExpPrinter) {
         printer.startList()
-        methodHeader.write(printer)
+        printer.printAtom(id)
+        printList(printer, args)
+        printList(printer, returnTypes)
         body?.write(printer)
         printer.endList()
     }
