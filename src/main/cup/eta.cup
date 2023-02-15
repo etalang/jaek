@@ -1,4 +1,5 @@
 import java_cup.runtime.*;
+//import ast.*;
 
 /* Preliminaries to set up and use the scanner.  */
 //init with {: scanner.init();              :};
@@ -38,14 +39,16 @@ precedence left UMINUS, NOT;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 
 /* Grammar Definition */
-file            ::= INTERFACE interface |
-                    PROGRAM program;
-interface       ::= | abs_meth interface ;
+//file            ::= INTERFACE interface {: System.out.println("got here"); :}
+//                    | PROGRAM program;
+//interface       ::= | abs_meth interface ;
+start with program;
+
 abs_meth        ::= IDENTIFIER OPEN_PAREN decls CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN decls CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN COLON typelst |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
-program         ::= imports defns;
+program         ::= imports defns ;
 imports          ::= use imports |
                      ;
 use             ::= USE IDENTIFIER semi;
@@ -66,9 +69,10 @@ if              ::= IF expr block elseopt |
                     IF OPEN_PAREN expr CLOSE_PAREN block elseopt;
 while           ::= WHILE OPEN_PAREN expr CLOSE_PAREN block |
                     WHILE expr block;
-fnblock         ::= OPEN_BRACKET statementlst CLOSE_BRACKET |
-                    OPEN_BRACKET statementlst return CLOSE_BRACKET |
-                    OPEN_BRACKET CLOSE_BRACKET;
+fnblock         ::= OPEN_BRACE statementlst CLOSE_BRACE |
+                    OPEN_BRACE statementlst return CLOSE_BRACE |
+                    OPEN_BRACE return CLOSE_BRACE |
+                    OPEN_BRACE CLOSE_BRACE;
 block           ::= statement |
                     fnblock;
 statement       ::= if |
@@ -79,7 +83,7 @@ statement       ::= if |
 fncall          ::= IDENTIFIER OPEN_PAREN vallst CLOSE_PAREN |
                     IDENTIFIER OPEN_PAREN CLOSE_PAREN;
 elseopt         ::= | ELSE block;
-unop            ::= UMINUS |
+unop            ::= MINUS %prec UMINUS | // cannot differentiate identical token but need diff prec
                     NOT;
 binop           ::= PLUS |
                     MINUS |
@@ -104,8 +108,8 @@ type            ::= BOOL |
                     BOOL bracketlst |
                     INT bracketlst;
 bracketlst      ::= nullbrackets |
-                    OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET |
-                    OPEN_BRACKET INTEGER_LITERAL CLOSE_BRACKET bracketlst;
+                    OPEN_BRACKET expr CLOSE_BRACKET |
+                    OPEN_BRACKET expr CLOSE_BRACKET bracketlst;
 nullbrackets    ::= OPEN_BRACKET CLOSE_BRACKET |
                     OPEN_BRACKET CLOSE_BRACKET nullbrackets;
 expr            ::= expr binop expr |
@@ -113,7 +117,7 @@ expr            ::= expr binop expr |
                     IDENTIFIER |
                     fncall |
                     STRING_LITERAL |
-                    INTEGER_LITERAL |
+                    INTEGER_LITERAL:l |
                     CHARACTER_LITERAL |
                     FALSE |
                     TRUE |
@@ -123,7 +127,9 @@ expr            ::= expr binop expr |
 idxlst          ::= OPEN_BRACKET expr CLOSE_BRACKET |
                     OPEN_BRACKET expr CLOSE_BRACKET idxlst;
 target          ::= decl |
-                    UNDERSCORE;
+                    UNDERSCORE |
+                    IDENTIFIER |
+                    IDENTIFIER idxlst; // array element
 targets         ::= target |
                     target COMMA targets;
 semi            ::= SEMICOLON |
