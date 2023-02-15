@@ -4,6 +4,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 
 public class LexUtil {
+    private final static BigInteger maxVal = new BigInteger("9223372036854775808");
+
     /** [formatChar(n)] outputs the printable version of a Character. */
     public static String formatChar(Integer character) {
 
@@ -62,15 +64,12 @@ public class LexUtil {
     }
 
     /**
-     * [parseToInt(matched)] truncates matched to fit into a long. If the number is too large, it will
-     * be taken mod 2^64 and shifted to fit into the correct long range. In the specific case
+     * [parseToInt(matched)] asserts that the number contained in matched is valid.
      */
     public static String parseToInt(String matched, int lineNum, int col) throws LexicalError{
         BigInteger intVal = new BigInteger(matched);
-        BigInteger maxVal = new BigInteger("9223372036854775808");
-
         if (intVal.compareTo(maxVal) <= 0) {
-            return intVal.toString();
+            return matched;
         } else {
             throw new LexicalError(LexicalError.errType.InvalidInteger, lineNum, col);
         }
