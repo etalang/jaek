@@ -4,6 +4,11 @@ import kotlin.collections.CollectionsKt;
 import kotlin.jvm.internal.markers.*;
 import java.util.*;
 
+parser code  {:
+  public void syntax_error(java_cup.runtime.Symbol current) {
+    throw new ParseError(current);
+  }
+:};
 scan with {: return getScanner().next_token(); :};
 
 /* Terminals */
@@ -36,7 +41,6 @@ nonterminal ArrayList<Type> typelst;
 nonterminal Primitive primType;
 nonterminal Type type;
 nonterminal Literal primitiveLiteral;
-nonterminal ArrayList<Literal> primLitLst;
 nonterminal Statement.If if;
 nonterminal Statement.While while;
 nonterminal Statement return;
@@ -49,10 +53,9 @@ nonterminal Statement.Block elseOptional; // might have to add empty list in emp
 nonterminal Statement.Procedure procedureCall;
 nonterminal Expr.FunctionCall functionCall;
 nonterminal MultiAssign multiAssign;
-nonterminal ArrayInit arrayInit;
+nonterminal ArrayInit arrayInit, arrayNonBlank;
+nonterminal VarDecl.InitArr arrayInitStatement;
 nonterminal ArrayList<Expr> exprList;
-nonterminal ArrayList<Statement.DeclareInit> multiDeclOrArrayInit; // this is wrong
-nonterminal ArrayInit arrayinit, arrayNonBlank;
 nonterminal AssignTarget assignable;
 nonterminal ArrayList<AssignTarget> assignables;
 nonterminal VarDecl.RawVarDecl methodArg;
@@ -72,14 +75,15 @@ precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
+precedence left OPEN_PAREN, CLOSE_PAREN;
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Root */
 start with file;
 file            ::= INTERFACE interface:It                      {: RESULT = It; :}
                     | PROGRAM program:P                         {: RESULT = P;  :};
-interface       ::= methodHeader:am interface:it                {: ArrayList<Method> ml = it.getMethodHeaders(); ml.add(0, am); RESULT = new Interface(ml); :}
-                    |                                           {: RESULT = new Interface(new ArrayList<Method>());:};
+interface       ::= interface:it methodHeader:am                {: ArrayList<Method> ml = it.getMethodHeaders(); ml.add(am); RESULT = new Interface(ml); :}
+                    |                                           {: RESULT = new Interface(new ArrayList<>());:};
 program         ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -90,8 +94,8 @@ use             ::= USE IDENTIFIER:id semi                      {: RESULT = new 
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
-allDefinitions  ::= definition:d allDefinitions:Dt              {: Dt.add(d); RESULT = Dt; :} //could be sketch
-                    |                                           {: RESULT = new ArrayList<Definition>(); :};
+allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :} //could be sketch
+                    |                                           {: RESULT = new ArrayList<>(); :};
 definition      ::= method:m                                    {: RESULT = m; :}
                     | globalDecl:dc semi                        {: RESULT = dc; :};
 
@@ -123,9 +127,9 @@ statementList   ::= statement:s                                                 
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
-                    | arrayInit:a semi                                              {: RESULT = a; :}
                     | varDecl:d semi                                                {: RESULT = d; :}
-                    | procedureCall:fn semi                                          {: RESULT = fn; :};
+                    //| arrayInitStatement:a semi                                     {: RESULT = a; :}
+                    | procedureCall:fn semi                                         {: RESULT = fn; :};
 if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
                     | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
 while           ::= WHILE OPEN_PAREN expr:e CLOSE_PAREN block:b                     {: RESULT = new Statement.While(e, b); :}
@@ -162,19 +166,20 @@ assignable          ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */ {: RESULT = n
                     | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
                     | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :}
                     | IDENTIFIER:id                                {: RESULT = new AssignTarget.ExprAssign(new Expr.Identifier(id)); :};
-assignables         ::= assignable:at                              {: RESULT = ParseUtil.singleton(at); :}
-                    | assignable:at COMMA assignables:atl          {: atl.add(0, at); RESULT = atl; :} ;
+assignables     ::= assignable:at                                  {: RESULT = ParseUtil.singleton(at); :}
+                    | assignables:atl COMMA assignable:at          {: atl.add(at); RESULT = atl; :} ; //LEFT RECURSIVE
 multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = new MultiAssign(tg, exprs);:};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
-arrayinit       ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
-                    | arrayinit:ai OPEN_BRACKET CLOSE_BRACKET                       {: RESULT = new ArrayInit.Dim(ai, null); :};
+arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                             {: RESULT = new VarDecl.InitArr(id, ar); :};
+arrayInit       ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
+                    | arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                       {: RESULT = new ArrayInit.Dim(ai, null); :};
 arrayNonBlank   ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
                     | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET           {: RESULT = new ArrayInit.Dim(anb, e); :};
 method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
 typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
-                    | type:t COMMA typelst:tl                                       {: tl.add(0, t); RESULT = tl;:};
+                    | typelst:tl COMMA type:t                                       {: tl.add(t); RESULT = tl;:}; //LR
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
@@ -186,9 +191,10 @@ expr            ::= expr:l binop:op expr:r                         {: RESULT = n
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
                     | arrayAccess:aa                               {: RESULT = aa; :}
-                    | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = e; :};
+                    | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
+                    | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
-                    | expr:e COMMA exprList:l                      {: l.add(0,e); RESULT = l; :};
+                    | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
 arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1,e2); :};
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
@@ -197,10 +203,8 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = n
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
                     | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
-primLitLst      ::= primitiveLiteral:pl                            {: RESULT = ParseUtil.singleton(pl); :}
-                    | primitiveLiteral:pl primLitLst:pll           {: pll.add(0, pl); RESULT = pll;:};
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<Expr>());:};
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>());:};
 unop            ::= MINUS %prec UMINUS |                           {: RESULT = UnaryOp.Operation.NEG; :}// cannot differentiate identical token but need diff prec
                     NOT                                            {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
 binop           ::= PLUS                                           {: RESULT = BinaryOp.Operation.PLUS; :}
@@ -223,4 +227,4 @@ binop           ::= PLUS                                           {: RESULT = B
 primType        ::= BOOL                                           {:RESULT = new Primitive.BOOL(); :}
                     | INT                                          {:RESULT = new Primitive.INT(); :};
 type            ::= primType:pt                                    {:RESULT = pt; :}
-                    | type:t  OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};
+                    | type:t OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};

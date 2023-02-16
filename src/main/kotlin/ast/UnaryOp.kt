@@ -8,8 +8,6 @@ class UnaryOp(val op: Operation, val arg: Expr) : Expr() {
         NOT("!"),
         NEG("-")
     }
-//    class IntNeg(arg: Expr) : UnaryOp(arg)
-//    class BoolNeg(arg: Expr) : UnaryOp(arg)
 
     override fun write(printer: SExpPrinter) {
         printer.startList()

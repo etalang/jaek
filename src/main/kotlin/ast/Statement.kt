@@ -3,11 +3,43 @@ package ast
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
 sealed class Statement : Node() {
-    class If(val guard: Expr, val thenBlock: Statement, val elseBlock: Statement?) : Statement()
+    class If(val guard: Expr, val thenBlock: Statement, val elseBlock: Statement?) : Statement() {
+        override fun write(printer: SExpPrinter) {
+            printer.startList()
+            printer.printAtom("if")
+            guard.write(printer)
+            printer.startList()
+            thenBlock.write(printer)
+            printer.endList()
+            if (elseBlock != null){
+                printer.startList()
+                elseBlock?.write(printer)
+                printer.endList()
+            }
+            printer.endList()
+        }
+    }
 
-    class While(val guard: Expr, val body: Statement) : Statement()
+    class While(val guard: Expr, val body: Statement) : Statement() {
+        override fun write(printer: SExpPrinter) {
+            printer.startList()
+            printer.printAtom("while")
+            guard.write(printer)
+            printer.startList()
+            body.write(printer)
+            printer.endList()
+            printer.endList()
+        }
+    }
 
-    class Return(val args: List<Expr>) : Statement()
+    class Return(val args: List<Expr>) : Statement() {
+        override fun write(printer: SExpPrinter) {
+            printer.startList()
+            printer.printAtom("return")
+            args.forEach { expr -> expr.write(printer) }
+            printer.endList()
+        }
+    }
 
 //    // probably could change typing to make this check better
 //    sealed class DeclareInit {
@@ -21,38 +53,24 @@ sealed class Statement : Node() {
 //    class DeclareAssign(val decl: VarDecl, val expr: Expr) : Statement() //not entirely sure if I love this
 //    // changed the RHS to be an expression instead
 
-    class Block(val stmts: List<Statement>) : Statement()
+    class Block(val stmts: List<Statement>) : Statement() {
+        override fun write(printer: SExpPrinter) {
+            printer.startList()
+            stmts.forEach { stmt -> stmt.write(printer) }
+            printer.endList()
+        }
+    }
 
-    class Procedure(val id: String, val args: List<Expr>) : Statement()
+    class Procedure(val id: String, val args: List<Expr>) : Statement() {
+        override fun write(printer: SExpPrinter) {
+            printer.startList()
+            printer.printAtom(id)
+            args.forEach { args -> args.write(printer) }
+            printer.endList()
+        }
+    }
 
-    override fun write(printer: SExpPrinter) {
-        printer.startList()
-        when (this) {
-            is If -> {
-                printer.printAtom("if")
-                printer.startList()
-                guard.write(printer)
-                printer.endList()
-                printer.startList()
-                thenBlock.write(printer)
-                printer.endList()
-                printer.startList()
-                elseBlock?.write(printer)
-                printer.endList()
-            }
-            is While -> {
-                printer.printAtom("while")
-                printer.startList()
-                guard.write(printer)
-                printer.endList()
-                printer.startList()
-                body.write(printer)
-                printer.endList()
-            }
-            is Return -> {
-                printer.printAtom("return")
-                args.forEach {expr -> expr.write(printer)}
-            }
+//    override fun write(printer: SExpPrinter) {
 //            is Assignment -> {
 //                printer.printAtom("=")
 //                printer.startList()
@@ -84,11 +102,5 @@ sealed class Statement : Node() {
 //                printer.endList()
 //                printer.endList()
 //            }
-            else -> {
-                printer.printAtom("")
-            }
-        }
-        printer.endList()
-    }
 
 }

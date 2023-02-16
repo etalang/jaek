@@ -10,6 +10,16 @@ sealed class Expr : Node() {
             args.forEach { expr -> expr.write(printer) }
             printer.endList()
         }
+
+        class LengthFn(val arg : Expr) : Expr() {
+            override fun write(printer: SExpPrinter) {
+                printer.startList()
+                printer.printAtom("length")
+                arg.write(printer)
+                printer.endList()
+            }
+
+        }
     }
 
     class ArrayAccess(val arr: Expr, val idx: Expr) : Expr() {
