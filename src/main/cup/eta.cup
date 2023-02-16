@@ -129,7 +129,7 @@ statement       ::= if:i                                                        
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
                     | varDecl:d semi                                                {: RESULT = d; :}
-                    //| arrayInitStatement:a semi                                     {: RESULT = a; :}
+                    | arrayInitStatement:a semi                                     {: RESULT = a; :}
                     | procedureCall:fn semi                                         {: RESULT = fn; :};
 if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
                     | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
@@ -177,6 +177,7 @@ arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         
 arrayInit          ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
                      |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                         {: RESULT = new ArrayInit.Dim(ai, null); :};
 arrayNonBlank       ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
+                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET                     {:RESULT = new ArrayInit.Dim(anb, null);:}
                        | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET            {: RESULT = new ArrayInit.Dim(anb, e); :};
 
 method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
@@ -207,8 +208,8 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = n
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>());:};
-unop            ::= MINUS %prec UMINUS |                           {: RESULT = UnaryOp.Operation.NEG; :}// cannot differentiate identical token but need diff prec
-                    NOT                                            {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
+unop            ::= MINUS {: RESULT = UnaryOp.Operation.NEG; :} %prec UMINUS  // cannot differentiate identical token but need diff prec
+                    | NOT                                            {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
 binop           ::= PLUS                                           {: RESULT = BinaryOp.Operation.PLUS; :}
                     | MINUS                                        {: RESULT = BinaryOp.Operation.MINUS; :}
                     | TIMES                                        {: RESULT = BinaryOp.Operation.TIMES; :}
@@ -229,4 +230,5 @@ binop           ::= PLUS                                           {: RESULT = B
 primType        ::= BOOL                                           {:RESULT = new Primitive.BOOL(); :}
                     | INT                                          {:RESULT = new Primitive.INT(); :};
 type            ::= primType:pt                                    {:RESULT = pt; :}
+                    | primType:pt OPEN_BRACKET CLOSE_BRACKET       {:RESULT = new Type.Array(pt);:}
                     | type:t OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};
