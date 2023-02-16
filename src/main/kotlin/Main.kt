@@ -107,7 +107,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 }
 
                 try {
-                    val AST = parser.debug_parse().value
+                    val AST = parser.parse().value
 
                     if (print_parse) {
                         val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
