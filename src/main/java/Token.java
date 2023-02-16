@@ -17,8 +17,11 @@ public abstract class Token<T> extends Symbol {
         this.col = col;
     }
 
+    public String location() {
+        return lineNum + ":" + col;
+    }
     public String lexInfo() {
-        return lineNum + ":" + col + " " + type() + stringVal();
+        return location() + " " + type() + stringVal();
     }
 
     protected String stringVal() {
