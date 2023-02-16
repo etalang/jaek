@@ -183,6 +183,7 @@ expr            ::= expr:l binop:op expr:r                         {: RESULT = n
                     | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
+                    | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}  //array literal
                     | arrayAccess:aa                               {: RESULT = aa; :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
