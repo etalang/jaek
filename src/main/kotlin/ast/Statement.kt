@@ -62,37 +62,4 @@ sealed class Statement : Node() {
         }
     }
 
-//    override fun write(printer: SExpPrinter) {
-//            is Assignment -> {
-//                printer.printAtom("=")
-//                printer.startList()
-//                id.write(printer)
-//                printer.endList()
-//                printer.startList()
-//                expr.write(printer)
-//                printer.endList()
-//            }
-//            is DeclareAssign -> {
-//                printer.printAtom("=")
-//                printer.startList()
-//                decl.write(printer)
-//                printer.endList()
-//                printer.startList()
-//                expr.write(printer)
-//                printer.endList()
-//            }
-//            is Block -> {
-//                printer.startList()
-//                stmts.forEach { stmt -> stmt.write(printer) }
-//                printer.endList()
-//            }
-//            is Procedure -> {
-//                printer.startList()
-//                printer.printAtom(id)
-//                printer.startList()
-//                args.forEach {expr -> expr.write(printer)}
-//                printer.endList()
-//                printer.endList()
-//            }
-
 }

@@ -46,10 +46,11 @@ nonterminal Statement.While while;
 nonterminal Statement return;
 nonterminal Expr expr;
 nonterminal ArrayList<VarDecl.RawVarDecl> methodArgs;
-nonterminal Statement.Block returnableBlock, block;
+nonterminal Statement.Block returnableBlock;
+nonterminal Statement block;
 nonterminal ArrayList<Statement> statementList;
 nonterminal Statement statement;
-nonterminal Statement.Block elseOptional; // might have to add empty list in empty case to type check?
+nonterminal Statement elseOptional; // might have to add empty list in empty case to type check?
 nonterminal Statement.Procedure procedureCall;
 nonterminal Expr.FunctionCall functionCall;
 nonterminal MultiAssign multiAssign;
@@ -134,15 +135,15 @@ if              ::= IF expr:e block:b elseOptional:els                          
                     | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
 while           ::= WHILE OPEN_PAREN expr:e CLOSE_PAREN block:b                     {: RESULT = new Statement.While(e, b); :}
                     | WHILE expr:e block:b                                          {: RESULT = new Statement.While(e, b); :};
-block           ::= statement:s                                                     {: RESULT = new Statement.Block(ParseUtil.singleton(s)); :}
+block           ::= statement:s                                                     {: RESULT = s; :}
                     | returnableBlock:rb                                            {: RESULT = rb; :};
 returnableBlock ::= OPEN_BRACE statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst); :}
                     | OPEN_BRACE statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst); :} // is this being added to the end??
                     | OPEN_BRACE return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r)); :};
 procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>());:};
-elseOptional         ::=
-                    | ELSE block:b                                             {: RESULT = new Statement.Block(ParseUtil.singleton(b)); :};
+elseOptional    ::=
+                    | ELSE block:b                                                  {: RESULT = b; :};
 semi            ::= SEMICOLON | ;
 return          ::= RETURN semi                                                     {: RESULT = new Statement.Return(new ArrayList<Expr>()); :}
                     | RETURN exprList:exprLst semi                                  {: RESULT = new Statement.Return(exprLst); :};
