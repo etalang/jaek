@@ -20,7 +20,7 @@ plugins {
     //INCLUDE FOR DOWNLOAD
     id "org.jetbrains.kotlin.jvm" version "$kotlin_version"
     id 'java'
-    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 repositories {

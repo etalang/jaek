@@ -6,7 +6,7 @@ Just Another Eta Kompiler
 ### Environment
 The `charlessherk/cs4120-vm` Docker image contains the necessary dependencies (javac, kotlinc, jflex, etc...). You can either build the project in the image or install the dependencies locally onto your machine. Note that building on the Docker image is **incredibly slow** on M1 chips, so it's preferable to build locally during development. You should start the Docker image with `--network none`. You should share the **production** directory.
 
-Ensure you are using Gradle 6.7.1. You should automatically have the wrapper from the gradle-wrapper.properties. This version supports our version of Kotlin, and it is the version of gradle we force onto the Docker image.
+Ensure you are using Gradle 7.6. You should automatically have the wrapper from the gradle-wrapper.properties. This version supports our version of Kotlin, and it is the version of Gradle used by the Docker image.
 
 ### Development
 You do not need to build the Jar to develop locally. You can simply let IntelliJ create a run configuration for the main method, and IntelliJ should respect the downloaded dependencies and work in "production mode".
@@ -29,7 +29,7 @@ Both environments have an `etac` script that lets you use the jar CLI with forma
 We have made the repository compatible with the `eth` testing harness. The `make zip` command above includes the relevant files. On the VM, we have two existing test suites.
 If the zip is unzipped in the `production` folder, the example tests pre-provided can be run from that directory with 
 ```bash
-eth ~/eth/tests/pa1/ethScript -compilerpath ~/shared/production/
+eth ~/eth/tests/pa2/ethScript -compilerpath ~/shared/production/
 ```
 Our personal test cases can be run with
 ```bash
