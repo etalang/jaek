@@ -63,7 +63,7 @@ nonterminal VarDecl.RawVarDecl methodArg;
 nonterminal VarDecl.RawVarDecl varDecl;
 //nonterminal varDeclOrArrayInit;
 nonterminal semi;
-nonterminal BinaryOp.Operation binop;
+nonterminal BinaryOp binop;
 nonterminal UnaryOp.Operation unop;
 nonterminal Expr arrayAccess, indexable;
 
@@ -176,19 +176,19 @@ typelst         ::= type:t                                                      
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
-expr            ::= expr:l binop:op expr:r                         {: RESULT = new BinaryOp(op, l, r); :}
-                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :}
+expr            ::= binop:op                        {: RESULT = op; :}
+                    | primitiveLiteral:pl                          {: RESULT = pl; :}
+                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :} %prec UMINUS
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
                     | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
-                    | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
                     | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}  //array literal
                     | arrayAccess:aa                               {: RESULT = aa; :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
-                    | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
+                    | expr:e COMMA exprList:l                      {: l.add(0,e); RESULT = l; :}; //LR
 arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2); :};
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
@@ -199,22 +199,22 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = n
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>());:};
-unop            ::= MINUS {: RESULT = UnaryOp.Operation.NEG; :} %prec UMINUS  // cannot differentiate identical token but need diff prec
+unop            ::= MINUS {: RESULT = UnaryOp.Operation.NEG; :}   // cannot differentiate identical token but need diff prec
                     | NOT                                          {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
-binop           ::= PLUS                                           {: RESULT = BinaryOp.Operation.PLUS; :}
-                    | MINUS                                        {: RESULT = BinaryOp.Operation.MINUS; :}
-                    | TIMES                                        {: RESULT = BinaryOp.Operation.TIMES; :}
-                    | HIGHTIMES                                    {: RESULT = BinaryOp.Operation.HIGHTIMES; :}
-                    | DIVIDE                                       {: RESULT = BinaryOp.Operation.DIVIDE; :}
-                    | MODULO                                       {: RESULT = BinaryOp.Operation.MODULO; :}
-                    | LT                                           {: RESULT = BinaryOp.Operation.LT; :}
-                    | LEQ                                          {: RESULT = BinaryOp.Operation.LEQ; :}
-                    | GT                                           {: RESULT = BinaryOp.Operation.GT; :}
-                    | GEQ                                          {: RESULT = BinaryOp.Operation.GEQ; :}
-                    | EQB                                          {: RESULT = BinaryOp.Operation.EQB; :}
-                    | NEQB                                         {: RESULT = BinaryOp.Operation.NEQB; :}
-                    | AND                                          {: RESULT = BinaryOp.Operation.AND; :}
-                    | OR                                           {: RESULT = BinaryOp.Operation.OR; :};
+binop           ::= expr:r PLUS expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.PLUS,r,l); :}
+                    | expr:r TIMES expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l); :}
+                    | expr:r MINUS expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.MINUS,r,l); :}
+                    | expr:r HIGHTIMES expr:l                                    {: RESULT = new BinaryOp(BinaryOp.Operation.HIGHTIMES,r,l); :}
+                    | expr:r DIVIDE expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.DIVIDE,r,l); :}
+                    | expr:r MODULO expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.MODULO,r,l); :}
+                    | expr:r LT expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.LT,r,l); :}
+                    | expr:r LEQ expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.LEQ,r,l); :}
+                    | expr:r GT expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.GT,r,l); :}
+                    | expr:r GEQ expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.GEQ,r,l); :}
+                    | expr:r EQB expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.EQB,r,l); :}
+                    | expr:r NEQB expr:l                                         {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l); :}
+                    | expr:r AND expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l); :}
+                    | expr:r OR expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Types */

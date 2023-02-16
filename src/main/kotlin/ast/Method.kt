@@ -8,9 +8,6 @@ class Method(
     val returnTypes: ArrayList<Type>
 ) : Definition() {
     var body : Statement.Block? = null
-        set(b) {
-            field = b
-        }
 
     override fun write(printer: SExpPrinter) {
         printer.startList()
