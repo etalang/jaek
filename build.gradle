@@ -70,7 +70,7 @@ task jflex(type: Exec) {
 }
 
 task cup(type: Exec) {
-    commandLine "./cup", "-destdir", "src/main/java", "-symbols", "SymbolTable", "src/main/cup/eta.cup"
+    commandLine "./cup", "-dump", "-destdir", "src/main/java", "-symbols", "SymbolTable", "src/main/cup/eta.cup"
 }
 
 build {
