@@ -11,7 +11,7 @@ sealed class Literal : Expr() {
 
     class StringLit(val text: String) : Literal() {
         override fun write(printer: SExpPrinter) {
-            printer.printAtom(text)
+            printer.printAtom("\"${text}\"")
         }
     }
 
@@ -23,7 +23,7 @@ sealed class Literal : Expr() {
 
     class CharLit(val char: Int) : Literal() {
         override fun write(printer: SExpPrinter) {
-            printer.printAtom(char.toString())
+            printer.printAtom("'${LexUtil.formatChar(char)}'")
         }
     }
 

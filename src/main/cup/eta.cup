@@ -172,11 +172,12 @@ multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = n
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
-arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                             {: RESULT = new VarDecl.InitArr(id, ar); :};
-arrayInit       ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
-                    | arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                       {: RESULT = new ArrayInit.Dim(ai, null); :};
-arrayNonBlank   ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
-                    | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET           {: RESULT = new ArrayInit.Dim(anb, e); :};
+arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                              {: RESULT = new VarDecl.InitArr(id, ar); :};
+arrayInit          ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
+                     |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                         {: RESULT = new ArrayInit.Dim(ai, null); :};
+arrayNonBlank       ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
+                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET            {: RESULT = new ArrayInit.Dim(anb, e); :};
+
 method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
 typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
                     | typelst:tl COMMA type:t                                       {: tl.add(t); RESULT = tl;:}; //LR
