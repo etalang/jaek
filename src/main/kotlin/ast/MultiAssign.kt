@@ -11,15 +11,11 @@ class MultiAssign(
         printer.startList()
         printer.printAtom("=")
         if (targets.size > 1){
-            printer.startList()
             printList(printer, targets)
-            printer.endList()
-            printer.startList()
             printList(printer, vals)
-            printer.endList()
         } else {
-            printList(printer, targets)
-            printList(printer, vals)
+            targets.forEach{target -> target.write(printer) }
+            vals.forEach{value -> value.write(printer)}
         }
         printer.endList()
     }
