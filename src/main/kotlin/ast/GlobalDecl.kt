@@ -7,10 +7,8 @@ class GlobalDecl(val id: String, val type: Type, val value : Literal?) : Definit
     override fun write(printer: SExpPrinter) {
         printer.startList()
         printer.printAtom(":global")
-        printer.startList()
         printer.printAtom(id)
         type.write(printer)
-        printer.endList()
         value?.write(printer)
         printer.endList()
     }
