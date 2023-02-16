@@ -1,12 +1,12 @@
 
 function1 (n : int){
-    if n <= 0 return n
-    else return function2(n-1)
+    if n <= 0 { return n }
+    else { return function2(n-1) }
 }
 
 function2 (n: int){
-   if n <= 0 return n
-   else return function1(n-2)
+   if n <= 0 { return n }
+   else { return function1(n-2)}
 }
 
 main(args: int[][]) {
