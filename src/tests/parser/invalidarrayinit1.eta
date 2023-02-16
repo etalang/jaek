@@ -1,0 +1,3 @@
+//cannot init array in global
+
+a : int[3][4]
