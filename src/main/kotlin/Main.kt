@@ -25,7 +25,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Input files to compiler.", name = "<source files>"
     ).file(canBeDir = false).multiple()
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
-    private val print_parse: Boolean by option("--parse", help = "Generate output from parser").flag()
+    private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val dOpt = option(
         "-D",
         metavar = "<folder>",
@@ -65,65 +65,73 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
         folderFiles.forEach {
             //the only files accepts must exist at sourcepath & be eta/eti files
-            if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
+            if (it.exists() && (it.extension == "eta" || it.extension == "eti") && (outputLex || outputParse)) {
+                var lexError: String? = null
+                var lexedFile: File? = null
                 if (outputLex) {
                     //"double-lex" to guarantee lexing completion even if parse fails
                     val lexedFileName = it.nameWithoutExtension + ".lexed"
-                    val lexedFile = File(diagnosticPath.toString(), lexedFileName)
+                    lexedFile = File(diagnosticPath.toString(), lexedFileName)
                     if (lexedFile.exists() && !lexedFile.isDirectory) {
                         lexedFile.delete()
                     }
                     lexedFile.createNewFile()
-                    val lex = JFlexLexer(it.bufferedReader())
+                }
+                val jFlexLexer = JFlexLexer(it.bufferedReader())
 
-                    while (true) {
-                        try {
-                            val t: Symbol = (lex.next_token() ?: break)
-                            if (t.sym == SymbolTable.EOF) break
-                            lexedFile.appendText((t as Token<*>).lexInfo() + "\n")
-                        } catch (e: LexicalError) {
-                            lexedFile.appendText("${e.msg}\n")
-                            break
-                        }
+                while (true) {
+                    try {
+                        val t: Symbol = (jFlexLexer.next_token() ?: break)
+                        if (t.sym == SymbolTable.EOF) break
+                        if (outputLex && lexedFile != null) lexedFile.appendText((t as Token<*>).lexInfo() + "\n")
+                    } catch (e: LexicalError) {
+                        if (outputLex && lexedFile != null) lexedFile.appendText("${e.msg}\n")
+                        lexError = e.msg
+                        break
                     }
                 }
 
-                val fileType: HeaderToken? = when (it.extension) {
-                    "eta" -> HeaderToken.PROGRAM;
-                    "eti" -> HeaderToken.INTERFACE;
-                    else -> null;
-                }
-                val lexer = UltimateLexer(it.bufferedReader(), fileType)
-                val parser = parser(lexer)
-
-                var parsedFile: File? = null;
-                if (print_parse) {
-                    val parsedFileName = it.nameWithoutExtension + ".parsed" // WHAT ABOUT ETA vs ETI?
-                    parsedFile = File(diagnosticPath.toString(), parsedFileName)
+                if (outputParse) {
+                    val fileType: HeaderToken? = when (it.extension) {
+                        "eta" -> HeaderToken.PROGRAM
+                        "eti" -> HeaderToken.INTERFACE
+                        else -> null
+                    }
+                    val parsedFileName = it.nameWithoutExtension + ".parsed"
+                    val parsedFile = File(diagnosticPath.toString(), parsedFileName)
                     if (parsedFile.exists() && !parsedFile.isDirectory) {
                         parsedFile.delete()
                     }
                     parsedFile.createNewFile()
-                }
 
-                try {
-                    val AST = parser.parse().value
-
-                    if (print_parse) {
-                        val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
-                        ((AST as Node).write(writer))
-                        writer.flush()
-                        writer.close()
+                    if (lexError == null) {
+                        val lexer = UltimateLexer(it.bufferedReader(), fileType)
+                        @Suppress("DEPRECATION") val parser = parser(lexer)
+                        try {
+                            val AST = parser.parse().value
+                            if (outputParse) {
+                                val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
+                                ((AST as Node).write(writer))
+                                writer.flush()
+                                writer.close()
+                            }
+                        } catch (e: ParseError) {
+                            val badSym = e.sym
+                            if (badSym is Token<*>) {
+                                val err = "${badSym.location()} error:${badSym.stringVal()}"
+                                parsedFile.appendText(err)
+                                println(err)
+                            } else {
+                                val err = "Unexpected error while parsing."
+                                parsedFile.appendText(err)
+                                println(err)
+                            }
+                        }
+                    } else {
+                        parsedFile.appendText(lexError)
+                        println(lexError)
                     }
-                } catch (e: ParseError) {
-                    val badSym = e.sym;
-                    if (parsedFile != null && badSym is Token<*>) {
-                        val err = "${badSym.location()} error:${badSym.stringVal()}"
-                        parsedFile.appendText(err)
-                        println(err)
-                    }
                 }
-
             } else {
                 echo("Skipping $it due to invalid file.")
             }
