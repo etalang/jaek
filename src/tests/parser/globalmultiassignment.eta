@@ -1,0 +1,6 @@
+//multiassignment in the global section which is not legal
+c: int;
+a : int, b : int[][], c = 1, 2, 3
+d : int, e : int = f(x);
+h, i : int = b[3][4]
+j : int, k : int= f(x)[1];

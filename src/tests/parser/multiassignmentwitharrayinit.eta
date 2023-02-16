@@ -1,0 +1,5 @@
+foo () {
+    c: int;
+    //not legal
+    a : int, b : int[3][];
+}
