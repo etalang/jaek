@@ -54,7 +54,7 @@ nonterminal Statement elseOptional; // might have to add empty list in empty cas
 nonterminal Statement.Procedure procedureCall;
 nonterminal Expr.FunctionCall functionCall;
 nonterminal MultiAssign multiAssign;
-nonterminal ArrayInit arrayInit, arrayNonBlank;
+nonterminal Statement.ArrayInit arrayInit, arrayNonBlank;
 nonterminal VarDecl.InitArr arrayInitStatement;
 nonterminal ArrayList<Expr> exprList;
 nonterminal AssignTarget assignable;
@@ -103,12 +103,6 @@ definition      ::= method:m                                    {: RESULT = m; :
 /* =============> Global Variables <============= */
 // a : int[6] ILLEGAL
 // b : int[] = 5
-
-//
-//globalMultiDeclaration ::= globalDecls:gD                      {: RESULT = new GlobalDeclarationBuilder(gD, null); :}
-//                        | globalDecls:gD EQUALS primLitLst:pl  {: RESULT = new GlobalDeclarationBuilder(gD, pl); :};
-//globalDecls     ::=  globalDecl:d                              {: RESULT = ParseUtil.singleton(d); :}
-//                    | globalDecl:d COMMA globalDecls:Ds        {: Ds.add(0, d); RESULT = Ds; :};
 globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null); :};
 globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :};
 
@@ -124,7 +118,7 @@ methodArgs      ::= methodArg:ma                                                
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
 statementList   ::= statement:s                                                     {:RESULT = ParseUtil.singleton(s);:}
-                    | statement:s statementList:sl                                  {:sl.add(0, s); RESULT = sl;:};
+                    | statementList:sl statement:s                                  {:sl.add(s); RESULT = sl;:};
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
@@ -151,20 +145,11 @@ return          ::= RETURN semi                                                 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Local Variables */
 
-/* =============> [MULTI] No Assignment <============= */
-//DOESN'T EXIST ANYMORE
-// RESULTS: Declaration No Init OR Array Init
-//multiDeclOrArrayInit ::= varDecl:vd     {:RESULT = ParseUtil.singleton(new Statement.DeclareInit.Declare(vd));:}
-//                        | arrayinit:ai  {:RESULT = ParseUtil.singleton(new Statement.DeclareInit.Init(ai));:}
-//                        | varDecl:vd COMMA multiDeclOrArrayInit:mdai {:Statement.DeclareInit di = new Statement.DeclareInit.Declare(vd); mdai.add(0, di); RESULT = mdai; :}
-//                        | arrayinit:ai COMMA multiDeclOrArrayInit:mdai {:Statement.DeclareInit di = new Statement.DeclareInit.Init(ai); mdai.add(0, di); RESULT = mdai;:} ;
-//varDeclOrArrayInit ::= varDecl | arrayinit;
-
 /* =============> [MULTI] With Assignment <============= */
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
 varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDecl(id, t); :};
-assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */ {: RESULT = new AssignTarget.ExprAssign(e1); :} //TODO: THOROUGHLY THINK ABOUT THIS ONE
+assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ExprAssign(e1); :} //TODO: THOROUGHLY THINK ABOUT THIS ONE
                     | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
                     | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :}
                     | IDENTIFIER:id                                {: RESULT = new AssignTarget.ExprAssign(new Expr.Identifier(id)); :};
@@ -174,13 +159,17 @@ multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = n
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
-arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                              {: RESULT = new VarDecl.InitArr(id, ar); :};
-arrayInit          ::= arrayNonBlank:anb                                               {: RESULT = anb;:}
-                     |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                         {: RESULT = new ArrayInit.Dim(ai, null); :};
-arrayNonBlank       ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                   {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
-                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET                     {:RESULT = new ArrayInit.Dim(anb, null);:}
-                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET            {: RESULT = new ArrayInit.Dim(anb, e); :};
-
+arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                             {: RESULT = new VarDecl.InitArr(id, ar); :};
+//arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:}
+//                     |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                     {: RESULT = new ArrayInit.Dim(ai, null); :};
+//arrayNonBlank       ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET               {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
+//                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET               {: RESULT = new ArrayInit.Dim(anb, null);:}
+//                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: RESULT = new ArrayInit.Dim(anb, e); :};
+arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:} //TODO: this is a hack really bad structure
+                       |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                   {: ai.getDimensions().add(0, null); RESULT = ai; :};
+arrayNonBlank      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
+                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
+                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
 method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
 typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
                     | typelst:tl COMMA type:t                                       {: tl.add(t); RESULT = tl;:}; //LR
@@ -199,7 +188,7 @@ expr            ::= expr:l binop:op expr:r                         {: RESULT = n
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
                     | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
-arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1,e2); :};
+arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2); :};
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
                     | arrayAccess:aa                               {: RESULT = aa; :};
@@ -210,7 +199,7 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = n
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>());:};
 unop            ::= MINUS {: RESULT = UnaryOp.Operation.NEG; :} %prec UMINUS  // cannot differentiate identical token but need diff prec
-                    | NOT                                            {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
+                    | NOT                                          {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
 binop           ::= PLUS                                           {: RESULT = BinaryOp.Operation.PLUS; :}
                     | MINUS                                        {: RESULT = BinaryOp.Operation.MINUS; :}
                     | TIMES                                        {: RESULT = BinaryOp.Operation.TIMES; :}
@@ -232,4 +221,4 @@ primType        ::= BOOL                                           {:RESULT = ne
                     | INT                                          {:RESULT = new Primitive.INT(); :};
 type            ::= primType:pt                                    {:RESULT = pt; :}
                     | primType:pt OPEN_BRACKET CLOSE_BRACKET       {:RESULT = new Type.Array(pt);:}
-                    | type:t OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};
+                    | type:t OPEN_BRACKET CLOSE_BRACKET            {:RESULT = new Type.Array(t);:};

@@ -61,5 +61,19 @@ sealed class Statement : Node() {
             printer.endList()
         }
     }
+    class ArrayInit(val type: Type, initDim : Expr) : Statement() {
 
+        var dimensions : ArrayList<Expr?> = arrayListOf<Expr?>(initDim)
+        override fun write(printer: SExpPrinter) {
+            dimensions.forEach {
+                printer.startList()
+                printer.printAtom("[]")
+            }
+            type.write(printer)
+            dimensions.forEach { dim ->
+                dim?.write(printer)
+                printer.endList()
+            }
+        }
+    }
 }
