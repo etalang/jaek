@@ -160,11 +160,6 @@ multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = n
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
 arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                             {: RESULT = new VarDecl.InitArr(id, ar); :};
-//arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:}
-//                     |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                     {: RESULT = new ArrayInit.Dim(ai, null); :};
-//arrayNonBlank       ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET               {: RESULT = new ArrayInit.ArrPtr(pt, e); :}
-//                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET               {: RESULT = new ArrayInit.Dim(anb, null);:}
-//                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: RESULT = new ArrayInit.Dim(anb, e); :};
 arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:} //TODO: this is a hack really bad structure
                        |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                   {: ai.getDimensions().add(0, null); RESULT = ai; :};
 arrayNonBlank      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
@@ -176,7 +171,7 @@ typelst         ::= type:t                                                      
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
-expr            ::= binop:op                        {: RESULT = op; :}
+expr            ::= binop:op                                       {: RESULT = op; :}
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :} %prec UMINUS
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
@@ -188,7 +183,7 @@ expr            ::= binop:op                        {: RESULT = op; :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
-                    | expr:e COMMA exprList:l                      {: l.add(0,e); RESULT = l; :}; //LR
+                    | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
 arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2); :};
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
@@ -199,7 +194,7 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = n
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>());:};
-unop            ::= MINUS {: RESULT = UnaryOp.Operation.NEG; :}   // cannot differentiate identical token but need diff prec
+unop            ::= MINUS                                          {: RESULT = UnaryOp.Operation.NEG; :}   // cannot differentiate identical token but need diff prec
                     | NOT                                          {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
 binop           ::= expr:r PLUS expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.PLUS,r,l); :}
                     | expr:r TIMES expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l); :}
