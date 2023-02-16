@@ -8,14 +8,8 @@ sealed class Statement : Node() {
             printer.startList()
             printer.printAtom("if")
             guard.write(printer)
-            printer.startList()
             thenBlock.write(printer)
-            printer.endList()
-            if (elseBlock != null){
-                printer.startList()
-                elseBlock?.write(printer)
-                printer.endList()
-            }
+            elseBlock?.write(printer)
             printer.endList()
         }
     }
@@ -25,9 +19,7 @@ sealed class Statement : Node() {
             printer.startList()
             printer.printAtom("while")
             guard.write(printer)
-            printer.startList()
             body.write(printer)
-            printer.endList()
             printer.endList()
         }
     }
