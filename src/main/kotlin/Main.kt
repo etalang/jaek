@@ -87,7 +87,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                         }
                     }
                 }
-                
+
                 val fileType: HeaderToken? = when (it.extension) {
                     "eta" -> HeaderToken.PROGRAM;
                     "eti" -> HeaderToken.INTERFACE;
@@ -95,19 +95,33 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 }
                 val lexer = UltimateLexer(it.bufferedReader(), fileType)
                 val parser = parser(lexer)
-                val AST = parser.parse().value
 
+                var parsedFile: File? = null;
                 if (print_parse) {
                     val parsedFileName = it.nameWithoutExtension + ".parsed" // WHAT ABOUT ETA vs ETI?
-                    val parsedFile = File(diagnosticPath.toString(), parsedFileName)
+                    parsedFile = File(diagnosticPath.toString(), parsedFileName)
                     if (parsedFile.exists() && !parsedFile.isDirectory) {
                         parsedFile.delete()
                     }
                     parsedFile.createNewFile()
-                    val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
-                    ((AST as Node).write(writer))
-                    writer.flush()
-                    writer.close()
+                }
+
+                try {
+                    val AST = parser.parse().value
+
+                    if (print_parse) {
+                        val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
+                        ((AST as Node).write(writer))
+                        writer.flush()
+                        writer.close()
+                    }
+                } catch (e: ParseError) {
+                    val badSym = e.sym;
+                    if (parsedFile != null && badSym is Token<*>) {
+                        val err = "${badSym.location()} error:${badSym.stringVal()}"
+                        parsedFile.appendText(err)
+                        println(err)
+                    }
                 }
 
             } else {
