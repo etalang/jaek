@@ -23,11 +23,7 @@ public class UltimateLexer extends JFlexLexer {
             hasAbsorbed = true;
             return new Symbol(header.sym);
         } else {
-            try {
-                return super.next_token();
-            } catch (LexicalError error) {
-                throw error;
-            }
+            return super.next_token();
         }
     }
 
