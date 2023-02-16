@@ -22,7 +22,7 @@ terminal BinaryOp.Operation PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, 
 
 terminal IF, ELSE, WHILE, RETURN, USE, LENGTH,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS, LITMINUS;
 
 terminal INTERFACE, PROGRAM;
 
@@ -75,6 +75,7 @@ precedence left LT, LEQ, GT, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
+precedence left LITMINUS;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 precedence left OPEN_PAREN, CLOSE_PAREN;
 
@@ -189,6 +190,7 @@ indexable         ::= functionCall:fc                              {: RESULT = f
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
                     | arrayAccess:aa                               {: RESULT = aa; :};
 primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = new Literal.IntLit(Long.parseLong(n)); :}
+                    | MINUS INTEGER_LITERAL:n                      {: RESULT = new Literal.IntLit(Long.parseLong("-" + n)); :} %prec LITMINUS
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
                     | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
