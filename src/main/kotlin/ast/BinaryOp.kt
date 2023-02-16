@@ -26,6 +26,5 @@ class BinaryOp(val op: Operation, val left: Expr, val right: Expr) : Expr() {
         this.left.write(printer)
         this.right.write(printer)
         printer.endList()
-        printer.endList()
     }
 }

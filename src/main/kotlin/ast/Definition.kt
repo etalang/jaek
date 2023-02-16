@@ -6,7 +6,7 @@ sealed class Definition : Node() { //
     override fun write(printer: SExpPrinter) {
         when (this) {
             is Method -> this.write(printer)
-            else -> printer.printAtom("")
+            is GlobalDecl -> this.write(printer)
         }
     }
 }

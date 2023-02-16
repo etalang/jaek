@@ -16,7 +16,7 @@ sealed class VarDecl(val id: String) : Statement() {
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom(id)
-//            printer.printAtom(type.toString())
+            arrInit.write(printer)
             printer.endList()
         }
     }
