@@ -24,9 +24,11 @@ sealed class Expr : Node() {
 
     class ArrayAccess(val arr: Expr, val idx: Expr) : Expr() {
         override fun write(printer: SExpPrinter) {
+            printer.startList()
             printer.printAtom("[]")
             arr.write(printer)
             idx.write(printer)
+            printer.endList()
         }
     }
 
