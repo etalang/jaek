@@ -65,6 +65,8 @@ nonterminal semi;
 nonterminal BinaryOp.Operation binop;
 nonterminal UnaryOp.Operation unop;
 nonterminal Expr arrayAccess, indexable;
+nonterminal ArrayList<Expr> nonemptyBrackets;
+nonterminal Integer emptyBrackets;
 
 /* Precedences */
 precedence left OR;
@@ -127,9 +129,26 @@ statementList   ::= statement:s                                                 
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
-                    | varDecl:d semi                                                {: RESULT = d; :}
+                    | IDENTIFIER:id COLON primType:pt nonemptyBrackets:nl emptyBrackets:el
+                    {: if (nl.size() == 0) {
+                            Type t = pt;
+                            for (int i = 0; i < el; i++) { t = new Type.Array(t); }
+                            RESULT = new VarDecl.RawVarDecl(id, t);
+                        } else {
+                            ArrayInit ai = new ArrayInit.ArrPtr(pt, nl.get(0));
+                            for (int i = 1; i < nl.size(); i++) {
+                                ai = new ArrayInit.Dim(ai, nl.get(i));
+                            }
+                            RESULT = new VarDecl.InitArr(id, ai);
+                        } :}
+                        // put some complex code here to parse out the difference
+//                    | varDecl:d semi                                                {: RESULT = d; :}
                     //| arrayInitStatement:a semi                                     {: RESULT = a; :}
                     | procedureCall:fn semi                                         {: RESULT = fn; :};
+nonemptyBrackets ::=  {:RESULT = new ArrayList<Expr>(); :} //empty production returns empty list
+                    | OPEN_BRACKET expr:e CLOSE_BRACKET nonemptyBrackets:nl  {: nl.add(0, e); RESULT = nl;:};// cons expr to front of nl
+emptyBrackets   ::= {:RESULT = 0;:}// empty production returns 0
+                    | OPEN_BRACKET CLOSE_BRACKET emptyBrackets:n                 {:RESULT = 1 + n;:}; // returns 1 + n
 if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
                     | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
 while           ::= WHILE OPEN_PAREN expr:e CLOSE_PAREN block:b                     {: RESULT = new Statement.While(e, b); :}
@@ -224,8 +243,8 @@ binop           ::= PLUS                                           {: RESULT = B
                     | OR                                           {: RESULT = BinaryOp.Operation.OR; :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-/* Types */
+/* Types  -> previous code  | primType:t       {:RESULT = new Type.Array(t);:}; */
 primType        ::= BOOL                                           {:RESULT = new Primitive.BOOL(); :}
                     | INT                                          {:RESULT = new Primitive.INT(); :};
-type            ::= primType:pt                                    {:RESULT = pt; :}
-                    | type:t OPEN_BRACKET CLOSE_BRACKET           {:RESULT = new Type.Array(t);:};
+type            ::= primType:pt emptyBrackets:n
+                    {:Type t = pt;  for (int i = 0; i < n; i++) { t = new Type.Array(t); } RESULT = t; :};
