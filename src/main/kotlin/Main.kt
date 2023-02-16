@@ -1,4 +1,3 @@
-
 import UltimateLexer.HeaderToken
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
@@ -25,20 +24,18 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     private val files: List<File> by argument(
         help = "Input files to compiler.", name = "<source files>"
     ).file(canBeDir = false).multiple()
-    private val print_lex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
+    private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val print_parse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val dOpt = option(
         "-D",
         metavar = "<folder>",
-        help = "Specify where to place generated diagnostic files. " +
-                "Default is the current working directory. The directory is expected to exist."
+        help = "Specify where to place generated diagnostic files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val diagnosticRelPath: String by dOpt
     private val sourceOpt = option(
         "-sourcepath",
         metavar = "<folder>",
-        help = "Specify where to locate input files. " +
-                "Default is the current working directory. The directory is expected to exist."
+        help = "Specify where to locate input files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val sourcepath: String by sourceOpt
 
@@ -47,30 +44,29 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
      * preprocessed into vars above.
      */
     override fun run() {
-        if (!File(diagnosticRelPath).isDirectory) { //output dir must be dir
-            throw BadParameterValue(text = "The file output location must be an existing directory.", option = dOpt)
+        if (!File(diagnosticRelPath).isDirectory) throw BadParameterValue(
+            text = "The file output location must be an existing directory.", option = dOpt
+        )
+
+        if (!File(sourcepath).isDirectory) throw BadParameterValue(
+            text = "The file input location must be an existing directory.", option = sourceOpt
+        )
+
+        val diagnosticPath = when {
+            Path(diagnosticRelPath).isAbsolute -> Path(diagnosticRelPath)
+            else -> Path(System.getProperty("user.dir"), diagnosticRelPath)
         }
 
-        if (!File(sourcepath).isDirectory) { //input dir must be dir
-            throw BadParameterValue(text = "The file input location must be an existing directory.", option = sourceOpt)
-        }
-
-        val diagnosticPath = if (Path(diagnosticRelPath).isAbsolute) {
-            Path(diagnosticRelPath)
-        } else { // create absolute path from current dir and relative path
-            Path(System.getProperty("user.dir"), diagnosticRelPath)
-        }
-        val absSourcepath = if (Path(sourcepath).isAbsolute) {
-            Path(sourcepath)
-        } else { // create absolute path from current dir and relative path
-            Path(System.getProperty("user.dir"), sourcepath)
+        val absSourcepath = when {
+            (Path(sourcepath).isAbsolute) -> Path(sourcepath)
+            else -> Path(System.getProperty("user.dir"), sourcepath)
         }
 
         val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
         folderFiles.forEach {
-            //the only files accepts must exist at sourcepath, be eta/eti files
+            //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
-                if (print_lex) {
+                if (outputLex) {
                     //"double-lex" to guarantee lexing completion even if parse fails
                     val lexedFileName = it.nameWithoutExtension + ".lexed"
                     val lexedFile = File(diagnosticPath.toString(), lexedFileName)
@@ -79,8 +75,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     }
                     lexedFile.createNewFile()
                     val lex = JFlexLexer(it.bufferedReader())
-                    
-                    //truly awful
+
                     while (true) {
                         try {
                             val t: Symbol = (lex.next_token() ?: break)
@@ -100,12 +95,21 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 }
                 val lexer = UltimateLexer(it.bufferedReader(), fileType)
                 val parser = parser(lexer)
-                val out = parser.parse()
-                // remember to delete and regenerate if needed
-                val writer = CodeWriterSExpPrinter(PrintWriter("output.txt"))
-                if (print_parse) ((out.value as Node).write(writer)) // will need to cast this according to example
-                writer.flush()
-                writer.close()
+                val AST = parser.parse().value
+
+                if (print_parse) {
+                    val parsedFileName = it.nameWithoutExtension + ".parsed" // WHAT ABOUT ETA vs ETI?
+                    val parsedFile = File(diagnosticPath.toString(), parsedFileName)
+                    if (parsedFile.exists() && !parsedFile.isDirectory) {
+                        parsedFile.delete()
+                    }
+                    parsedFile.createNewFile()
+                    val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
+                    ((AST as Node).write(writer))
+                    writer.flush()
+                    writer.close()
+                }
+
             } else {
                 echo("Skipping $it due to invalid file.")
             }
