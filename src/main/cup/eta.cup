@@ -5,7 +5,7 @@ import kotlin.jvm.internal.markers.*;
 import java.util.*;
 
 parser code  {:
-  public void syntax_error(java_cup.runtime.Symbol current) {
+  public void syntax_error(java_cup.runtime.Symbol current) throws ParseError {
     throw new ParseError(current);
   }
 :};
