@@ -138,7 +138,8 @@ while           ::= WHILE OPEN_PAREN expr:e CLOSE_PAREN block:b                 
 block           ::= statement:s                                                     {: RESULT = s; :}
                     | returnableBlock:rb                                            {: RESULT = rb; :};
 returnableBlock ::= OPEN_BRACE statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst); :} // is this being added to the end??
+                    | OPEN_BRACE statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst); :}
+                    | OPEN_BRACE CLOSE_BRACE                                        {: RESULT = new Statement.Block(new ArrayList<Statement>()); :}
                     | OPEN_BRACE return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r)); :};
 procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>());:};

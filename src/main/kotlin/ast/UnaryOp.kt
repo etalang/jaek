@@ -12,9 +12,7 @@ class UnaryOp(val op: Operation, val arg: Expr) : Expr() {
     override fun write(printer: SExpPrinter) {
         printer.startList()
         printer.printAtom(op.strVal)
-        printer.startList()
         this.arg.write(printer)
-        printer.endList()
         printer.endList()
     }
 }
