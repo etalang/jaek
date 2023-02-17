@@ -1,9 +1,19 @@
-1:1 id ((((()))))
+1:1 (
+1:2 (
+1:3 (
+1:4 (
+1:5 (
+1:6 )
+1:7 )
+1:8 )
+1:9 )
+1:10 )
 3:1 id who
 3:5 id lives
 3:11 id in
 3:14 id a
 3:16 id pineapple
-3:26 under
-3:32 the
-3:39 error:
+3:26 id under
+3:32 id the
+3:36 id sea
+3:39 error:Not a valid identifier
