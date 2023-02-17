@@ -135,7 +135,20 @@ block           ::= statement:s                                                 
 returnableBlock ::= OPEN_BRACE statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst); :}
                     | OPEN_BRACE statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst); :}
                     | OPEN_BRACE CLOSE_BRACE                                        {: RESULT = new Statement.Block(new ArrayList<Statement>()); :}
-                    | OPEN_BRACE return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r)); :};
+                    | OPEN_BRACE return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r)); :}
+                    | OPEN_BRACE statementList:sLst returnableBlock:rb CLOSE_BRACE  {: sLst.add(rb); RESULT = new Statement.Block(sLst); :}
+                    | OPEN_BRACE statementList:sLst
+                    returnableBlock:rb return:r CLOSE_BRACE                         {:sLst.add(rb); sLst.add(r); RESULT = new Statement.Block(sLst); :}
+                    | OPEN_BRACE
+                    returnableBlock:rb statementList:sLst return:r CLOSE_BRACE     {:sLst.add(0, rb); sLst.add(r); RESULT = new Statement.Block(sLst); :}
+                    | OPEN_BRACE
+                    returnableBlock:rb statementList:sLst CLOSE_BRACE               {:sLst.add(0, rb); RESULT = new Statement.Block(sLst); :}
+                    | OPEN_BRACE statementList:sLst1 returnableBlock:rb
+                    statementList:sLst2 CLOSE_BRACE                                 {:sLst1.add(rb); sLst1.addAll(sLst2); RESULT = new Statement.Block(sLst1); :}
+                    | OPEN_BRACE statementList:sLst1 returnableBlock:rb
+                    statementList:sLst2 return:r CLOSE_BRACE                        {:sLst1.add(rb); sLst1.addAll(sLst2); sLst1.add(r); RESULT = new Statement.Block(sLst1); :}
+                    | OPEN_BRACE returnableBlock:rb CLOSE_BRACE                     {: RESULT = new Statement.Block(ParseUtil.singleton(rb)); :}
+                    | OPEN_BRACE returnableBlock:rb return:r CLOSE_BRACE            {: ArrayList<Statement> st = ParseUtil.singleton(rb); st.add(r); RESULT = new Statement.Block(st); :};
 procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl);:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>());:};
 elseOptional    ::=
