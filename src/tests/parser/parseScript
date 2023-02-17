@@ -10,9 +10,12 @@ etac ("Test --parse") "--parse" {
     invalidarrayinit1.eta (Syntax, "cannot initialize size of global arrays");
     invalidarrayinit2.eta (Syntax, "cannot assign to array in global");
     invalidarrayinit3.eta (Syntax, "cannot initialize size and declare values");
+    invalidarrayinit4.eta (Syntax, "Unexpected index 3");
     invalideti1.eti (Syntax, "unexpected character {, interface function cannot have block");
     invalideti2.eti (Syntax, "unexpected token :, declaration cannot occur in eti file");
     manyassignments.eta;
+    multiassignmentwitharrayinit.eta (Syntax, "Unexpected token 3");
+    multideclaration.eta (Syntax, "Unexpected token ]");
     mutuallyrecursive.eta;
     nestedifstatements.eta;
     operatorprecedence.eta;
