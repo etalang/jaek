@@ -9,6 +9,7 @@ etac ("Test --parse") "--parse" {
     globalmultass2.eta (Syntax, "multiple assignment disallowed in global");
     globalmultass3.eta (Syntax, "multiple assignment disallowed in global");
     globalmultass4.eta (Syntax, "multiple assignment disallowed in global");
+    globalnegs.eta (Syntax, "no double negative in global");
     invalidarrayinit1.eta (Syntax, "cannot initialize size of global arrays");
     invalidarrayinit2.eta (Syntax, "cannot assign to array in global");
     invalidarrayinit3.eta (Syntax, "cannot initialize size and declare values");
