@@ -1,0 +1,36 @@
+build
+
+etac ("Test --parse") "--parse" {
+    booleanprecedence.eta;
+    exampleprogram.eta;
+    functioncalls.eta;
+    globaldeclarations.eta;
+    globalmultass1.eta (Syntax, "multiple assignment disallowed in global");
+    globalmultass2.eta (Syntax, "multiple assignment disallowed in global");
+    globalmultass3.eta (Syntax, "multiple assignment disallowed in global");
+    globalmultass4.eta (Syntax, "multiple assignment disallowed in global");
+    globalnegs.eta (Syntax, "no double negative in global");
+    invalidarrayinit1.eta (Syntax, "cannot initialize size of global arrays");
+    invalidarrayinit2.eta (Syntax, "cannot assign to array in global");
+    invalidarrayinit3.eta (Syntax, "cannot initialize size and declare values");
+    invalidarrayinit4.eta (Syntax, "Unexpected index 3");
+    invalideti1.eti (Syntax, "unexpected character {, interface function cannot have block");
+    invalideti2.eti (Syntax, "unexpected token :, declaration cannot occur in eti file");
+    invalidsinglereturn.eta (Syntax, "return");
+    invalidsubtraction.eta (Syntax, "9223372036854775808");
+    largeint.eta;
+    largeintfail.eta (Syntax, "this number too big");
+    length.eta;
+    lengthwithtrailingcommas.eta;
+    manyassignments.eta;
+    manyfunctions.eta;
+    manynegative.eta;
+    multiassignment.eta;
+    multiassignmentwitharrayinit.eta (Syntax, "Unexpected token 3");
+    multideclaration.eta (Syntax, "Unexpected token ]");
+    mutuallyrecursive.eta;
+    nestedifstatements.eta;
+    operatorprecedence.eta;
+    trailingcomma.eta;
+    whilenoblock.eta;
+}

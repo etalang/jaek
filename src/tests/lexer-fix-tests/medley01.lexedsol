@@ -1,0 +1,16 @@
+1:1 id bool''''x'x'x'x_x2451'x
+1:24 :
+1:25 bool
+1:29 =
+1:30 integer 5
+1:31 +
+1:32 integer 5
+1:33 <=
+1:35 integer 5555
+1:39 id bool5
+1:44 :
+1:45 int
+1:48 [
+1:49 ]
+1:50 =
+1:51 error:Invalid character constant

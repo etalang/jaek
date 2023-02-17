@@ -1,0 +1,15 @@
+build
+
+etac ("Test --lex") "--lex" {
+    doublebackslash.eta;
+    errorline.eta (Lexical, "Invalid character constant");
+    integers.eta;
+    manyquotes.eta (Lexical, "Non-terminating string or multiline string");
+    medley01.eta (Lexical, "Invalid character constant");
+    noendstring.eta (Lexical, "Non-terminating string or multiline string");
+    questionmark.eta (Lexical, "Not a valid identifier");
+    quoteinquote.eta;
+    singlequote.eta (Lexical, "Unmatched \"'\"");
+    tab.eta;
+    toolargeint.eta (Lexical, "Not a valid integer");
+}

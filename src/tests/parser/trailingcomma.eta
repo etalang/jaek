@@ -1,0 +1,4 @@
+foo () {
+    i : int[] = {1,}
+    j : int[] = "yourmom"
+}

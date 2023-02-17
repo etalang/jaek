@@ -1,0 +1,20 @@
+
+
+foo () {
+    return 2 + 3 - 4;
+}
+
+bar () {
+    return a[0];
+}
+
+more(a : int, b : int) : int[][]{
+ c : int[5][6][3];
+ c[1] = a;
+ c[2] = b;
+ return c;
+}
+
+
+
+

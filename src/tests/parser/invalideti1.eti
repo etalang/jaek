@@ -1,0 +1,4 @@
+//oh no we have a function body
+foo () {
+    if x == 3 return 1;
+}

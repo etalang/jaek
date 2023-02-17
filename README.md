@@ -31,9 +31,13 @@ If the zip is unzipped in the `production` folder, the example tests pre-provide
 ```bash
 eth ~/eth/tests/pa2/ethScript -compilerpath ~/shared/production/
 ```
-Our personal test cases can be run with
+Our personal lexer test cases can be run with
 ```bash
-eth src/tests/errorScript -compilerpath ~/shared/production/
+eth src/tests/lexer/errorScript -compilerpath ~/shared/production/
+```
+and the parser cases use
+```bash
+eth src/tests/parser/parseScript -compilerpath ~/shared/production/
 ```
 Include the `-p` flag to preserve the `.lexed` output of the lexer. 
 More `eth` flags can be found by accessing the native help page.

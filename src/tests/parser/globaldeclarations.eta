@@ -1,0 +1,7 @@
+use io
+
+global_int : int = 4;
+global_bool : bool = true;
+uninit_int : int;
+uninit_bool : bool;
+global_array : int[][][];
