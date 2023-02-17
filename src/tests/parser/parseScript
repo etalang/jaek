@@ -19,6 +19,7 @@ etac ("Test --parse") "--parse" {
     mutuallyrecursive.eta;
     nestedifstatements.eta;
     operatorprecedence.eta;
+    trailingcomma.eta;
     whilenoblock.eta;
     largeint.eta;
     largeintfail.eta (Syntax, "this number too big");
