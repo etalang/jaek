@@ -1,4 +1,4 @@
-( ((use io)(use boolean precedence))
+( ((use io)(use booleanprecedence))
     ((main
     ((args ([] ([] int))))
     () (

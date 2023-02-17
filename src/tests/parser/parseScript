@@ -2,6 +2,8 @@ build
 
 etac ("Test --parse") "--parse" {
     booleanprecedence.eta;
+    exampleprogram.eta;
+    functioncalls.eta;
     globaldeclarations.eta;
     globalmultass1.eta (Syntax, "multiple assignment disallowed in global");
     globalmultass2.eta (Syntax, "multiple assignment disallowed in global");
@@ -13,6 +15,12 @@ etac ("Test --parse") "--parse" {
     invalidarrayinit4.eta (Syntax, "Unexpected index 3");
     invalideti1.eti (Syntax, "unexpected character {, interface function cannot have block");
     invalideti2.eti (Syntax, "unexpected token :, declaration cannot occur in eti file");
+    invalidsinglereturn.eta (Syntax, "return");
+    invalidsubtraction.eta (Syntax, "9223372036854775808");
+    largeint.eta;
+    largeintfail.eta (Syntax, "this number too big");
+    length.eta;
+    lengthwithtrailingcommas.eta;
     manyassignments.eta;
     manyfunctions.eta;
     manynegative.eta;
@@ -24,6 +32,4 @@ etac ("Test --parse") "--parse" {
     operatorprecedence.eta;
     trailingcomma.eta;
     whilenoblock.eta;
-    largeint.eta;
-    largeintfail.eta (Syntax, "this number too big");
 }
