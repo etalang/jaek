@@ -5,7 +5,15 @@ import edu.cornell.cs.cs4120.util.SExpPrinter
 sealed class Literal : Expr() {
     class IntLit(val num: Long) : Literal() {
         override fun write(printer: SExpPrinter) {
-            printer.printAtom(num.toString());
+            if (num < 0)    {
+                printer.startList()
+                printer.printAtom("-")
+                printer.printAtom((-1 * num).toString())
+                printer.endList()
+            }
+            else {
+                printer.printAtom(num.toString());
+            }
         }
     }
 
