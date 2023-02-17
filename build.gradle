@@ -64,7 +64,7 @@ version '1.0'
 sourceCompatibility = 1.8
 
 task jflex(type: Exec) {
-    commandLine "jflex", "-q", "-d src/main/java", "src/main/jflex/Lexer.flex"
+    commandLine "jflex", "-q", "-d", "src/main/java", "src/main/jflex/Lexer.flex"
     dependsOn 'cup'
     mustRunAfter 'cup'
 }
