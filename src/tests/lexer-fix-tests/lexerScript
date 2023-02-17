@@ -9,7 +9,7 @@ etac ("Test --lex") "--lex" {
     noendstring.eta (Lexical, "Non-terminating string or multiline string");
     questionmark.eta (Lexical, "Not a valid identifier");
     quoteinquote.eta;
-    singlequote.eta (Lexical, "Unmatched "'"")
+    singlequote.eta (Lexical, "Unmatched \"'\"");
     tab.eta;
     toolargeint.eta (Lexical, "Not a valid integer");
 }
