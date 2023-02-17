@@ -15,7 +15,7 @@ scan with {: return getScanner().next_token(); :};
 terminal String IDENTIFIER;
 terminal String STRING_LITERAL;
 terminal Integer CHARACTER_LITERAL;
-terminal String INTEGER_LITERAL;
+terminal IntLitInfo INTEGER_LITERAL;
 terminal TRUE, FALSE;
 terminal INT, BOOL;
 terminal BinaryOp.Operation PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB;
@@ -189,8 +189,9 @@ arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT 
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
                     | arrayAccess:aa                               {: RESULT = aa; :};
-primitiveLiteral  ::= INTEGER_LITERAL:n                            {: RESULT = new Literal.IntLit(Long.parseLong(n)); :}
-                    | MINUS INTEGER_LITERAL:n                      {: RESULT = new Literal.IntLit(Long.parseLong("-" + n)); :} %prec LITMINUS
+primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.IntegerToken(n.data, n.line, n.column)); }
+                                                                        RESULT = new Literal.IntLit(Long.parseLong(n.data)); :}
+                    | MINUS INTEGER_LITERAL:n                      {: RESULT = new Literal.IntLit(Long.parseLong("-" + n.data)); :} %prec LITMINUS
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
                     | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
