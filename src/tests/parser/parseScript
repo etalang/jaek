@@ -17,4 +17,6 @@ etac ("Test --parse") "--parse" {
     nestedifstatements.eta;
     operatorprecedence.eta;
     whilenoblock.eta;
+    largeint.eta;
+    largeintfail.eta (Syntax, "this number too big");
 }
