@@ -11,7 +11,7 @@ public abstract class Token<T> extends Symbol {
     private final int col;
 
     public Token(T attribute, int sym, int lineNum, int col) {
-        super(sym, lineNum, col, attribute);
+        super(sym, attribute);
         this.attribute = attribute;
         this.lineNum = lineNum;
         this.col = col;
