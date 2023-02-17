@@ -8,6 +8,6 @@ public class IntLitInfo {
 
     @Override
     public String toString() {
-        return "this number too big";
+        return data;
     }
 }
