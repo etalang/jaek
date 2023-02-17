@@ -1712,8 +1712,9 @@ class CUP$parser$actions {
                 Literal RESULT = null;
                 int nleft = CUP$parser$stack.peek().left;
                 int nright = CUP$parser$stack.peek().right;
-                String n = CUP$parser$stack.peek().<String> value();
-                 RESULT = new Literal.IntLit(Long.parseLong(n)); 
+                IntLitInfo n = CUP$parser$stack.peek().<IntLitInfo> value();
+                 if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.IntegerToken(n.data, n.line, n.column)); }
+                                                                        RESULT = new Literal.IntLit(Long.parseLong(n.data)); 
                 CUP$parser$result = parser.getSymbolFactory().newSymbol("primitiveLiteral",13, CUP$parser$stack.peek(), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;
@@ -1724,8 +1725,8 @@ class CUP$parser$actions {
                 Literal RESULT = null;
                 int nleft = CUP$parser$stack.peek().left;
                 int nright = CUP$parser$stack.peek().right;
-                String n = CUP$parser$stack.peek().<String> value();
-                 RESULT = new Literal.IntLit(Long.parseLong("-" + n)); 
+                IntLitInfo n = CUP$parser$stack.peek().<IntLitInfo> value();
+                 RESULT = new Literal.IntLit(Long.parseLong("-" + n.data)); 
                 CUP$parser$result = parser.getSymbolFactory().newSymbol("primitiveLiteral",13, CUP$parser$stack.elementAt(CUP$parser$top-1), CUP$parser$stack.peek(), RESULT);
             }
             return CUP$parser$result;

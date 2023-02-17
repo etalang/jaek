@@ -9,7 +9,7 @@ bar () {
 }
 
 more(a : int, b : int) : int[][]{
- c : int[5][6];
+ c : int[5][6][3];
  c[1] = a;
  c[2] = b;
  return c;

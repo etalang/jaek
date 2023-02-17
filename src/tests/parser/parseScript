@@ -14,6 +14,9 @@ etac ("Test --parse") "--parse" {
     invalideti1.eti (Syntax, "unexpected character {, interface function cannot have block");
     invalideti2.eti (Syntax, "unexpected token :, declaration cannot occur in eti file");
     manyassignments.eta;
+    manyfunctions.eta;
+    manynegative.eta;
+    multiassignment.eta;
     multiassignmentwitharrayinit.eta (Syntax, "Unexpected token 3");
     multideclaration.eta (Syntax, "Unexpected token ]");
     mutuallyrecursive.eta;
