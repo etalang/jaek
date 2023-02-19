@@ -1,6 +1,7 @@
 package typechecker
 
 import ast.*
+import ast.BinaryOp.Operation.*
 import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.VarBind
 
@@ -44,7 +45,29 @@ class TypeChecker {
             is Expr -> {
                 when (n) {
                     is Expr.ArrayAccess -> TODO()
-                    is BinaryOp -> TODO()
+                    is BinaryOp -> {
+                        typeCheck(n.left)
+                        typeCheck(n.right)
+                        val ltype = n.left.etaType
+                        val rtype = n.right.etaType
+                        var invalidOp = false
+                        if ((ltype is IntType) && (rtype is IntType)) {
+                            if (n.op in listOf(PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO)){
+                                    n.etaType = IntType()
+                            } else if (n.op in listOf(EQB, NEQB, LT, LEQ, GT, GEQ)) {
+                                    n.etaType = BoolType()
+                            } else invalidOp = true
+                        } else if ((ltype is BoolType) && (rtype is BoolType)) {
+                            if (n.op in listOf(EQB, NEQB, AND, OR))
+                                n.etaType = BoolType()
+                            else invalidOp = true
+                        } else if ((ltype is ArrayType) && (rtype is ArrayType))
+                            if (n.op in listOf(EQB, NEQB))
+                                n.etaType = BoolType()
+                            else invalidOp = true
+                        else invalidOp = true
+                        //if (invalidOp) throw error
+                    }
                     is Expr.FunctionCall -> TODO()
                     is Expr.Identifier -> {
                         val t = Gamma.lookup(n.name)
