@@ -1,32 +1,41 @@
 package typechecker
 
 sealed class EtaType {
+    companion object {
+        fun lub(r1 : StatementType, r2: StatementType) : StatementType {
+            if (r1 == r2) {
+                return r1
+            }
+            else {
+                if (r1 is StatementType.UnitType ||
+                    r2 is StatementType.UnitType) {
+                    return StatementType.UnitType()
+                }
+                else {
+                    return StatementType.VoidType()
+                }
+            }
+        }
+    }
     sealed class OrdinaryType : EtaType() {
         class IntType : OrdinaryType()
         class BoolType : OrdinaryType()
         class ArrayType(val t : OrdinaryType) : OrdinaryType()
     }
 
-    sealed class ExpandedType : EtaType() {
-        class Ordinary(val o : OrdinaryType) : ExpandedType()
-        class Unit : ExpandedType()
-        class Tuple(val lst : List<OrdinaryType>) : ExpandedType()
+    class ExpandedType(val lst : ArrayList<OrdinaryType>) : EtaType()
 
-        fun subType(e1 : ExpandedType, e2 : ExpandedType) {
-            when (e1) {
-                is Ordinary -> when (e2) {
-                    is Ordinary -> true
-                    is Tuple -> false
-                    is Unit -> true
-                }
-                is Tuple -> e2 is Tuple
-                is Unit -> e2 is Unit
-            }
-        }
+    sealed class StatementType : EtaType() {
+        class UnitType : StatementType()
+        class VoidType : StatementType()
     }
 
-    class Void : EtaType()
-    class VarBind (val item : OrdinaryType) : EtaType()
-    class Return(val value : ExpandedType) : EtaType()
-    class FunType (val domain : ExpandedType, val codomain : ExpandedType) : EtaType()
+
+
+    sealed class ContextType : EtaType() {
+        class VarBind (val item : OrdinaryType) : ContextType()
+        class Return(val value : ExpandedType) : ContextType()
+        class FunType (val domain : ExpandedType, val codomain : ExpandedType) : ContextType()
+    }
+
 }

@@ -1,7 +1,8 @@
 package typechecker
+import typechecker.EtaType.ContextType
 
 class Context {
-    var stack : ArrayList<MutableMap<String, EtaType>> = ArrayList()
+    var stack : ArrayList<MutableMap<String, ContextType>> = ArrayList()
     init {
         stack.add(HashMap())
     }
@@ -14,11 +15,11 @@ class Context {
         stack.removeLast()
     }
 
-    fun bind(id : String, type : EtaType) {
+    fun bind(id : String, type : ContextType) {
         stack.last()[id] = type
     }
 
-    fun lookup(id : String) : EtaType? {
+    fun lookup(id : String) : ContextType? {
         return stack.last()[id]
     }
 
