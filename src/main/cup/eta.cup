@@ -65,7 +65,7 @@ nonterminal VarDecl.RawVarDecl varDecl;
 nonterminal semi;
 nonterminal BinaryOp binop;
 nonterminal UnaryOp.Operation unop;
-nonterminal Expr arrayAccess, indexable;
+nonterminal Expr arrayAccess, indexable, arrayLiteral, arrayLiteralAccess;
 
 /* Precedences */
 precedence left OR;
@@ -191,8 +191,8 @@ expr            ::= binop:op                                       {: RESULT = o
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
                     | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
-                    | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
-                    | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}  //array literal
+                    | arrayLiteral:al                              {: RESULT = al; :}
+                    | arrayLiteralAccess:ala                       {: RESULT = ala; :}
                     | arrayAccess:aa                               {: RESULT = aa; :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
@@ -202,6 +202,11 @@ arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT 
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
                     | arrayAccess:aa                               {: RESULT = aa; :};
+arrayLiteral     ::= OPEN_BRACE exprList:el CLOSE_BRACE            {: RESULT = new Literal.ArrayLit(el); :}
+                    | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}
+                    | OPEN_BRACE CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>()); :};
+arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e); :}
+                    | arrayLiteralAccess:ala OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e); :};
 primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.IntegerToken(n.data, n.line, n.column)); }
                                                                         RESULT = new Literal.IntLit(Long.parseLong(n.data)); :}
                     | MINUS INTEGER_LITERAL:n                      {: RESULT = new Literal.IntLit(Long.parseLong("-" + n.data)); :} %prec LITMINUS
