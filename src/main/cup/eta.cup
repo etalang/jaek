@@ -177,6 +177,7 @@ arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         
 arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:} //TODO: this is a hack really bad structure
                        |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                   {: ai.getDimensions().add(0, null); RESULT = ai; :};
 arrayNonBlank      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
+                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
                        | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
 method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
 typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
