@@ -1,4 +1,3 @@
-import UltimateLexer.HeaderToken
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
@@ -92,11 +91,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 }
 
                 if (outputParse) {
-                    val fileType: HeaderToken? = when (it.extension) {
-                        "eta" -> HeaderToken.PROGRAM
-                        "eti" -> HeaderToken.INTERFACE
-                        else -> null
-                    }
                     val parsedFileName = it.nameWithoutExtension + ".parsed"
                     val parsedFile = File(diagnosticPath.toString(), parsedFileName)
                     if (parsedFile.exists() && !parsedFile.isDirectory) {
@@ -105,13 +99,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     parsedFile.createNewFile()
 
                     if (lexError == null) {
-                        val lexer = UltimateLexer(it.bufferedReader(), fileType)
-                        @Suppress("DEPRECATION") val parser = parser(lexer)
                         try {
-                            val AST = parser.parse().value
+                            val AST = ASTUtil.getAST(it.absoluteFile)
                             if (outputParse) {
                                 val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
-                                ((AST as Node).write(writer))
+                                AST.write(writer)
                                 writer.flush()
                                 writer.close()
                             }
