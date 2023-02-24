@@ -137,9 +137,10 @@ class TypeChecker {
                         typeCheck(n.stmts[i])
                         val t = n.stmts[i].etaType
                         if (i < n.stmts.size - 1 && t !is UnitType) {
-                            // throw an error
+                            // throw an error, non-unit return type detected
                         }
                     }
+                    n.etaType = n.stmts[n.stmts.size - 1].etaType
                     Gamma.leaveScope()
                 }
             }
@@ -164,7 +165,36 @@ class TypeChecker {
                 else {} // guard is not bool
             }
             is MultiAssign -> TODO()
-            is Statement.Procedure -> TODO()
+            is Statement.Procedure -> {
+                val fnType = Gamma.lookup(n.id)
+                if (fnType == null) {
+                    // error: function not bound in scope
+                }
+                else {
+                    if (fnType !is FunType) {
+                        // error: id is not bound as function
+                    }
+                    else {
+                        if (fnType.codomain.lst.size != 0) {
+                            // error: call is not a procedure
+                        }
+                        else {
+                            if (fnType.domain.lst.size != n.args.size) {
+                                // error: # of arguments mismatch
+                            }
+                            else {
+                                for (i in 0 until fnType.domain.lst.size) {
+                                    typeCheck(n.args[i])
+                                    if (n.args[i].etaType != fnType.domain.lst[i]) {
+                                        // error: argument i does not match expected type
+                                    }
+                                }
+                                n.etaType = UnitType()
+                            }
+                        }
+                    }
+                }
+            }
             is Statement.Return -> {
                 // INVARIANT: IF IT EXISTS, THE KEY "@" WILL BE BOUND TO A RETURN TYPE
 
@@ -177,10 +207,8 @@ class TypeChecker {
                 if (t is BoolType) {
                     typeCheckStmt(n.body)
                     n.etaType = UnitType()
-
                 }
-                else { // guard is not bool
-
+                else { // guard is not bool, throw error
                 }
             }
         }
