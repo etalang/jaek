@@ -45,7 +45,7 @@ sealed class EtaType {
     sealed class ContextType : EtaType() {
         class VarBind (val item : OrdinaryType) : ContextType()
         class ReturnType(val value : ExpandedType) : ContextType()
-        class FunType (val domain : ExpandedType, val codomain : ExpandedType) : ContextType()
+        class FunType (val domain : ExpandedType, val codomain : ExpandedType, var fromInterface : Boolean) : ContextType()
     }
 
 }

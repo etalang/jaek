@@ -1,5 +1,6 @@
 package typechecker
 
+import ASTUtil
 import ast.*
 import ast.BinaryOp.Operation.*
 import ast.Expr.FunctionCall.LengthFn
@@ -7,13 +8,13 @@ import ast.Literal.*
 import ast.UnaryOp.Operation.NEG
 import ast.UnaryOp.Operation.NOT
 import typechecker.EtaType.Companion.translateType
-import typechecker.EtaType.ContextType.FunType
-import typechecker.EtaType.ContextType.ReturnType
-import typechecker.EtaType.ContextType.VarBind
-import typechecker.EtaType.OrdinaryType.*
+import typechecker.EtaType.ContextType.*
 import typechecker.EtaType.ExpandedType
 import typechecker.EtaType.OrdinaryType
+import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
+import typechecker.EtaType.StatementType.VoidType
+import java.io.File
 
 
 class TypeChecker {
@@ -22,14 +23,9 @@ class TypeChecker {
     fun typeCheck(n : Node) {
         when (n) {
             is Program -> {
-                // how to deal with interfaces?
+                // add interface bindings to the program first
                 for (u in n.imports) {
-                    if (Gamma.contains(u.lib)) {
-                        // throw an error
-                    }
-                    else {
-                        Gamma.bind(u.lib, VarBind(IntType()))
-                    }
+                    typeCheck(u)
                 }
                 // first pass
                 for (defn in n.definitions) {
@@ -44,7 +40,32 @@ class TypeChecker {
                         }
                         is Method -> {
                             if (Gamma.contains(defn.id)) {
-                                // throw an error
+                                val currFunType = Gamma.lookup(defn.id)
+                                if (currFunType !is FunType) {
+                                    // blow up, should not be bound already to a non-function type
+                                }
+                                else {
+                                    if (!(currFunType.fromInterface)) {
+                                        // throw error, cannot redeclare function within program
+                                    } else {
+                                        var domainList = ArrayList<OrdinaryType>()
+                                        for (decl in defn.args) {
+                                            domainList.add(translateType(decl.type))
+                                        }
+                                        var codomainList = ArrayList<OrdinaryType>()
+                                        for (t in defn.returnTypes) {
+                                            codomainList.add(translateType(t))
+                                        }
+                                        if (currFunType.domain.lst == domainList &&
+                                            currFunType.codomain.lst == codomainList
+                                        ) {
+                                            currFunType.fromInterface = false
+                                            Gamma.bind(defn.id, currFunType)
+                                        } else {
+                                            // throw an error
+                                        }
+                                    }
+                                }
                             }
                             else {
                                 val inputTypes = ArrayList<OrdinaryType>()
@@ -55,7 +76,7 @@ class TypeChecker {
                                 for (t in defn.returnTypes) {
                                     outputTypes.add(translateType(t))
                                 }
-                                Gamma.bind(defn.id, FunType(ExpandedType(inputTypes), ExpandedType(outputTypes)))
+                                Gamma.bind(defn.id, FunType(ExpandedType(inputTypes), ExpandedType(outputTypes), false))
                             }
                         }
                     }
@@ -84,7 +105,7 @@ class TypeChecker {
                         is Method -> {
                             // check if names are not bound in global scope
                             val argNames = ArrayList<String>()
-
+                            // TODO: fill in gaps here
                             // add bindings
 
                             // INVARIANT: "@" is the name of the return context varaiable
@@ -96,37 +117,50 @@ class TypeChecker {
                         }
                     }
                 }
-
-
             }
             is Statement -> { typeCheckStmt(n) }
-            is AssignTarget -> {
-                when (n) {
-                    is AssignTarget.DeclAssign -> TODO()
-                    is AssignTarget.ExprAssign -> TODO()
-                    is AssignTarget.Underscore -> TODO()
-                }
-            }
-            is Definition -> {
-                when (n) {
-                    is GlobalDecl -> {
-
+            is Interface -> {
+                for (method in n.methodHeaders) {
+                    var domainList = ArrayList<OrdinaryType>()
+                    for (decl in method.args) {
+                        domainList.add(translateType(decl.type))
                     }
-                    is Method -> TODO()
+                    var codomainList = ArrayList<OrdinaryType>()
+                    for (t in method.returnTypes){
+                        codomainList.add(translateType(t))
+                    }
+                    val currFunType = FunType(ExpandedType(domainList), ExpandedType(codomainList), true)
+                    if (Gamma.contains(method.id) ) {
+                        if (Gamma.lookup(method.id) != currFunType) {
+                            // error: mismatch in type of function <method.id> among interfaces/programs
+                        }
+                    }
+                    else {
+                        Gamma.bind(method.id, currFunType)
+                    }
+                }
+
+            }
+            is Expr -> typeCheckExpr(n)
+            is Use -> {
+                val filepath = File(System.getProperty("user.dir"), n.lib + ".eti")
+                val interfaceAST = ASTUtil.getAST(filepath)
+                if (interfaceAST is Interface)
+                    typeCheck(interfaceAST)
+                else {
+                    // the interface is not an interface file
                 }
             }
-            is Interface -> TODO()
-            is Expr -> typeCheckExpr(n)
-            is Type.Array -> TODO()
-            is Primitive.BOOL -> TODO()
-            is Primitive.INT -> TODO()
-            is Use -> TODO()
+            else -> {
+                // AssignTarget case -> do nothing, should never be typechecked
+                // Type nodes -> should never actually be checked, only referenced and read
+                // Definition -> handled at the top level in Program with the multiple passes
+            }
         }
     }
 
     fun typeCheckStmt(n:Statement) {
         when (n) {
-            is Statement.ArrayInit -> TODO()
             is Statement.Block -> {
                 if (n.stmts.isEmpty()) {
                     n.etaType = UnitType()
@@ -164,7 +198,84 @@ class TypeChecker {
                 }
                 else {} // guard is not bool
             }
-            is MultiAssign -> TODO()
+            is MultiAssign -> {
+                if (n.targets.size != n.vals.size) {
+                    // error: # of assignment targets does not match # of assignments
+                }
+                else {
+                    if (n.targets.size == 1) { // single assignment rules
+                        val target = n.targets.first()
+                        when (target) {
+                            is AssignTarget.DeclAssign -> { // VarInit rule
+                                if (Gamma.contains(target.decl.id)) {
+                                    // error: wtf this is shadowing
+                                }
+                                else {
+                                    typeCheck(n.vals.first())
+                                    val t = n.vals.first().etaType
+                                    if (t == null || t !is OrdinaryType) {
+                                        // error: should be unreachable, invalid var type
+                                    }
+                                    else {
+                                        if (t != translateType(target.decl.type)) {
+                                            // error: type mismatch for assignment
+                                        }
+                                        Gamma.bind(target.decl.id, VarBind(t))
+                                        n.etaType = UnitType()
+                                    }
+                                }
+                            }
+                            is AssignTarget.ExprAssign -> {
+                                typeCheck(n.vals.first())
+                                val t = n.vals.first().etaType
+                                when (target.target) {
+                                    is Expr.ArrayAccess -> { // ArrAssign rule
+                                        typeCheck(target.target.arr)
+                                        typeCheck(target.target.idx)
+                                        val expectedType = target.target.arr.etaType
+                                        if (expectedType !is ArrayType) {
+                                            // throw error, only arrays indexable
+                                        }
+                                        else if (target.target.idx.etaType !is IntType){
+                                            // throw error, indices must be integers
+                                        }
+                                        else {
+                                            val expected = expectedType.t
+                                            if (t != expected) {
+                                                // error: unexpected type of expression
+                                            }
+                                            n.etaType = UnitType()
+
+                                        }
+                                    }
+                                    is Expr.Identifier -> { // Assign rule
+                                        val varType = Gamma.lookup(target.target.name)
+                                        if (varType == null || varType !is VarBind) {
+                                            // error: wtf the name you want is not a variable
+                                        }
+                                        else {
+                                            val expected = varType.item
+                                            if (t != expected) {
+                                                // error: mismatch expression type to var type
+                                            }
+                                            n.etaType = UnitType()
+                                        }
+                                    }
+                                    else -> {
+                                        // error: wtf this is not assignable
+                                    }
+                                }
+                            }
+                            is AssignTarget.Underscore -> {
+                                // error - underscore not permitted in single assignment
+                            }
+                        }
+                    }
+                    else { // multiple case
+
+                    }
+                }
+            }
             is Statement.Procedure -> {
                 val fnType = Gamma.lookup(n.id)
                 if (fnType == null) {
@@ -197,10 +308,43 @@ class TypeChecker {
             }
             is Statement.Return -> {
                 // INVARIANT: IF IT EXISTS, THE KEY "@" WILL BE BOUND TO A RETURN TYPE
-
+                val retType = Gamma.lookup("@")
+                if (retType == null) {
+                    // throw error, return type did not make it into the context??
+                }
+                else if (retType !is ReturnType) {
+                    // throw error, some weird shit happened in binding and this should be unreachable
+                }
+                else {
+                    if (retType.value.lst.size != n.args.size){
+                        // error: length of return argument mismatch
+                    }
+                    for (i in 0 until n.args.size) {
+                        typeCheck(n.args[i])
+                        if (retType.value.lst[i] != n.args[i].etaType){
+                            // error: type mismatch on returned value i
+                        }
+                    }
+                    n.etaType = VoidType()
+                }
             }
-            is VarDecl.InitArr -> TODO()
-            is VarDecl.RawVarDecl -> TODO()
+            is VarDecl.InitArr -> { // ArrayDecl
+                if (Gamma.contains(n.id)) {
+                    // error: shadowing, already have name in scope
+                }
+                // TODO: more hypothesis checking + well-formedness of expression
+                Gamma.bind(n.id, VarBind(ArrayType(UnknownType())))
+                n.etaType = UnitType()
+            }
+            is VarDecl.RawVarDecl -> { // VarDecl
+                if (Gamma.contains(n.id)) {
+                    // error: shadowing, already have name in scope
+                }
+                else {
+                    Gamma.bind(n.id, VarBind(translateType(n.type)))
+                    n.etaType = UnitType()
+                }
+            }
             is Statement.While -> {
                 typeCheck(n.guard)
                 val t = n.guard.etaType
@@ -210,6 +354,9 @@ class TypeChecker {
                 }
                 else { // guard is not bool, throw error
                 }
+            }
+            else -> {
+                // ArrayInit - never checked, only referenced as a part of Assign/MultiAssign rules
             }
         }
     }
@@ -331,7 +478,7 @@ class TypeChecker {
 
             is Literal -> {
                 when (n) {
-                    is ArrayLit -> { // TODO: HOW TO RESOLVE EMPTY ARRAYS?
+                    is ArrayLit -> {
                         val typeList = ArrayList<EtaType?>()
                         for (e in n.list) {
                             typeCheck(e)
