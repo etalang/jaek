@@ -2,6 +2,7 @@ package typechecker
 import typechecker.EtaType.ContextType
 
 class Context {
+    /** INVARIANT: "@" is always the name of the return variable. */
     var stack : ArrayList<MutableMap<String, ContextType>> = ArrayList()
     init {
         stack.add(HashMap())
@@ -20,7 +21,17 @@ class Context {
     }
 
     fun lookup(id : String) : ContextType? {
-        return stack.last()[id]
+        for (i in stack.size - 1 downTo 0) {
+            val type = stack[i][id]
+            if (type != null) {
+                return type
+            }
+        }
+        return null
+    }
+
+    fun contains(id: String): Boolean {
+        return (lookup(id) != null)
     }
 
 

@@ -6,9 +6,13 @@ import ast.Expr.FunctionCall.LengthFn
 import ast.Literal.*
 import ast.UnaryOp.Operation.NEG
 import ast.UnaryOp.Operation.NOT
+import typechecker.EtaType.Companion.translateType
 import typechecker.EtaType.ContextType.FunType
+import typechecker.EtaType.ContextType.ReturnType
 import typechecker.EtaType.ContextType.VarBind
 import typechecker.EtaType.OrdinaryType.*
+import typechecker.EtaType.ExpandedType
+import typechecker.EtaType.OrdinaryType
 import typechecker.EtaType.StatementType.UnitType
 
 
@@ -17,10 +21,85 @@ class TypeChecker {
 
     fun typeCheck(n : Node) {
         when (n) {
-            is Program -> { // two passes here
+            is Program -> {
+                // how to deal with interfaces?
+                for (u in n.imports) {
+                    if (Gamma.contains(u.lib)) {
+                        // throw an error
+                    }
+                    else {
+                        Gamma.bind(u.lib, VarBind(IntType()))
+                    }
+                }
+                // first pass
+                for (defn in n.definitions) {
+                    when (defn) {
+                        is GlobalDecl -> {
+                            if (Gamma.contains(defn.id)) {
+                                // throw an error
+                            }
+                            else {
+                                Gamma.bind(defn.id, VarBind(translateType(defn.type)))
+                            }
+                        }
+                        is Method -> {
+                            if (Gamma.contains(defn.id)) {
+                                // throw an error
+                            }
+                            else {
+                                val inputTypes = ArrayList<OrdinaryType>()
+                                for (t in defn.args) {
+                                    inputTypes.add(translateType(t.type))
+                                }
+                                val outputTypes = ArrayList<OrdinaryType>()
+                                for (t in defn.returnTypes) {
+                                    outputTypes.add(translateType(t))
+                                }
+                                Gamma.bind(defn.id, FunType(ExpandedType(inputTypes), ExpandedType(outputTypes)))
+                            }
+                        }
+                    }
+                }
+
+                // second pass
+                for (defn in n.definitions) {
+                    when (defn) {
+                        is GlobalDecl -> {
+                            val vartype = Gamma.lookup(defn.id)
+                            if (vartype == null) {
+                                // blow up, should be unreachable
+                            }
+                            else {
+                                if (defn.value != null) {
+                                    typeCheck(defn.value)
+                                    val t = defn.value.etaType
+                                    if (t != vartype) {
+                                        // blowup, type mismatch
+                                    }
+                                    // already enforced that it has to be a literal
+                                    // OK
+                                }
+                            }
+                        }
+                        is Method -> {
+                            // check if names are not bound in global scope
+                            val argNames = ArrayList<String>()
+
+                            // add bindings
+
+                            // INVARIANT: "@" is the name of the return context varaiable
+                            val convertedReturns = ArrayList<OrdinaryType>()
+                            for (t in defn.returnTypes) {
+                                convertedReturns.add(translateType(t))
+                            }
+                            Gamma.bind("@", ReturnType(ExpandedType(convertedReturns)))
+                        }
+                    }
+                }
+
 
             }
-            is Statement -> { Gamma = typeCheckStmt(n, Gamma) }
+            is Statement -> { typeCheckStmt(n) }
             is AssignTarget -> {
                 when (n) {
                     is AssignTarget.DeclAssign -> TODO()
@@ -30,7 +109,9 @@ class TypeChecker {
             }
             is Definition -> {
                 when (n) {
-                    is GlobalDecl -> TODO()
+                    is GlobalDecl -> {
+
+                    }
                     is Method -> TODO()
                 }
             }
@@ -43,29 +124,35 @@ class TypeChecker {
         }
     }
 
-    fun typeCheckStmt(n:Statement, C:Context): Context {
+    fun typeCheckStmt(n:Statement) {
         when (n) {
             is Statement.ArrayInit -> TODO()
             is Statement.Block -> {
                 if (n.stmts.isEmpty()) {
                     n.etaType = UnitType()
-                    return C
                 }
                 else {
-
+                    Gamma.enterScope()
+                    for (i in 0 until n.stmts.size) {
+                        typeCheck(n.stmts[i])
+                        val t = n.stmts[i].etaType
+                        if (i < n.stmts.size - 1 && t !is UnitType) {
+                            // throw an error
+                        }
+                    }
+                    Gamma.leaveScope()
                 }
-
             }
             is Statement.If -> {
                 typeCheck(n.guard)
                 val t = n.guard.etaType
                 if (t is BoolType) {
-                    typeCheckStmt(n.thenBlock, C)
+                    typeCheckStmt(n.thenBlock)
                     if (n.elseBlock == null) { // no else block? (IF)
                         n.etaType = UnitType()
                     }
                     else {
-                        typeCheckStmt(n.elseBlock, C)
+                        typeCheckStmt(n.elseBlock)
                         val r1 = n.thenBlock.etaType
                         val r2 = n.elseBlock.etaType
                         if (r1 is EtaType.StatementType && r2 is EtaType.StatementType) {
@@ -73,29 +160,30 @@ class TypeChecker {
                         }
                         else {} // throw error, statement types are not returning properly
                     }
-                    return C
                 }
                 else {} // guard is not bool
             }
             is MultiAssign -> TODO()
             is Statement.Procedure -> TODO()
-            is Statement.Return -> TODO()
+            is Statement.Return -> {
+                // INVARIANT: IF IT EXISTS, THE KEY "@" WILL BE BOUND TO A RETURN TYPE
+
+            }
             is VarDecl.InitArr -> TODO()
             is VarDecl.RawVarDecl -> TODO()
             is Statement.While -> {
                 typeCheck(n.guard)
                 val t = n.guard.etaType
                 if (t is BoolType) {
-                    typeCheckStmt(n.body, C)
+                    typeCheckStmt(n.body)
                     n.etaType = UnitType()
-                    return C
+
                 }
                 else { // guard is not bool
 
                 }
             }
         }
-        return C
     }
 
     fun typeCheckExpr(n:Expr) {
@@ -140,18 +228,28 @@ class TypeChecker {
                         } else {
                         } // throw error, expecting bool, got smth else
                     }
-                    is ArrayType -> {
+                    is ArrayType -> { // precondition: ArrayTypes can only be formed from OrdinaryTypes
                         val leftBase = ltype.t
                         if (rtype is ArrayType) {
                             val rightBase = rtype.t
-                            if (leftBase == rightBase) {
+                            if (leftBase == rightBase || leftBase is UnknownType || rightBase is UnknownType) {
                                 if (n.op in listOf(EQB, NEQB))
                                     n.etaType = BoolType()
                                 else if (n.op == PLUS) {
-                                    n.etaType = ArrayType(ltype)
-                                } else {
+                                    if (leftBase is UnknownType && rightBase !is UnknownType) {
+                                        n.etaType = ArrayType(rtype)
+                                    }
+                                    else if (leftBase is UnknownType && rightBase is UnknownType) {
+                                        n.etaType = ArrayType(UnknownType())
+                                    }
+                                    else {
+                                        n.etaType = ArrayType(ltype)
+                                    }
+                                }
+                                else {
                                 } // throw error, unsupported operator
-                            } else {
+                            }
+                            else {
                             } // throw error, array type mismatch
                         } else {
                         } // throw error, expecting t[], got smth else
@@ -179,7 +277,7 @@ class TypeChecker {
                     } else {
                         //number of arguments mismatch
                     }
-                    n.etaType = ft.codomain
+                    n.etaType = ft.codomain.lst[0] // first (and only) type in list
                 } else {
                     // function does not exist
                 }
@@ -212,8 +310,23 @@ class TypeChecker {
                             val et = e.etaType
                             typeList.add(et)
                         }
-                        n.etaType = ArrayType(IntType())
-                        // definitely incorrect but at least it will have something
+                        if (typeList.size == 0){
+                            n.etaType = ArrayType(UnknownType())
+                        }
+                        else {
+                            val t = typeList[0]
+                            if (t is OrdinaryType) {
+                                for (i in 1 until typeList.size) {
+                                    if (typeList[i] != t) {
+                                        // throw a semantic error, not all types the same
+                                    }
+                                }
+                                n.etaType = ArrayType(t)
+                            }
+                            else {
+                                // t is not ordinary??? blow up
+                            }
+                        }
                     }
                     is BoolLit -> n.etaType = BoolType()
                     is CharLit -> n.etaType = IntType()
