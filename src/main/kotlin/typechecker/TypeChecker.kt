@@ -143,7 +143,7 @@ class TypeChecker {
             }
             is Expr -> typeCheckExpr(n)
             is Use -> {
-                val filepath = File(System.getProperty("user.dir"), n.lib + ".eti")
+                val filepath = File(System.getProperty("user.dir"), n.lib + ".eti") // needs to use library path
                 val interfaceAST = ASTUtil.getAST(filepath)
                 if (interfaceAST is Interface)
                     typeCheck(interfaceAST)

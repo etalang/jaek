@@ -16,7 +16,11 @@ public class LexicalError extends Exception {
         return lineNum + ":" + col + " error:" + details();
     }
 
-    private String details() {
+    public int getLine() {return lineNum;}
+    public int getCol() {return col;}
+
+
+    public String details() {
         switch (errorType) {
             case BadString:
                 return "Non-terminating string or multiline string";
