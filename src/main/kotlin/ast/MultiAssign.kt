@@ -16,11 +16,7 @@ class MultiAssign(
         } else {
             targets.forEach{target -> target.write(printer) }
         }
-        if (vals.size > 1){
-            printList(printer, vals)
-        } else {
-            vals.forEach{value -> value.write(printer)}
-        }
+        vals.forEach{value -> value.write(printer)}
 
         printer.endList()
     }
