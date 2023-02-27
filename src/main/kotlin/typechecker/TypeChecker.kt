@@ -15,6 +15,7 @@ import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
 import java.io.File
+import java.io.FileNotFoundException
 
 
 class TypeChecker {
@@ -167,11 +168,16 @@ class TypeChecker {
             is Expr -> typeCheckExpr(n)
             is Use -> {
                 val filepath = File(System.getProperty("user.dir"), n.lib + ".eti") // needs to use library path
-                val interfaceAST = ASTUtil.getAST(filepath)
-                if (interfaceAST is Interface)
-                    typeCheck(interfaceAST)
-                else {
-                    throw SemanticError(0, 0, "Could not import interface ${n.lib} AST")
+                try {
+                    val interfaceAST = ASTUtil.getAST(filepath)
+                    if (interfaceAST is Interface)
+                        typeCheck(interfaceAST)
+                    else {
+                        throw SemanticError(0, 0, "Could not import interface ${n.lib} AST")
+                    }
+                } catch (e : FileNotFoundException) {
+                    throw SemanticError(0, 0, "Could not find interface ${n.lib} file")
+
                 }
             }
             else -> {
