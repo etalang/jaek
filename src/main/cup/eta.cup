@@ -54,14 +54,13 @@ nonterminal Statement elseOptional; // might have to add empty list in empty cas
 nonterminal Statement.Procedure procedureCall;
 nonterminal Expr.FunctionCall functionCall;
 nonterminal MultiAssign multiAssign;
-nonterminal Statement.ArrayInit arrayInit, arrayNonBlank;
+nonterminal Statement.ArrayInit arrayInit;
 nonterminal VarDecl.InitArr arrayInitStatement;
 nonterminal ArrayList<Expr> exprList;
 nonterminal AssignTarget assignable;
 nonterminal ArrayList<AssignTarget> assignables;
 nonterminal VarDecl.RawVarDecl methodArg;
 nonterminal VarDecl.RawVarDecl varDecl;
-//nonterminal varDeclOrArrayInit;
 nonterminal semi;
 nonterminal BinaryOp binop;
 nonterminal UnaryOp.Operation unop;
@@ -173,15 +172,13 @@ multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = n
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
-arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                             {: RESULT = new VarDecl.InitArr(id, ar); :};
-arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:} //TODO: this is a hack really bad structure
-                       |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                   {: ai.getDimensions().add(0, null); RESULT = ai; :};
-arrayNonBlank      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
-                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
-                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
-method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
-typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
-                    | typelst:tl COMMA type:t                                       {: tl.add(t); RESULT = tl;:}; //LR
+arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         {: RESULT = new VarDecl.InitArr(id, ar); :};
+arrayInit      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
+                       | arrayInit:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
+                       | arrayInit:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
+method          ::= methodHeader:am returnableBlock:b                           {: am.setBody(b); RESULT = am; :};
+typelst         ::= type:t                                                      {: RESULT = ParseUtil.singleton(t);:}
+                    | typelst:tl COMMA type:t                                   {: tl.add(t); RESULT = tl;:}; //LR
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
