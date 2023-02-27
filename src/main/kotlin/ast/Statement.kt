@@ -33,18 +33,6 @@ sealed class Statement : Node() {
         }
     }
 
-//    // probably could change typing to make this check better
-//    sealed class DeclareInit {
-//        class Declare(val decl : VarDecl) : DeclareInit()
-//        class Init(val init: ArrayInit) : DeclareInit()
-//    }
-//    class DeclareInits(val declOrInit : List<DeclareInit>) : Statement()
-    /* this is handled by MultiAssignBuilder, I think */
-//    class Assignment(val id: Expr, val expr: Expr) : Statement() // changed this to be an expression, i.e. a[1] for instance
-//
-//    class DeclareAssign(val decl: VarDecl, val expr: Expr) : Statement() //not entirely sure if I love this
-//    // changed the RHS to be an expression instead
-
     class Block(val stmts: List<Statement>) : Statement() {
         override fun write(printer: SExpPrinter) {
             printer.startList()
