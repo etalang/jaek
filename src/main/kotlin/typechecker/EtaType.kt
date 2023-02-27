@@ -32,6 +32,24 @@ sealed class EtaType {
         class BoolType : OrdinaryType()
         class ArrayType(val t : OrdinaryType) : OrdinaryType()
         class UnknownType: OrdinaryType() // for empty arrays, underscores
+
+        override fun equals(other: Any?): Boolean {
+            when (other) {
+                is IntType -> {
+                    if (this is IntType || this is UnknownType) { return true }
+                }
+                is BoolType -> {
+                    if (this is BoolType || this is UnknownType) { return true }
+                }
+                is ArrayType -> {
+                    if (this !is ArrayType) { return false }
+                    else return (this.t == other.t)
+                }
+                is UnknownType -> return true
+                else -> return false
+            }
+            return false
+        }
     }
 
     class ExpandedType(val lst: ArrayList<OrdinaryType>) : EtaType()
@@ -47,5 +65,4 @@ sealed class EtaType {
         class ReturnType(val value : ExpandedType) : ContextType()
         class FunType (val domain : ExpandedType, val codomain : ExpandedType, var fromInterface : Boolean) : ContextType()
     }
-
 }
