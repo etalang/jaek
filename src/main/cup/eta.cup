@@ -96,7 +96,7 @@ use             ::= USE IDENTIFIER:id semi                      {: RESULT = new 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
 allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :} //could be sketch
-                    |                                           {: RESULT = new ArrayList<>(); :};
+                    | definition:d                              {: RESULT = ParseUtil.singleton(d); :};
 definition      ::= method:m                                    {: RESULT = m; :}
                     | globalDecl:dc semi                        {: RESULT = dc; :};
 
@@ -183,7 +183,7 @@ typelst         ::= type:t                                                      
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
 expr            ::= binop:op                                       {: RESULT = op; :}
-                    | primitiveLiteral:pl                          {: RESULT = pl; :}
+                    | primitiveLiteral:pl                          {: RESULT = pl; :} %prec LITMINUS
                     | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :} %prec UMINUS
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
