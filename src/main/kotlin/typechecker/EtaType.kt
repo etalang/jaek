@@ -52,11 +52,38 @@ sealed class EtaType {
         }
     }
 
-    class ExpandedType(val lst: ArrayList<OrdinaryType>) : EtaType()
+    class ExpandedType(val lst: ArrayList<OrdinaryType>) : EtaType() {
+        override fun equals(other: Any?): Boolean {
+            if (other !is ExpandedType) return false
+            else {
+                if (this.lst.size != other.lst.size) {
+                    return false
+                }
+                else {
+                    for (i in 0 until this.lst.size) {
+                        if (this.lst[i] != other.lst[i]) {
+                            return false
+                        }
+                    }
+                    return true
+                }
+            }
+        }
+    }
 
     sealed class StatementType : EtaType() {
         class UnitType : StatementType()
         class VoidType : StatementType()
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is StatementType) return false
+            else {
+                when (other) {
+                    is UnitType -> return (this is UnitType)
+                    is VoidType -> return (this is VoidType)
+                }
+            }
+        }
     }
 
 
@@ -64,5 +91,18 @@ sealed class EtaType {
         class VarBind (val item : OrdinaryType) : ContextType()
         class ReturnType(val value : ExpandedType) : ContextType()
         class FunType (val domain : ExpandedType, val codomain : ExpandedType, var fromInterface : Boolean) : ContextType()
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is ContextType) return false
+            else {
+                when (other) {
+                    is VarBind -> return (this is VarBind && this.item == other.item)
+                    is ReturnType -> return (this is ReturnType && this.value == other.value)
+                    is FunType -> return (this is FunType && this.domain == other.domain && this.codomain == other.codomain)
+                }
+            }
+        }
     }
+
+
 }

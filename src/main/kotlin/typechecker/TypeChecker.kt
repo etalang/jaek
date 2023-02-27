@@ -103,7 +103,7 @@ class TypeChecker {
                                         }
                                     }
                                     // already enforced that it has to be a literal
-                                    // OK
+                                    // OK, PASS THROUGH
                                 }
                             }
                         }
@@ -135,7 +135,7 @@ class TypeChecker {
                                         throw SemanticError(0, 0, "function body does not return")
                                     }
                                 }
-                                // OK
+                                // OK, PASS THROUGH
                             }
                         }
                     }
@@ -155,7 +155,7 @@ class TypeChecker {
                     val currFunType = FunType(ExpandedType(domainList), ExpandedType(codomainList), true)
                     if (Gamma.contains(method.id) ) {
                         if (Gamma.lookup(method.id) != currFunType) {
-                            // error: mismatch in type of function <method.id> among interfaces/programs
+                            throw SemanticError(0, 0, "Mismatch in type of function ${method.id} among interfaces/programs")
                         }
                     }
                     else {
@@ -171,11 +171,11 @@ class TypeChecker {
                 if (interfaceAST is Interface)
                     typeCheck(interfaceAST)
                 else {
-                    throw SemanticError(0, 0, "")
-                    // the interface is not an interface file
+                    throw SemanticError(0, 0, "Could not import interface ${n.lib} AST")
                 }
             }
             else -> {
+                throw SemanticError(0,0,"Unreachable, calling typeCheck on Node that should not be type-checked explicitly")
                 // AssignTarget case -> do nothing, should never be typechecked from here
                 // Type nodes -> should never actually be checked, only referenced and read
                 // Definition -> handled at the top level in Program with the multiple passes
@@ -196,11 +196,11 @@ class TypeChecker {
                     typeCheck(n.arrayAssign.arr)
                     typeCheck(n.arrayAssign.idx)
                     if (n.arrayAssign.arr.etaType !is ArrayType) {
-                        throw SemanticError(0, 0, "indexed expression is not an array")
+                        throw SemanticError(0, 0, "Indexed expression is not an array")
                     }
                     else {
                         if (n.arrayAssign.idx.etaType !is IntType) {
-                            throw SemanticError(0, 0, "indexing expression is not an integer")
+                            throw SemanticError(0, 0, "Indexing expression is not an integer")
                         }
                         else {
                             n.etaType = (n.arrayAssign.arr.etaType as ArrayType).t
@@ -209,7 +209,7 @@ class TypeChecker {
                 }
                 is AssignTarget.DeclAssign -> {
                     if (Gamma.contains(n.decl.id) || gammai.containsKey(n.decl.id)) {
-                        throw SemanticError(0, 0, "shadowing old variable in multiassignment")
+                        throw SemanticError(0, 0, "Shadowing old variable ${n.decl.id} in multiassignment")
                     }
                     val t = translateType(n.decl.type)
                     n.etaType = t
@@ -218,7 +218,7 @@ class TypeChecker {
                 is AssignTarget.IdAssign -> {
                     val t = Gamma.lookup(n.idAssign.name)
                     if (t !is VarBind) {
-                        throw SemanticError(0,0,"assignment target not a variable")
+                        throw SemanticError(0,0,"Assignment target not a variable")
                     }
                     else {
                         n.etaType = t.item
@@ -242,7 +242,7 @@ class TypeChecker {
                         typeCheck(n.stmts[i])
                         val t = n.stmts[i].etaType
                         if (i < n.stmts.size - 1 && t !is UnitType) {
-                            // throw an error, non-unit return type detected
+                            throw SemanticError(0, 0, "Function block should have void type")
                         }
                     }
                     n.etaType = n.stmts[n.stmts.size - 1].etaType
@@ -264,12 +264,14 @@ class TypeChecker {
                         if (r1 is StatementType && r2 is StatementType) {
                             n.etaType = EtaType.lub(r1, r2)
                         }
-                        else {} // throw error, statement types are not returning properly
+                        else {
+                            throw SemanticError(0,0,"One of these if/else blocks is not a StatementType")
+                        }
                     }
                 }
                 else {
                     throw SemanticError(0,0,"If statement guard must be type boolean")
-                } // guard is not bool
+                }
             }
             is MultiAssign -> {
                 if (n.targets.size != n.vals.size) {
@@ -328,11 +330,11 @@ class TypeChecker {
                                     typeCheck(n.vals.first())
                                     val t = n.vals.first().etaType
                                     if (t == null || t !is OrdinaryType) {
-                                        // error: should be unreachable, invalid var type
+                                        throw SemanticError(0,0,"Unreachable, variable type is not valid")
                                     }
                                     else {
                                         if (t != translateType(target.decl.type)) {
-                                            // error: type mismatch for assignment
+                                            throw SemanticError(0,0,"Assigned expression type does not match expected type ${target.decl.type}")
                                         }
                                         Gamma.bind(target.decl.id, VarBind(t))
                                         n.etaType = UnitType()
@@ -346,15 +348,15 @@ class TypeChecker {
                                 typeCheck(target.arrayAssign.idx)
                                 val expectedType = target.arrayAssign.arr.etaType
                                 if (expectedType !is ArrayType) {
-                                    // throw error, only arrays indexable
+                                    throw SemanticError(0,0,"Type of indexed expression is not an array")
                                 }
                                 else if (target.arrayAssign.idx.etaType !is IntType){
-                                    // throw error, indices must be integers
+                                    throw SemanticError(0,0,"Type of indexing expression is not an integer")
                                 }
                                 else {
                                     val expected = expectedType.t
                                     if (t != expected) {
-                                        // error: unexpected type of expression
+                                        throw SemanticError(0,0,"Cannot assign to array of type ${expected}[]")
                                     }
                                     n.etaType = UnitType()
 
@@ -365,18 +367,18 @@ class TypeChecker {
                                 val t = n.vals.first().etaType
                                 val varType = Gamma.lookup(target.idAssign.name)
                                 if (varType == null || varType !is VarBind) {
-                                    // error: wtf the name you want is not a variable
+                                    throw SemanticError(0,0,"Cannot assign to non-assignable type $varType")
                                 }
                                 else {
                                     val expected = varType.item
                                     if (t != expected) {
-                                        // error: mismatch expression type to var type
+                                        throw SemanticError(0,0, "Cannot assign type $t to variable of type $expected")
                                     }
                                     n.etaType = UnitType()
                                 }
                             }
                             is AssignTarget.Underscore -> {
-                                // error - underscore not permitted in single assignment
+                                throw SemanticError(0,0,"Underscore not permitted in single assignment")
                             }
                         }
                     }
@@ -399,25 +401,27 @@ class TypeChecker {
             is Statement.Procedure -> {
                 val fnType = Gamma.lookup(n.id)
                 if (fnType == null) {
-                    // error: function not bound in scope
+                    throw SemanticError(0,0,"Name ${n.id} of procedure is not bound in scope")
                 }
                 else {
                     if (fnType !is FunType) {
-                        // error: id is not bound as function
+                        throw SemanticError(0,0,"Name ${n.id} is not bound as a procedure")
                     }
                     else {
                         if (fnType.codomain.lst.size != 0) {
-                            // error: call is not a procedure
+                            throw SemanticError(0,0,"Procedures may not return any values")
                         }
                         else {
                             if (fnType.domain.lst.size != n.args.size) {
-                                // error: # of arguments mismatch
+                                throw SemanticError(0,0,"Procedure ${n.id} expected ${fnType.domain.lst.size} arguments," +
+                                        " received ${n.args.size}")
                             }
                             else {
                                 for (i in 0 until fnType.domain.lst.size) {
                                     typeCheck(n.args[i])
                                     if (n.args[i].etaType != fnType.domain.lst[i]) {
-                                        // error: argument i does not match expected type
+                                        throw SemanticError(0,0,"Argument at position $i does not match procedure's expected type")
+
                                     }
                                 }
                                 n.etaType = UnitType()
@@ -430,19 +434,21 @@ class TypeChecker {
                 // INVARIANT: IF IT EXISTS, THE KEY "@" WILL BE BOUND TO A RETURN TYPE
                 val retType = Gamma.lookup("@")
                 if (retType == null) {
-                    // throw error, return type did not make it into the context??
+                    throw SemanticError(0,0,"No return type found for function (not even unit!)")
                 }
                 else if (retType !is ReturnType) {
-                    // throw error, some weird shit happened in binding and this should be unreachable
+                    throw SemanticError(0,0,"The return is not of expected return type")
                 }
                 else {
                     if (retType.value.lst.size != n.args.size){
-                        // error: length of return argument mismatch
+                        throw SemanticError(0,0,"Expected return of size ${retType.value.lst.size}, but returned" +
+                                "only ${n.args.size}")
                     }
                     for (i in 0 until n.args.size) {
                         typeCheck(n.args[i])
                         if (retType.value.lst[i] != n.args[i].etaType){
-                            // error: type mismatch on returned value i
+                            throw SemanticError(0,0,"Return type expected ${n.args[i].etaType}" +
+                                    " at position $i, actual return was ${retType.value.lst[i]}")
                         }
                     }
                     n.etaType = VoidType()
@@ -450,7 +456,7 @@ class TypeChecker {
             }
             is VarDecl.InitArr -> { // ArrayDecl
                 if (Gamma.contains(n.id)) {
-                    // error: shadowing, already have name in scope
+                    throw SemanticError(0,0,"Identifier ${n.id} already exists")
                 }
                 val t = translateType(n.arrInit.type)
                 if (t !is IntType && t !is BoolType) {
@@ -486,7 +492,7 @@ class TypeChecker {
             }
             is VarDecl.RawVarDecl -> { // VarDecl
                 if (Gamma.contains(n.id)) {
-                    // error: shadowing, already have name in scope
+                    throw SemanticError(0,0,"Identifier ${n.id} already exists")
                 }
                 else {
                     Gamma.bind(n.id, VarBind(translateType(n.type)))
@@ -505,7 +511,7 @@ class TypeChecker {
                 }
             }
             else -> {
-                // ArrayInit - never checked, only referenced as a part of Assign/MultiAssign rules
+                throw SemanticError(0,0,"Unreachable, calling typeCheckStmt on Statement node that should not be type-checked explicitly")
             }
         }
     }
@@ -528,7 +534,7 @@ class TypeChecker {
                 }
                 else {
                     throw SemanticError(0,0,"Expression is not indexable")
-                } // arr is not indexable
+                }
             }
             is BinaryOp -> {
                 typeCheck(n.left)
