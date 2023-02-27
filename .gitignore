@@ -1,4 +1,5 @@
 src/main/java/JFlexLexer.java
+src/main/java/parser.java
 
 # Compiled class file
 *.class
