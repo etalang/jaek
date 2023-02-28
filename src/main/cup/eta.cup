@@ -35,6 +35,7 @@ nonterminal Use use;
 nonterminal ArrayList<Definition> allDefinitions;
 nonterminal Definition definition;
 nonterminal Method methodHeader;
+nonterminal ArrayList<Method> methodHeaders;
 nonterminal Method method;
 nonterminal GlobalDecl globalDecl;
 nonterminal ArrayList<Type> typelst;
@@ -83,8 +84,7 @@ precedence left OPEN_PAREN, CLOSE_PAREN;
 start with file;
 file            ::= INTERFACE interface:It                      {: RESULT = It; :}
                     | PROGRAM program:P                         {: RESULT = P;  :};
-interface       ::= interface:it methodHeader:am                {: ArrayList<Method> ml = it.getMethodHeaders(); ml.add(am); RESULT = new Interface(ml); :}
-                    |                                           {: RESULT = new Interface(new ArrayList<>());:};
+interface       ::= imports:It methodHeaders:Mh                 {: RESULT = new Interface(It, Mh); :};
 program         ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -107,6 +107,8 @@ globalDecl      ::= IDENTIFIER:id COLON type:t                                  
 globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :};
 
 /* =============> [Global] Methods <============= */
+methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
+                    | methodHeader:am                                                        {: RESULT = ParseUtil.singleton(am); :};
 methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts); :}
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>()); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts); :}
