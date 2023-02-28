@@ -18,7 +18,7 @@ import java.io.File
 import java.io.FileNotFoundException
 
 
-class TypeChecker {
+class TypeChecker(val libpath : String) {
     var Gamma : Context = Context()
 
     fun typeCheck(n : Node) {
@@ -167,7 +167,7 @@ class TypeChecker {
             }
             is Expr -> typeCheckExpr(n)
             is Use -> {
-                val filepath = File(System.getProperty("user.dir"), n.lib + ".eti") // needs to use library path
+                val filepath = File(libpath, n.lib + ".eti") // needs to use library path
                 try {
                     val interfaceAST = ASTUtil.getAST(filepath)
                     if (interfaceAST is Interface)
