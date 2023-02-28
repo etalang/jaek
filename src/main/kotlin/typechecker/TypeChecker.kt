@@ -209,6 +209,10 @@ class TypeChecker(val libpath : String) {
                             throw SemanticError(0, 0, "Indexing expression is not an integer")
                         }
                         else {
+                            val arrT = (n.arrayAssign.arr.etaType as ArrayType).t
+                            if (arrT != expectedType) {
+                                throw SemanticError(0, 0, "Type mismatch on array assignment")
+                            }
                             n.etaType = (n.arrayAssign.arr.etaType as ArrayType).t
                         }
                     }
@@ -218,6 +222,9 @@ class TypeChecker(val libpath : String) {
                         throw SemanticError(0, 0, "Shadowing old variable ${n.decl.id} in multiassignment")
                     }
                     val t = translateType(n.decl.type)
+                    if (t != expectedType) {
+                        throw SemanticError(0, 0, "Type mismatch on declaration assignment")
+                    }
                     n.etaType = t
                     gammai[n.decl.id] = VarBind(t)
                 }
@@ -227,6 +234,10 @@ class TypeChecker(val libpath : String) {
                         throw SemanticError(0,0,"Assignment target not a variable")
                     }
                     else {
+                        val idT = t.item
+                        if (idT != expectedType){
+                            throw SemanticError(0, 0, "Type mismatch on identifier assignment")
+                        }
                         n.etaType = t.item
                     }
                 }
@@ -484,14 +495,14 @@ class TypeChecker(val libpath : String) {
                     }
                     else {
                         n.arrInit.dimensions[j]?.let { typeCheck(it) }
-                        if (n.etaType !is IntType){
+                        if (n.arrInit.dimensions[j]?.etaType !is IntType){
                             throw SemanticError(0, 0, "Initialization dimension not an integer")
                         }
                     }
                 }
                 var boundType = t
                 for (k in 0 until n.arrInit.dimensions.size) {
-                    boundType = ArrayType(t)
+                    boundType = ArrayType(boundType)
                 }
                 Gamma.bind(n.id, VarBind(boundType))
                 n.etaType = UnitType()
@@ -581,13 +592,13 @@ class TypeChecker(val libpath : String) {
                                     n.etaType = BoolType()
                                 else if (n.op == PLUS) {
                                     if (leftBase is UnknownType && rightBase !is UnknownType) {
-                                        n.etaType = ArrayType(rtype)
+                                        n.etaType = rtype
                                     }
                                     else if (leftBase is UnknownType && rightBase is UnknownType) {
                                         n.etaType = ArrayType(UnknownType())
                                     }
                                     else {
-                                        n.etaType = ArrayType(ltype)
+                                        n.etaType = ltype
                                     }
                                 }
                                 else {
