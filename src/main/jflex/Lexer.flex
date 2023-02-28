@@ -63,10 +63,12 @@ CharLiteral = "'"({Character}|"\"")"'"
     "//"              { yybegin(COMMENT); }
     "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column());}
     "'"               { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());}
+    <<EOF>>           { return new Token.EOFToken(lineNumber(), column()); }
     [^]               { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());}
 }
 <COMMENT> {
     "\n"              { yybegin(YYINITIAL); }
+    <<EOF>>           { return new Token.EOFToken(lineNumber(), column()); }
     [^]               { }
 }
 <STRING> {
