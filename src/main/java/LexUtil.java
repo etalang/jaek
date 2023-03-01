@@ -22,11 +22,11 @@ public class LexUtil {
         return Character.toString(asciiChar);
     }
 
-    public static boolean isTwoCodePointUnicode(String matched) {
+    public static int unicodeAdjustment(String matched) {
         if (matched.length() == 2 && matched.charAt(0) != '\\'){
-            return true;
+            return 1;
         } else {
-            return false;
+            return 0;
         }
     }
 
