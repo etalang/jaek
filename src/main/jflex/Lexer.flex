@@ -46,6 +46,7 @@ Character = [^"\\""'"]|"\\"("\\"|"\""|"'"|"n"|"t"|"r")|{Unicode}
 Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
 CharLiteral = "'"({Character}|"\"")"'"
+MinInteger = "-"([ \t])*"9223372036854775808"
 
 %state COMMENT
 %state STRING
@@ -56,6 +57,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
+    {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column());}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
     {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column()); }
     {CharLiteral}     { return new Token.CharacterToken(yytext(), lineNumber(), column()); }
