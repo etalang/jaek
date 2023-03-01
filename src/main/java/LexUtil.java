@@ -23,10 +23,10 @@ public class LexUtil {
     }
 
     public static boolean isTwoCodePointUnicode(String matched) {
-        if (matched.charAt(0) == '\\') {
-            return false;
-        } else {
+        if (matched.length() == 2 && matched.charAt(0) != '\\'){
             return true;
+        } else {
+            return false;
         }
     }
 
