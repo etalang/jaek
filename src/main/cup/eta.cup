@@ -22,7 +22,7 @@ terminal BinaryOp.Operation PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, 
 
 terminal IF, ELSE, WHILE, RETURN, USE, LENGTH,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS, LITMINUS;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
 terminal INTERFACE, PROGRAM;
 
@@ -75,7 +75,6 @@ precedence left LT, LEQ, GT, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
-precedence left LITMINUS;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 precedence left OPEN_PAREN, CLOSE_PAREN;
 
@@ -104,7 +103,9 @@ definition      ::= method:m                                    {: RESULT = m; :
 // a : int[6] ILLEGAL
 // b : int[] = 5
 globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null); :};
-globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :};
+globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :}
+                    | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n             {: if (n.data.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n.data, n.line, n.column)); }
+                                                                                             RESULT = new GlobalDecl(id, t, new Literal.IntLit(Long.parseLong(n.data))); :};
 
 /* =============> [Global] Methods <============= */
 methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
@@ -185,7 +186,7 @@ typelst         ::= type:t                                                      
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
 expr            ::= binop:op                                       {: RESULT = op; :}
-                    | primitiveLiteral:pl                          {: RESULT = pl; :} %prec LITMINUS
+                    | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :} %prec UMINUS
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
@@ -206,9 +207,8 @@ arrayLiteral     ::= OPEN_BRACE exprList:el CLOSE_BRACE            {: RESULT = n
                     | OPEN_BRACE CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>()); :};
 arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e); :}
                     | arrayLiteralAccess:ala OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e); :};
-primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.IntegerToken(n.data, n.line, n.column)); }
+primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.StringToken(n.data, n.line, n.column)); }
                                                                         RESULT = new Literal.IntLit(Long.parseLong(n.data)); :}
-                    | MINUS INTEGER_LITERAL:n                      {: RESULT = new Literal.IntLit(Long.parseLong("-" + n.data)); :} %prec LITMINUS
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
                     | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
