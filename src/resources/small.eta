@@ -1,0 +1,5 @@
+a : int = 5
+
+f () {
+    a : int = 5 + false
+}

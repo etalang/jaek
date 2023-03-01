@@ -1,0 +1,5 @@
+build
+
+etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
+    fun1.eta (Semantic, "Invalid function shadowing");
+}
