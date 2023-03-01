@@ -76,7 +76,7 @@ MinInteger = "-"([ \t])*"9223372036854775808"
 <STRING> {
     "\""              { Token.StringToken t = currentString.complete(); yybegin(YYINITIAL); return t;}
     "\n"              { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
-    ({Character}|"'") { yycolumn = yycolumn - LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
+    ({Character}|"'") { yycolumn -= LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
     "\\"([^])         { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column()); }
     <<EOF>>           { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
     [^]               { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
