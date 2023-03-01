@@ -22,6 +22,14 @@ public class LexUtil {
         return Character.toString(asciiChar);
     }
 
+    public static boolean isTwoCodePointUnicode(String matched) {
+        if (matched.charAt(0) == '\\') {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     /**
      * [parseToChar(matched)] converts the matched string to the integer representing
      * the character. Throws an LexicalError if the string does not correspond to a

@@ -74,7 +74,7 @@ CharLiteral = "'"({Character}|"\"")"'"
 <STRING> {
     "\""              { Token.StringToken t = currentString.complete(); yybegin(YYINITIAL); return t;}
     "\n"              { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
-    ({Character}|"'") { currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
+    ({Character}|"'") { if (LexUtil.isTwoCodePointUnicode(yytext())) yycolumn--; currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
     "\\"([^])         { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column()); }
     <<EOF>>           { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
     [^]               { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
