@@ -384,7 +384,7 @@ class TypeChecker(val libpath : String) {
                                 val t = n.vals.first().etaType
                                 val varType = Gamma.lookup(target.idAssign.name)
                                 if (varType == null || varType !is VarBind) {
-                                    throw SemanticError(0,0,"Cannot assign to non-assignable type $varType")
+                                    throw SemanticError(0,0,"Cannot assign to non-assignable of type $varType")
                                 }
                                 else {
                                     val expected = varType.item

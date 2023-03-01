@@ -50,6 +50,15 @@ sealed class EtaType {
             }
             return false
         }
+
+        override fun toString(): String {
+            return when (this) {
+                is ArrayType -> this.t.toString() + "array"
+                is BoolType -> "bool"
+                is IntType -> "int"
+                is UnknownType -> "unk"
+            }
+        }
     }
 
     class ExpandedType(val lst: ArrayList<OrdinaryType>) : EtaType() {
@@ -84,6 +93,13 @@ sealed class EtaType {
                 }
             }
         }
+
+        override fun toString(): String {
+            return when (this) {
+                is UnitType -> "unit"
+                is VoidType -> "void"
+            }
+        }
     }
 
 
@@ -100,6 +116,14 @@ sealed class EtaType {
                     is ReturnType -> return (this is ReturnType && this.value == other.value)
                     is FunType -> return (this is FunType && this.domain == other.domain && this.codomain == other.codomain)
                 }
+            }
+        }
+
+        override fun toString(): String {
+            return when (this) {
+                is FunType -> "function"
+                is ReturnType -> "return" + this.value.toString()
+                is VarBind -> this.item.toString() + "variable"
             }
         }
     }
