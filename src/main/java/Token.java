@@ -20,6 +20,9 @@ public abstract class Token<T> extends Symbol {
     public String location() {
         return lineNum + ":" + col;
     }
+
+    public int getLine() {return lineNum;}
+    public int getCol() {return col;}
     public String lexInfo() {
         return location() + " " + type() + stringVal();
     }

@@ -65,7 +65,8 @@ nonterminal VarDecl.RawVarDecl varDecl;
 nonterminal semi;
 nonterminal BinaryOp binop;
 nonterminal UnaryOp.Operation unop;
-nonterminal Expr arrayAccess, indexable, arrayLiteral, arrayLiteralAccess;
+nonterminal Expr.ArrayAccess arrayAccess, arrayLiteralAccess;
+nonterminal Expr indexable, arrayLiteral;
 
 /* Precedences */
 precedence left OR;
@@ -165,10 +166,10 @@ return          ::= RETURN semi                                                 
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
 varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDecl(id, t); :};
-assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ExprAssign(e1); :}
+assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ArrayAssign(e1); :}
                     | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
                     | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :}
-                    | IDENTIFIER:id                                {: RESULT = new AssignTarget.ExprAssign(new Expr.Identifier(id)); :};
+                    | IDENTIFIER:id                                {: RESULT = new AssignTarget.IdAssign(new Expr.Identifier(id)); :};
 assignables     ::= assignable:at                                  {: RESULT = ParseUtil.singleton(at); :}
                     | assignables:atl COMMA assignable:at          {: atl.add(at); RESULT = atl; :} ; //LEFT RECURSIVE
 multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = new MultiAssign(tg, exprs);:};

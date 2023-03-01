@@ -1,4 +1,9 @@
 src/main/java/JFlexLexer.java
+src/main/java/parser.java
+
+*.parsed
+*.lexed
+*.typed
 
 # Compiled class file
 *.class

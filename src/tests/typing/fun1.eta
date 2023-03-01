@@ -1,0 +1,16 @@
+use int1
+
+foo() {
+    big : bool = f(6)
+    a : bool[] = {big, big, big}
+}
+
+f(g : int) : bool {
+    a : int[] = "i'm duplicating a signature function!"
+    return true
+}
+
+f(g : int[]) : bool {
+    a : int[] = "i'm NOT duplicating a signature function!"
+    return false
+}

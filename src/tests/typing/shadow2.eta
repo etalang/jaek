@@ -1,0 +1,9 @@
+use int1
+
+f(a : int) : bool {
+    return false
+}
+
+f(g : int) : bool {
+    return true
+}
