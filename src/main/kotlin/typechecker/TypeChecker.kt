@@ -209,11 +209,17 @@ class TypeChecker(val libpath : String) {
                             throw SemanticError(0, 0, "Indexing expression is not an integer")
                         }
                         else {
-                            val arrT = (n.arrayAssign.arr.etaType as ArrayType).t
-                            if (arrT != expectedType) {
-                                throw SemanticError(0, 0, "Type mismatch on array assignment")
+                            val arrType = n.arrayAssign.arr.etaType
+                            if (arrType is ArrayType) {
+                                val arrT = arrType.t
+                                if (arrT != expectedType) {
+                                    throw SemanticError(0, 0, "Type mismatch on array assignment")
+                                }
+                                n.etaType = arrType.t
                             }
-                            n.etaType = (n.arrayAssign.arr.etaType as ArrayType).t
+                            else {
+                                throw SemanticError(0,0, "Array assign is not assigning to an array")
+                            }
                         }
                     }
                 }
