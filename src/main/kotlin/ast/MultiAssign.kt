@@ -4,7 +4,8 @@ import edu.cornell.cs.cs4120.util.SExpPrinter
 
 class MultiAssign(
     val targets: ArrayList<AssignTarget>,
-    val vals: ArrayList<Expr>
+    val vals: ArrayList<Expr>,
+    override val terminal: Terminal
 ) : Statement() {
 
     override fun write(printer: SExpPrinter) {

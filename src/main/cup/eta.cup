@@ -1,11 +1,9 @@
-import java_cup.runtime.*;
 import ast.*;
-import kotlin.collections.CollectionsKt;
-import kotlin.jvm.internal.markers.*;
 import java.util.*;
+import errors.*;
 
 parser code  {:
-  public void syntax_error(java_cup.runtime.Symbol current) throws ParseError {
+  public void unrecovered_syntax_error(java_cup.runtime.Symbol current) throws ParseError {
     throw new ParseError(current);
   }
 :};
@@ -18,7 +16,7 @@ terminal Integer CHARACTER_LITERAL;
 terminal IntLitInfo INTEGER_LITERAL;
 terminal TRUE, FALSE;
 terminal INT, BOOL;
-terminal BinaryOp.Operation PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB;
+terminal String PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB;
 
 terminal IF, ELSE, WHILE, RETURN, USE, LENGTH,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
@@ -64,7 +62,7 @@ nonterminal VarDecl.RawVarDecl methodArg;
 nonterminal VarDecl.RawVarDecl varDecl;
 nonterminal semi;
 nonterminal BinaryOp binop;
-nonterminal UnaryOp.Operation unop;
+nonterminal ParseUtil.UnOpBundle unop;
 nonterminal Expr.ArrayAccess arrayAccess, arrayLiteralAccess;
 nonterminal Expr indexable, arrayLiteral;
 
@@ -91,7 +89,7 @@ program         ::= imports:Is allDefinitions:Ds                {: RESULT = new 
 /* Imports */
 imports         ::= use:u imports:It                            {: It.add(0, u); RESULT = It; :}
                     |                                           {: RESULT = new ArrayList<Use>(); :};
-use             ::= USE IDENTIFIER:id semi                      {: RESULT = new Use(id); :};
+use             ::= USE IDENTIFIER:id semi                      {: RESULT = new Use(id, new Terminal(idleft,idright)); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
@@ -103,19 +101,19 @@ definition      ::= method:m                                    {: RESULT = m; :
 /* =============> Global Variables <============= */
 // a : int[6] ILLEGAL
 // b : int[] = 5
-globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null); :};
-globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :}
+globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null, new Terminal(idleft,idright)); :};
+globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n             {: if (n.data.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n.data, n.line, n.column)); }
-                                                                                             RESULT = new GlobalDecl(id, t, new Literal.IntLit(Long.parseLong(n.data))); :};
+                                                                                             RESULT = new GlobalDecl(id, t, new Literal.IntLit(Long.parseLong(n.data), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :};
 
 /* =============> [Global] Methods <============= */
 methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
                     | methodHeader:am                                                        {: RESULT = ParseUtil.singleton(am); :};
-methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts); :}
-                    | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>()); :}
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts); :}
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>()); :};
-methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new VarDecl.RawVarDecl(id, t); :};
+methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts, new Terminal(idleft,idright)); :}
+                    | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>(), new Terminal(idleft,idright)); :}
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts, new Terminal(idleft,idright)); :}
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>(), new Terminal(idleft,idright)); :};
+methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new VarDecl.RawVarDecl(id, t, new Terminal(idleft,idright)); :};
 methodArgs      ::= methodArg:ma                                                    {:RESULT = ParseUtil.singleton(ma); :}
                     | methodArg:ma COMMA methodArgs:mal                             {:mal.add(0, ma); RESULT = mal;:};
 
@@ -129,54 +127,54 @@ statement       ::= if:i                                                        
                     | varDecl:d semi                                                {: RESULT = d; :}
                     | arrayInitStatement:a semi                                     {: RESULT = a; :}
                     | procedureCall:fn semi                                         {: RESULT = fn; :};
-if              ::= IF expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els); :}
-                    | IF OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els); :};
-while           ::= WHILE OPEN_PAREN expr:e CLOSE_PAREN block:b                     {: RESULT = new Statement.While(e, b); :}
-                    | WHILE expr:e block:b                                          {: RESULT = new Statement.While(e, b); :};
+if              ::= IF:o expr:e block:b elseOptional:els                              {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :}
+                    | IF:o OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els     {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :};
+while           ::= WHILE:o OPEN_PAREN expr:e CLOSE_PAREN block:b                     {: RESULT = new Statement.While(e, b, new Terminal(oleft,oright)); :}
+                    | WHILE:o expr:e block:b                                          {: RESULT = new Statement.While(e, b, new Terminal(oleft,oright)); :};
 block           ::= statement:s                                                     {: RESULT = s; :}
                     | returnableBlock:rb                                            {: RESULT = rb; :};
-returnableBlock ::= OPEN_BRACE statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE CLOSE_BRACE                                        {: RESULT = new Statement.Block(new ArrayList<Statement>()); :}
-                    | OPEN_BRACE return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r)); :}
-                    | OPEN_BRACE statementList:sLst returnableBlock:rb CLOSE_BRACE  {: sLst.add(rb); RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE statementList:sLst
-                    returnableBlock:rb return:r CLOSE_BRACE                         {:sLst.add(rb); sLst.add(r); RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE
-                    returnableBlock:rb statementList:sLst return:r CLOSE_BRACE     {:sLst.add(0, rb); sLst.add(r); RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE
-                    returnableBlock:rb statementList:sLst CLOSE_BRACE               {:sLst.add(0, rb); RESULT = new Statement.Block(sLst); :}
-                    | OPEN_BRACE statementList:sLst1 returnableBlock:rb
-                    statementList:sLst2 CLOSE_BRACE                                 {:sLst1.add(rb); sLst1.addAll(sLst2); RESULT = new Statement.Block(sLst1); :}
-                    | OPEN_BRACE statementList:sLst1 returnableBlock:rb
-                    statementList:sLst2 return:r CLOSE_BRACE                        {:sLst1.add(rb); sLst1.addAll(sLst2); sLst1.add(r); RESULT = new Statement.Block(sLst1); :}
-                    | OPEN_BRACE returnableBlock:rb CLOSE_BRACE                     {: RESULT = new Statement.Block(ParseUtil.singleton(rb)); :}
-                    | OPEN_BRACE returnableBlock:rb return:r CLOSE_BRACE            {: ArrayList<Statement> st = ParseUtil.singleton(rb); st.add(r); RESULT = new Statement.Block(st); :};
-procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl);:} // these should be statements!
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>());:};
+returnableBlock ::= OPEN_BRACE:b statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b CLOSE_BRACE                                        {: RESULT = new Statement.Block(new ArrayList<Statement>(), new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r), new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b statementList:sLst returnableBlock:rb CLOSE_BRACE  {: sLst.add(rb); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b statementList:sLst
+                    returnableBlock:rb return:r CLOSE_BRACE                         {:sLst.add(rb); sLst.add(r); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b
+                    returnableBlock:rb statementList:sLst return:r CLOSE_BRACE     {:sLst.add(0, rb); sLst.add(r); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b
+                    returnableBlock:rb statementList:sLst CLOSE_BRACE               {:sLst.add(0, rb); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b statementList:sLst1 returnableBlock:rb
+                    statementList:sLst2 CLOSE_BRACE                                 {:sLst1.add(rb); sLst1.addAll(sLst2); RESULT = new Statement.Block(sLst1, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b statementList:sLst1 returnableBlock:rb
+                    statementList:sLst2 return:r CLOSE_BRACE                        {:sLst1.add(rb); sLst1.addAll(sLst2); sLst1.add(r); RESULT = new Statement.Block(sLst1, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b returnableBlock:rb CLOSE_BRACE                     {: RESULT = new Statement.Block(ParseUtil.singleton(rb), new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b returnableBlock:rb return:r CLOSE_BRACE            {: ArrayList<Statement> st = ParseUtil.singleton(rb); st.add(r); RESULT = new Statement.Block(st, new Terminal(bleft, bright)); :};
+procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl, new Terminal(idleft,idright));:} // these should be statements!
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>(), new Terminal(idleft,idright));:};
 elseOptional    ::=
                     | ELSE block:b                                                  {: RESULT = b; :};
 semi            ::= SEMICOLON | ;
-return          ::= RETURN semi                                                     {: RESULT = new Statement.Return(new ArrayList<Expr>()); :}
-                    | RETURN exprList:exprLst semi                                  {: RESULT = new Statement.Return(exprLst); :};
+return          ::= RETURN:r semi                                                     {: RESULT = new Statement.Return(new ArrayList<Expr>(), new Terminal(rleft,rright)); :}
+                    | RETURN:r exprList:exprLst semi                                  {: RESULT = new Statement.Return(exprLst, new Terminal(rleft,rright)); :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Local Variables */
 
 /* =============> [MULTI] With Assignment <============= */
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
-varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDecl(id, t); :};
+varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDecl(id, t, new Terminal(idleft,idright)); :};
 assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ArrayAssign(e1); :}
                     | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
-                    | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :}
-                    | IDENTIFIER:id                                {: RESULT = new AssignTarget.IdAssign(new Expr.Identifier(id)); :};
+                    | UNDERSCORE:u                                   {: RESULT = new AssignTarget.Underscore(new Terminal(uleft,uright)); :}
+                    | IDENTIFIER:id                                {: RESULT = new AssignTarget.IdAssign(new Expr.Identifier(id, new Terminal(idleft,idright))); :};
 assignables     ::= assignable:at                                  {: RESULT = ParseUtil.singleton(at); :}
                     | assignables:atl COMMA assignable:at          {: atl.add(at); RESULT = atl; :} ; //LEFT RECURSIVE
-multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = new MultiAssign(tg, exprs);:};
+multiAssign     ::= assignables:tg EQUALS:o exprList:exprs           {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright));:};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
-arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         {: RESULT = new VarDecl.InitArr(id, ar); :};
+arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         {: RESULT = new VarDecl.InitArr(id, ar, new Terminal(idleft,idright)); :};
 arrayInit      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
                        | arrayInit:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
                        | arrayInit:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
@@ -188,54 +186,54 @@ typelst         ::= type:t                                                      
 /* Expressions */
 expr            ::= binop:op                                       {: RESULT = op; :}
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
-                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op, arg); :} %prec UMINUS
-                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
+                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
+                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id,new Terminal(idleft,idright)); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
-                    | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
+                    | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s,new Terminal(sleft,sright)); :}
                     | arrayLiteral:al                              {: RESULT = al; :}
                     | arrayLiteralAccess:ala                       {: RESULT = ala; :}
                     | arrayAccess:aa                               {: RESULT = aa; :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
-                    | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
+                    | LENGTH:l OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e, new Terminal(lleft,lright)); :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
                     | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
-arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2); :};
+arrayAccess       ::= indexable:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2,new Terminal(bleft,bright)); :};
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
-                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
+                    | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id,new Terminal(idleft,idright)); :}
                     | arrayAccess:aa                               {: RESULT = aa; :};
-arrayLiteral     ::= OPEN_BRACE exprList:el CLOSE_BRACE            {: RESULT = new Literal.ArrayLit(el); :}
-                    | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}
-                    | OPEN_BRACE CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>()); :};
-arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e); :}
-                    | arrayLiteralAccess:ala OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e); :};
+arrayLiteral     ::= OPEN_BRACE:b exprList:el CLOSE_BRACE            {: RESULT = new Literal.ArrayLit(el, new Terminal(bleft,bright)); :}
+                    | OPEN_BRACE:b exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el, new Terminal(bleft,bright)); :}
+                    | OPEN_BRACE:b CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>(), new Terminal(bleft,bright)); :};
+arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET:b expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e,new Terminal(bleft,bright)); :}
+                    | arrayLiteralAccess:ala OPEN_BRACKET:b expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e,new Terminal(bleft,bright)); :};
 primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.StringToken(n.data, n.line, n.column)); }
-                                                                        RESULT = new Literal.IntLit(Long.parseLong(n.data)); :}
-                    | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
-                    | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
-                    | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};
-functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl);:} // these should be statements!
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>());:};
-unop            ::= MINUS                                          {: RESULT = UnaryOp.Operation.NEG; :}   // cannot differentiate identical token but need diff prec
-                    | NOT                                          {: RESULT = UnaryOp.Operation.NOT; :}; // need to take expr
-binop           ::= expr:r PLUS expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.PLUS,r,l); :}
-                    | expr:r TIMES expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l); :}
-                    | expr:r MINUS expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.MINUS,r,l); :}
-                    | expr:r HIGHTIMES expr:l                                    {: RESULT = new BinaryOp(BinaryOp.Operation.HIGHTIMES,r,l); :}
-                    | expr:r DIVIDE expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.DIVIDE,r,l); :}
-                    | expr:r MODULO expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.MODULO,r,l); :}
-                    | expr:r LT expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.LT,r,l); :}
-                    | expr:r LEQ expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.LEQ,r,l); :}
-                    | expr:r GT expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.GT,r,l); :}
-                    | expr:r GEQ expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.GEQ,r,l); :}
-                    | expr:r EQB expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.EQB,r,l); :}
-                    | expr:r NEQB expr:l                                         {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l); :}
-                    | expr:r AND expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l); :}
-                    | expr:r OR expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l); :};
+                                                                        RESULT = new Literal.IntLit(Long.parseLong(n.data),new Terminal(nleft,nright)); :}
+                    | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c,new Terminal(cleft,cright)); :}
+                    | FALSE:o                                        {: RESULT = new Literal.BoolLit(false,new Terminal(oleft,oright)); :}
+                    | TRUE:o                                         {: RESULT = new Literal.BoolLit(true,new Terminal(oleft,oright)); :};
+functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl,new Terminal(idleft,idright));:} // these should be statements!
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>(),new Terminal(idleft,idright));:};
+unop            ::= MINUS:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NEG,new Terminal(uleft,uright)); :}  // cannot differentiate identical token but need diff prec
+                    | NOT:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NOT,new Terminal(uleft,uright)); :}; // need to take expr
+binop           ::= expr:r PLUS:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.PLUS,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r TIMES:o expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r MINUS:o expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.MINUS,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r HIGHTIMES:o expr:l                                    {: RESULT = new BinaryOp(BinaryOp.Operation.HIGHTIMES,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r DIVIDE:o expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.DIVIDE,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r MODULO:o expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.MODULO,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r LT:o expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.LT,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r LEQ:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.LEQ,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r GT:o expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.GT,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r GEQ:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.GEQ,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r EQB:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.EQB,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r NEQB:o expr:l                                         {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r AND:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r OR:o expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l,new Terminal(oleft,oright)); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Types */
-primType        ::= BOOL                                           {:RESULT = new Primitive.BOOL(); :}
-                    | INT                                          {:RESULT = new Primitive.INT(); :};
+primType        ::= BOOL:s                                           {:RESULT = new Primitive.BOOL(new Terminal(sleft,sright)); :}
+                    | INT:s                                          {:RESULT = new Primitive.INT(new Terminal(sleft,sright)); :};
 type            ::= primType:pt                                    {:RESULT = pt; :}
                     | primType:pt OPEN_BRACKET CLOSE_BRACKET       {:RESULT = new Type.Array(pt);:}
                     | type:t OPEN_BRACKET CLOSE_BRACKET            {:RESULT = new Type.Array(t);:};
