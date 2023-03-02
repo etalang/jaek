@@ -64,9 +64,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         folderFiles.forEach {
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
-                var lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
-                var parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
-                var typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
+                val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
+                val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)

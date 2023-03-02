@@ -1,7 +1,6 @@
 package ast
 
 import edu.cornell.cs.cs4120.util.SExpPrinter
-import java_cup.runtime.Symbol
 
 sealed class AssignTarget : Node() {
     class DeclAssign(val decl: VarDecl.RawVarDecl) : AssignTarget() {
@@ -26,8 +25,6 @@ sealed class AssignTarget : Node() {
             is ArrayAssign -> arrayAssign.write(printer)
 
             is IdAssign -> idAssign.write(printer)
-
-//            is ExprAssign -> target.write(printer)
 
             is Underscore -> printer.printAtom("_")
         }

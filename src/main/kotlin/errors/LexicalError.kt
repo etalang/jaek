@@ -22,7 +22,7 @@ class LexicalError(private val errorType: errType, line: Int, col: Int) : Compil
         BadString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId, InvalidInteger
     }
 
-    override fun output(file: String): String {
-        return "Lexical error beginning at ${file}:${line}:${column}: ${details()}"
-    }
+//    override fun output(file: String): String {
+//        return "Lexical error beginning at ${file}:${line}:${column}: ${details()}"
+//    }
 }

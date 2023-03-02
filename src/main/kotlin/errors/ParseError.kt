@@ -18,14 +18,14 @@ class ParseError(val sym: Symbol) : CompilerError(
     },
     "Syntax Error"
 ) {
-    override fun output(file: String): String {
-        return "Syntax error beginning at ${file}:${line}:${column}${
-            when (sym) {
-                is Token<*> -> ": ${sym.stringVal()}"
-                else -> {
-                    ""
-                }
-            }
-        }"
-    }
+//    override fun output(file: String): String {
+//        return "Syntax error beginning at ${file}:${line}:${column}${
+//            when (sym) {
+//                is Token<*> -> ": ${sym.stringVal()}"
+//                else -> {
+//                    ""
+//                }
+//            }
+//        }"
+//    }
 }

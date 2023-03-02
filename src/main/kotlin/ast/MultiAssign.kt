@@ -11,13 +11,13 @@ class MultiAssign(
     override fun write(printer: SExpPrinter) {
         printer.startList()
         printer.printAtom("=")
-        if (targets.size > 1){
+        if (targets.size > 1) {
             printList(printer, targets)
 
         } else {
-            targets.forEach{target -> target.write(printer) }
+            targets.forEach { target -> target.write(printer) }
         }
-        vals.forEach{value -> value.write(printer)}
+        vals.forEach { value -> value.write(printer) }
 
         printer.endList()
     }
