@@ -1,1 +1,1 @@
-3:12: Assigned expression type does not match expected type ast.Primitive$INT@527e5409
+3:12 error:Assigned expression type does not match expected type ast.Primitive$INT@527e5409

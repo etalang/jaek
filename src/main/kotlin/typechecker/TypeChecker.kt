@@ -8,7 +8,6 @@ import ast.Expr.FunctionCall.LengthFn
 import ast.Literal.*
 import ast.UnaryOp.Operation.NEG
 import ast.UnaryOp.Operation.NOT
-import com.sun.org.apache.xpath.internal.operations.Bool
 import typechecker.EtaType.*
 import typechecker.EtaType.Companion.translateType
 import typechecker.EtaType.ContextType.*

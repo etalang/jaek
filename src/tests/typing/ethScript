@@ -26,5 +26,11 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     multipletypesinarray2.eta (Semantic, "Array elements must be consistent type");
     mutuallyrecursive.eta;
     noimplementalleti.eta;
+    procedurecalls.eta;
+    recursivefunctions.eta;
+    samefunction.eti;
     shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
+    shadow2.eta (Semantic, "Invalid function shadowing");
+    variableassign.eta (Semantic, "Cannot assign type bool to variable of type int");
+    wrongtypeinarrayassign.eta (Semantic, "Assigned expression type does not match expected type ast.Primitive$INT@527e5409");
 }
