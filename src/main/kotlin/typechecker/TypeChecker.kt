@@ -1,7 +1,5 @@
 package typechecker
 
-import ASTUtil
-import Etac
 import SemanticError
 import ast.*
 import ast.BinaryOp.Operation.*
@@ -15,19 +13,14 @@ import typechecker.EtaType.ContextType.*
 import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
-import java.io.File
 
 
-class TypeChecker(val libpath : String, val currFile : Etac.CurrFile) {
-    var Gamma : Context = Context()
+class TypeChecker(topGamma : Context) {
+    var Gamma : Context = topGamma
 
     fun typeCheck(n : Node) {
         when (n) {
             is Program -> {
-                // add interface bindings to the program first
-                for (u in n.imports) {
-                    typeCheck(u)
-                }
                 // first pass
                 for (defn in n.definitions) {
                     when (defn) {
@@ -143,50 +136,13 @@ class TypeChecker(val libpath : String, val currFile : Etac.CurrFile) {
                 }
             }
             is Statement -> { typeCheckStmt(n) }
-            is Interface -> {
-                for (method in n.methodHeaders) {
-                    var domainList = ArrayList<OrdinaryType>()
-                    for (decl in method.args) {
-                        domainList.add(translateType(decl.type))
-                    }
-                    var codomainList = ArrayList<OrdinaryType>()
-                    for (t in method.returnTypes){
-                        codomainList.add(translateType(t))
-                    }
-                    val currFunType = FunType(ExpandedType(domainList), ExpandedType(codomainList), true)
-                    if (Gamma.contains(method.id) ) {
-                        if (Gamma.lookup(method.id) != currFunType) {
-                            throw SemanticError(0, 0, "Mismatch in type of function ${method.id} among interfaces/programs")
-                        }
-                    }
-                    else {
-                        Gamma.bind(method.id, currFunType)
-                    }
-                }
-
-            }
             is Expr -> typeCheckExpr(n)
-            is Use -> {
-                val filepath = File(libpath, n.lib + ".eti") // needs to use library path
-                    if (filepath.exists()) {
-                        val prevFile = currFile.file
-                        currFile.file = filepath
-                        val interfaceAST = ASTUtil.getAST(filepath)
-                        if (interfaceAST is Interface)
-                            typeCheck(interfaceAST)
-                        else {
-                            throw SemanticError(0, 0, "Could not import interface ${n.lib} AST") // will throw in eti file :(
-                        }
-                        currFile.file = prevFile
-                    } else {
-                        throw SemanticError(0, 0, "Could not find interface ${n.lib} file")
-                    }
-            }
             else -> {
                 throw SemanticError(0,0,"Unreachable, calling typeCheck on Node that should not be type-checked explicitly")
                 // AssignTarget case -> do nothing, should never be typechecked from here
                 // Type nodes -> should never actually be checked, only referenced and read
                 // Definition -> handled at the top level in Program with the multiple passes
+                // Interface, Use should be handled by top-level constructor
             }
         }
     }

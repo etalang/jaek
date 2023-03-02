@@ -11,6 +11,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import java_cup.runtime.Symbol
+import typechecker.Context
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -50,7 +51,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
     data class CurrFile(var file : File)
-
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
@@ -64,6 +64,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
         folderFiles.forEach {
             val currFile = CurrFile(it) //holds the currently processing file for error reporting
+            val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
                 var lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
@@ -72,7 +73,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
-                    typeCheck(ast, absLibpath.toString(), typedFile, currFile)
+                    val topGamma = kompiler.createTopLevelContext(ast, absLibpath.toString(), currFile)
+                    typeCheck(ast, typedFile, topGamma)
                 } catch (e : Exception) {
                     when (e) {
                         is LexicalError -> {
@@ -157,14 +159,15 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         return AST
     }
 
-    private fun typeCheck(ast : Node, libpath : String, typedFile: File?, currFile : CurrFile) {
+    private fun typeCheck(ast : Node, typedFile: File?, topGamma : Context) {
         try {
-            TypeChecker(libpath, currFile).typeCheck(ast)
+            TypeChecker(topGamma).typeCheck(ast)
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
             typedFile?.appendText("${e.line}:${e.col} error:${e.desc}")
             throw e
         }
     }
+
 }
 fun main(args: Array<String>) = Etac().main(args)
