@@ -1,0 +1,13 @@
+build
+
+etac ("Test --parse") "--parse" {
+    arraylit.eta;
+    blanketa.eta (Syntax, "<<EOF>>");
+    blanketi.eti (Syntax, "<<EOF>>");
+    function.eta (Syntax, "int");;
+    minint.eta;
+    multassignprint.eta;
+    unfinishedfunction.eta (Syntax, "<<EOF>>");
+    useeta.eta (Syntax, "<<EOF>>");
+    useeti.eti  (Syntax, "use");
+}
