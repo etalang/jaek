@@ -1,0 +1,4 @@
+f (a : int) : bool
+g (a : int) : int[]
+h (b : bool, k:int[][][]) : int[][]
+i (a : int, b : bool) : int

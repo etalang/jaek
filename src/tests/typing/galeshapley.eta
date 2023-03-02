@@ -1,0 +1,160 @@
+public static void main(String[] args) throws IOException {
+    //number of things to be matched
+    int n = 1000
+    pLinkedQueue : int[n]
+
+    //pArray stores the preferences for the proposers.  The nth
+    //proposer's preference list is stored in pArray[n] in the order from
+    //most to least preferred respondent.  Ex. pArray[0][0] is the 0th proposer's
+    //first preference
+    pArray : int[n][n]
+
+    //next[n] stores which respondent proposer n needs to propose to next (hasn't been proposed to before)
+    next : int[n]
+
+    //[rPairs] stores the current pairings for the respondents. Ex. rPairs[0] stores
+    //the proposer that respondent 0 is paired with.
+    rPairs : int[n]
+
+
+    //initializes current pairings to -1 which corresponds to no pairings
+    i : int = 0
+    while(i < n) {
+        rPairs[i] = -1;
+        i = i + 1;
+    }
+
+    //stores the preferences for the respondents such that rRanking[r][p] gives
+    //a number from 0 to n-1 corresponding to the rank of p in r's preference list.
+    //0 is most preferred and n-1 is least preferred.
+
+    rRanking : int[n][n]
+
+    //reading in the information
+    i : int = 0
+    while (i < n) {
+        StringTokenizer tk = new StringTokenizer(reader.readLine());
+        //add all proposers to the queue
+        pLinkedQueue.add(i);
+        for (int j = 0; j < n; j++) {
+            int r = Integer.parseInt(tk.nextToken());
+            pArray[i][j] = r;
+        }
+        i = i + 1
+
+    }
+    //reading in the respondents
+    for (int i = 0; i < n; i++) {
+        StringTokenizer tk = new StringTokenizer(reader.readLine());
+        for (int j = 0; j < n; j++) {
+            int p = Integer.parseInt(tk.nextToken());
+            rRanking[i][p] = j;
+
+        }
+
+    }
+
+    while (!pLinkedQueue.isEmpty()) {
+        //proposal portion
+        //p is the next unmatched proposer
+        int p = pLinkedQueue.peek();
+        //r is most preferred respondent that has not yet been proposed to by p
+        int r = pArray[p][next[p]];
+        //c is r's current match
+        int c = rPairs[r];
+        //if r is unmatched
+        if (rPairs[r] == -1) {
+            //add p to r's match list
+            rPairs[r] = p;
+            //remove p from queue
+            pLinkedQueue.poll();
+            //if r is matched but r prefers p to its current match
+        } else if (rRanking[r][p] < rRanking[r][c]) {
+            //match p and r
+            rPairs[r] = p;
+            //remove p from queue
+            pLinkedQueue.poll();
+            //add c to queue
+            pLinkedQueue.add(c);
+
+        }
+        //increment next since p already proposed to r
+        next[p]++;
+
+
+    }
+    //printing the result
+    System.out.println(rPairs[0]);
+
+    //calculations for a2
+    int[] next2 = new int[n];
+    //ensures that the first proposal always fails for respondent 0 (doesn't propose at all)
+    next2[0] = 1;
+    //creating a new pairing list for the second iteration
+    int[] rPairs2 = new int[n];
+    //reading every proposer to the queue
+    for (int i = 0; i < n; i++) {
+        pLinkedQueue.add(i);
+    }
+    //initializing the new pairings to nonexistent
+    for(int i = 0; i < n; i++){
+        rPairs2[i] = -1;
+    }
+
+    while (!pLinkedQueue.isEmpty()) {
+        //proposal portion
+        //p is the next unmatched proposer
+        int p = pLinkedQueue.peek();
+
+        //if the respondent the proposer needs to propose doesn't exist and it's the last proposer left, it must
+        // be p0, so we quit matching
+        if(next2[p] >= n && pLinkedQueue.size() == 1){
+            break;
+        //if it goes out of bounds but there are more in the list, just cycle the list to another proposer
+        } else if(next2[p] >= n){
+            //change the element at the front of the queue, and match the next proposer one instead
+            pLinkedQueue.poll();
+            pLinkedQueue.add(p);
+            p = pLinkedQueue.peek();
+        }
+        //r is the most preferred respondent that has not yet been proposed to by p
+        int r = pArray[p][next2[p]];
+        //this is r's current match
+        int c = rPairs2[r];
+        //if r is unmatched
+        if (rPairs2[r] == -1) {
+            //add p to r's match list
+            rPairs2[r] = p;
+            //remove p from queue
+            pLinkedQueue.poll();
+            //if r is matched but r prefers p to its current match
+        } else if (rRanking[r][p] < rRanking[r][c]) {
+            rPairs2[r] = p;
+            //remove p from queue
+            pLinkedQueue.poll();
+            //add c to queue
+            pLinkedQueue.add(c);
+
+        }
+        //increment next since p proposed to r
+        next2[p]++;
+
+
+    }
+
+    //this is the first respondent that p0 proposes to in the standard algorithm
+    int firstR= pArray[0][0];
+
+    if(rPairs2[firstR] == -1){
+        //firstR is unpaired
+        System.out.println(1);
+    } else if (rRanking[firstR][rPairs2[firstR]] <= rRanking[firstR][rPairs[firstR]]){
+        //firstR gets an equal or more preferred proposer than in the standard algorithm
+        System.out.println(3);
+    } else {
+        System.out.println(2);
+    }
+
+
+}
+
