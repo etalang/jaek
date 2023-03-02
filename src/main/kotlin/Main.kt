@@ -10,6 +10,8 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
+import errors.LexicalError
+import errors.SemanticError
 import java_cup.runtime.Symbol
 import typechecker.TypeChecker
 import java.io.File
@@ -73,12 +75,12 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 } catch (e : Exception) {
                     when (e) {
                         is LexicalError -> {
-                            println("Lexical error beginning at ${it.name}:${e.line}:${e.col}: ${e.details()}")
+                            println("Lexical error beginning at ${it.name}:${e.line}:${e.column}: ${e.details()}")
                             //lexical error goes in remaining out files, do not pass GO
                             parsedFile?.appendText(e.msg)
                             typedFile?.appendText(e.msg)
                         }
-                        is ParseError -> {
+                        is errors.ParseError -> {
                             val badSym = e.sym
                             var err = ""
                             if (badSym is Token<*>) {
@@ -92,7 +94,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                         }
                         is SemanticError -> {
-                            println("Semantic error beginning at ${it.name}:${e.line}:${e.col}: ${e.desc}")
+                            println("Semantic error beginning at ${it.name}:${e.line}:${e.column}: ${e.desc}")
                         }
                         else -> {
                             println("An unexpected error has thrown during validity checking.")
@@ -159,7 +161,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             TypeChecker(libpath).typeCheck(ast)
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
-            typedFile?.appendText("${e.line}:${e.col} error:${e.desc}")
+            typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
             throw e
         }
     }

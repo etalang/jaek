@@ -1,4 +1,4 @@
-import java_cup.runtime.Symbol;
+import errors.LexicalError;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class LexUtil {
 
     /**
      * [parseToChar(matched)] converts the matched string to the integer representing
-     * the character. Throws an LexicalError if the string does not correspond to a
+     * the character. Throws an errors.LexicalError if the string does not correspond to a
      * character.
      */
     public static int parseToChar(String matched, int lineNum, int col) throws LexicalError {

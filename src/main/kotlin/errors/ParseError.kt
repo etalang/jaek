@@ -1,13 +1,31 @@
-import java_cup.runtime.Symbol;
+package errors
 
-public class ParseError extends RuntimeException{
-    private final Symbol sym;
+import Token
+import java_cup.runtime.Symbol
 
-    public ParseError(Symbol sym) {
-        this.sym = sym;
-    }
-
-    public Symbol getSym() {
-        return sym;
+class ParseError(val sym: Symbol) : CompilerError(
+    when (sym) {
+        is Token<*> -> sym.line
+        else -> {
+            sym.left
+        } //LOL I SHOULD NOT HAVE BOTH HERE BUT THIS IS BETTER THAN NOTHING I GUESS
+    },
+    when (sym) {
+        is Token<*> -> sym.col
+        else -> {
+            sym.right
+        }
+    },
+    "Syntax Error"
+) {
+    override fun output(file: String): String {
+        return "Syntax error beginning at ${file}:${line}:${column}${
+            when (sym) {
+                is Token<*> -> ": ${sym.stringVal()}"
+                else -> {
+                    ""
+                }
+            }
+        }"
     }
 }

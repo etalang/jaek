@@ -1,44 +1,28 @@
-/** [LexicalError] are exceptions that can be thrown by the lexer while parsing. */
-public class LexicalError extends Exception {
+package errors
 
-    private final errType errorType;
-    private final int lineNum;
-    private final int col;
+/** [LexicalError] are exceptions that can be thrown by the lexer while parsing.  */
+class LexicalError(private val errorType: errType, line: Int, col: Int) : CompilerError(
+    line, col, "Lexical Error"
+) {
+    val msg: String = line.toString() + ":" + col + " error:" + details()
 
-    LexicalError(errType lt, int lineNum, int col) {
-        super("Lexical Error at " + lineNum + ":" + col);
-        this.errorType = lt;
-        this.lineNum = lineNum;
-        this.col = col;
-    }
-
-    public String getMsg() {
-        return lineNum + ":" + col + " error:" + details();
-    }
-
-    public int getLine() {return lineNum;}
-    public int getCol() {return col;}
-
-
-    public String details() {
-        switch (errorType) {
-            case BadString:
-                return "Non-terminating string or multiline string";
-            case CharWrong:
-                return "Invalid character constant";
-            case CharNotEnd:
-                return "Unmatched \"'\"";
-            case UnicodeTooBig:
-                return "Unicode argument too large";
-            case InvalidId:
-                return "Not a valid identifier";
-            case InvalidInteger:
-                return "Not a valid integer";
-            default:
-                return "";
+    fun details(): String {
+        return when (errorType) {
+            errType.BadString -> "Non-terminating string or multiline string"
+            errType.CharWrong -> "Invalid character constant"
+            errType.CharNotEnd -> "Unmatched \"'\""
+            errType.UnicodeTooBig -> "Unicode argument too large"
+            errType.InvalidId -> "Not a valid identifier"
+            errType.InvalidInteger -> "Not a valid integer"
         }
     }
 
-    /** Types of possible errors encounterable while lexing */
-    public enum errType {BadString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId, InvalidInteger}
+    /** Types of possible errors encounterable while lexing  */
+    enum class errType {
+        BadString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId, InvalidInteger
+    }
+
+    override fun output(file: String): String {
+        return "Lexical error beginning at ${file}:${line}:${column}: ${details()}"
+    }
 }

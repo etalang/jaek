@@ -1,7 +1,7 @@
 package typechecker
 
 import ASTUtil
-import SemanticError
+import errors.SemanticError
 import ast.*
 import ast.BinaryOp.Operation.*
 import ast.Expr.FunctionCall.LengthFn

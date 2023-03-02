@@ -1,3 +1,4 @@
+import errors.LexicalError;
 import java_cup.runtime.Symbol;
 
 /**
@@ -11,7 +12,7 @@ public abstract class Token<T> extends Symbol {
     private final int col;
 
     public Token(T attribute, int sym, int lineNum, int col) {
-        super(sym, attribute);
+        super(sym, lineNum, col, attribute); // long story short I do not like this but it's basically impossible to get the Symbol on the left of the ::= to CORRECTLY USE left and right or to even DOWNCAST Symbol to Token<*> to get lineNum and col so here we are :(
         this.attribute = attribute;
         this.lineNum = lineNum;
         this.col = col;
@@ -27,7 +28,7 @@ public abstract class Token<T> extends Symbol {
         return location() + " " + type() + stringVal();
     }
 
-    protected String stringVal() {
+    public String stringVal() {
         return attribute.toString();
     }
 
@@ -68,7 +69,7 @@ public abstract class Token<T> extends Symbol {
         }
 
         @Override
-        protected String stringVal() {
+        public String stringVal() {
             return LexUtil.formatChar(attribute);
         }
     }
