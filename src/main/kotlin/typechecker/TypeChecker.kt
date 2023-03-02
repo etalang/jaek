@@ -402,7 +402,9 @@ class TypeChecker(val libpath : String) {
                                 }
                             }
                             is AssignTarget.Underscore -> {
-                                throw SemanticError(0,0,"Underscore not permitted in single assignment")
+                                typeCheck(n.vals.first())
+                                n.etaType = UnitType()
+//                                throw SemanticError(0,0,"Underscore not permitted in single assignment")
                             }
                         }
                     }
