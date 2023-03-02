@@ -15,12 +15,16 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     badetiuse.eta (Semantic, "Mismatch in type of function f among interfaces/programs");
     badprocedurecalls.eta (Semantic, "Procedures may not return any values");
     booleanprecedence.eta;
+    concatarray.eta;
     eti1.eti;
     eti2.eti;
     eti3.eti;
     exampleprogram.eta;
     fun1.eta (Semantic, "Invalid function shadowing");
+    guardif.eta;
+    guardwhile.eta;
     implementalleti.eta;
+    indexfunctionbad.eta; 
     length.eta;
     multipletypesinarray.eta (Semantic, "Array elements must be consistent type");
     multipletypesinarray2.eta (Semantic, "Array elements must be consistent type");
