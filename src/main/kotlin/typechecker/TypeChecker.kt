@@ -8,6 +8,7 @@ import ast.Expr.FunctionCall.LengthFn
 import ast.Literal.*
 import ast.UnaryOp.Operation.NEG
 import ast.UnaryOp.Operation.NOT
+import com.sun.org.apache.xpath.internal.operations.Bool
 import typechecker.EtaType.*
 import typechecker.EtaType.Companion.translateType
 import typechecker.EtaType.ContextType.*
@@ -572,7 +573,7 @@ class TypeChecker(topGamma : Context) {
                                     if (leftBase is UnknownType && rightBase !is UnknownType) {
                                         n.etaType = rtype
                                     }
-                                    else if (leftBase is UnknownType && rightBase is UnknownType) {
+                                    else if (leftBase is UnknownType) {
                                         n.etaType = ArrayType(UnknownType())
                                     }
                                     else {
@@ -590,7 +591,53 @@ class TypeChecker(topGamma : Context) {
                             semanticError(n,"Binop ${n.op} attempted with array and non-array")
                         }
                     }
-
+                    is UnknownType -> {
+                        when (rtype) {
+                            is IntType -> { // duplicated code
+                                if (n.op in listOf(PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO)) {
+                                    n.etaType = IntType()
+                                    n.left.etaType = IntType()
+                                } else if (n.op in listOf(EQB, NEQB, LT, LEQ, GT, GEQ)) {
+                                    n.etaType = BoolType()
+                                    n.left.etaType = BoolType()
+                                } else {
+                                    semanticError(n,"Integers cannot be used with ${n.op}")
+                                }
+                            }
+                            is BoolType -> {
+                                if (n.op in listOf(EQB, NEQB, AND, OR)){
+                                    n.etaType = BoolType()
+                                n.left.etaType = BoolType()
+                                }
+                                else {
+                                    semanticError(n,"Booleans cannot be used with ${n.op}")
+                                }
+                            }
+                            is ArrayType -> {
+                                val rightBase = rtype.t
+                                if (n.op in listOf(EQB, NEQB)) {
+                                    n.etaType = BoolType()
+                                    n.left.etaType = ArrayType(rightBase)
+                                }
+                                else if (n.op == PLUS) {
+                                    if (rightBase !is UnknownType) {
+                                        n.etaType = rtype
+                                        n.left.etaType = ArrayType(rightBase)
+                                    }
+                                    else {
+                                        n.etaType = ArrayType(UnknownType())
+                                    }
+                                }
+                                else {
+                                    semanticError(n,"Unknown array cannot be used with ${n.op}")
+                                }
+                            }
+                            is UnknownType -> { n.etaType = UnknownType() }
+                            else -> {
+                                semanticError(n, "Cannot do expression operation with non-expression type")
+                            }
+                        }
+                    }
                     else -> {
                         semanticError(n,"Operation ${n.op} attempted with impossible type")
                     }
