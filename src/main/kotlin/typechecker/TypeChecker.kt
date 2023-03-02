@@ -647,7 +647,11 @@ class TypeChecker(val libpath : String) {
                                 }
                             }
                         } else {
-                            semanticError(n,"Function ${n.fn} tried to output ${ft.codomain.lst.size} returns as an expression")
+                            if (ft.codomain.lst.size > 1) {
+                                semanticError(n,"Function ${n.fn} tried to output multiple returns as an expression")}
+                            else {
+                                semanticError(n,"Function ${n.fn} tried to output no returns as an expression")
+                            }
                         }
                     } else {
                         semanticError(n,"Function ${n.fn} expected ${ft.domain.lst.size} arguments," +
