@@ -1,6 +1,9 @@
 build
 
 etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
+    badeti.eti (Semantic, "Mismatch in type of function f among interfaces/programs");
+    badetiparse.eti (Syntax, "use");
+    badetiparseuse.eta (Syntax, "use");
     fun1.eta (Semantic, "Invalid function shadowing");
     shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
 }
