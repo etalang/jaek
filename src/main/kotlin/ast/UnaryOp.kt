@@ -2,9 +2,9 @@ package ast
 
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
-class UnaryOp(val op: Operation, val arg: Expr) : Expr() {
+class UnaryOp(val op: Operation, val arg: Expr, override val terminal: Terminal) : Expr() {
 
-    enum class Operation(val strVal : String) {
+    enum class Operation(val strVal: String) {
         NOT("!"),
         NEG("-")
     }

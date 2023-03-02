@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.math.BigInteger;
+import errors.*;
 
 %%
 

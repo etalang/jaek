@@ -3,7 +3,9 @@ package ast
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
 sealed class Statement : Node() {
-    class If(val guard: Expr, val thenBlock: Statement, val elseBlock: Statement?) : Statement() {
+    class If(val guard: Expr, val thenBlock: Statement, val elseBlock: Statement?, override val terminal: Terminal) :
+        Statement() {
+
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom("if")
@@ -14,7 +16,7 @@ sealed class Statement : Node() {
         }
     }
 
-    class While(val guard: Expr, val body: Statement) : Statement() {
+    class While(val guard: Expr, val body: Statement, override val terminal: Terminal) : Statement() {
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom("while")
@@ -24,7 +26,7 @@ sealed class Statement : Node() {
         }
     }
 
-    class Return(val args: List<Expr>) : Statement() {
+    class Return(val args: List<Expr>, override val terminal: Terminal) : Statement() {
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom("return")
@@ -33,7 +35,7 @@ sealed class Statement : Node() {
         }
     }
 
-    class Block(val stmts: List<Statement>) : Statement() {
+    class Block(val stmts: List<Statement>, override val terminal: Terminal) : Statement() {
         override fun write(printer: SExpPrinter) {
             printer.startList()
             stmts.forEach { stmt -> stmt.write(printer) }
@@ -41,7 +43,8 @@ sealed class Statement : Node() {
         }
     }
 
-    class Procedure(val id: String, val args: List<Expr>) : Statement() {
+    class Procedure(val id: String, val args: List<Expr>, override val terminal: Terminal) : Statement() {
+
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom(id)
@@ -49,9 +52,12 @@ sealed class Statement : Node() {
             printer.endList()
         }
     }
-    class ArrayInit(val type: Type, initDim : Expr) : Statement() {
-/** dimensions gives the expressions in the initialization of the array in REVERSE order! */
-        var dimensions : ArrayList<Expr?> = arrayListOf<Expr?>(initDim)
+
+    class ArrayInit(val type: Type, initDim: Expr) : Statement() {
+        /** dimensions gives the expressions in the initialization of the array in REVERSE order! */
+        var dimensions: ArrayList<Expr?> = arrayListOf(initDim)
+        override val terminal: Terminal = type.terminal
+
         override fun write(printer: SExpPrinter) {
             dimensions.forEach {
                 printer.startList()
