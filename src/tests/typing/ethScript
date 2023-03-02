@@ -10,4 +10,8 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     arrayassign2.eta;
     arrayassign3.eta;
     arrayassign4.eta;
+    arrayinits.eta;
+    badarray1.eta;
+    badarray2.eta;
+    badarray3.eta;
 }
