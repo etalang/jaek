@@ -79,7 +79,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
-                            println("Lexical error beginning at ${currFile.file.name}:${e.line}:${e.col}: ${e.details()}")
+                            println("Lexical error beginning at ${currFile.file.name}:${e.line}:${e.column}: ${e.details()}")
                             //lexical error goes in remaining out files, do not pass GO
                             parsedFile?.appendText(e.msg)
                             typedFile?.appendText(e.msg)
@@ -98,7 +98,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                         }
                         is SemanticError -> {
-                            println("Semantic error beginning at ${it.name}:${e.line}:${e.column}: ${e.desc}")
+                            println("Semantic error beginning at ${currFile.file.name}:${e.line}:${e.column}: ${e.desc}")
                         }
                     }
 
