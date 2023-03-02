@@ -312,7 +312,7 @@ class TypeChecker(val libpath : String) {
                             val fType = Gamma.lookup(f.fn)
                             if (fType is FunType) {
                                 if (f.args.size != fType.domain.lst.size) {
-                                    semanticError(f,"number of arguments mismatch in function call")
+                                    semanticError(n,"number of arguments mismatch in function call")
                                 }
                                 else {
                                     for (i in 0 until f.args.size) {
@@ -322,7 +322,7 @@ class TypeChecker(val libpath : String) {
                                         }
                                     }
                                     if (n.targets.size != fType.codomain.lst.size) {
-                                        semanticError(f,"Number of assignment targets mismatch from function")
+                                        semanticError(n,"Number of assignment targets mismatch from function")
                                     }
                                     else {
                                         var newBindings = HashMap<String, ContextType>()
@@ -647,7 +647,7 @@ class TypeChecker(val libpath : String) {
                                 }
                             }
                         } else {
-                            semanticError(n,"Function ${n.fn} tried to output multiple returns as an expression")
+                            semanticError(n,"Function ${n.fn} tried to output ${ft.codomain.lst.size} returns as an expression")
                         }
                     } else {
                         semanticError(n,"Function ${n.fn} expected ${ft.domain.lst.size} arguments," +
