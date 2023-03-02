@@ -1,11 +1,16 @@
 build
 
 etac ("Test --lex") "--lex" {
+    charstringedgecase.eta;
     comments.eta;
+    emotetest.eta (Lexical, "Unmatched \"'\"");
     invalidcharacter1.eta (Lexical, "Unmatched \"'\"");
     invalidcharacter2.eta (Lexical, "Unmatched \"'\"");
     invalidcharacter3.eta (Lexical, "Unmatched \"'\"");
     invalidcharacter4.eta (Lexical, "Unmatched \"'\"");
+    largeintegerneg.eta (Lexical, "Not a valid integer");
+    largeintegerpos.eta (Lexical, "Not a valid integer");
+    manysinglequotes.eta;
     multilinestring.eta (Lexical, "Multiline string");
     nonterminatingstring1.eta (Lexical, "Multiline string");
     nonterminatingstring2.eta (Lexical, "Non-terminating string");
@@ -25,9 +30,6 @@ etac ("Test --lex") "--lex" {
     unexpectedcharacter13.eta (Lexical, "Non-terminating string");
     unexpectedcharacter14.eta (Lexical, "Non-terminating string");
     unexpectedcharacter15.eta (Lexical, "Non-terminating string");
-    emotetest.eta (Lexical, "Unmatched \"'\"");
-    variabledeclarations.eta;
-    largeintegers.eta;
     unicodechars.eta;
-    charstringedgecase.eta;
+    variabledeclarations.eta;
 }
