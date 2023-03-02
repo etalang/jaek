@@ -55,8 +55,8 @@ sealed class Statement : Node() {
 
     class ArrayInit(val type: Type, initDim: Expr) : Statement() {
         /** dimensions gives the expressions in the initialization of the array in REVERSE order! */
-        var dimensions: ArrayList<Expr?> = arrayListOf<Expr?>(initDim)
-        override val terminal: Terminal = TODO("Not yet implemented")
+        var dimensions: ArrayList<Expr?> = arrayListOf(initDim)
+        override val terminal: Terminal = type.terminal
 
         override fun write(printer: SExpPrinter) {
             dimensions.forEach {

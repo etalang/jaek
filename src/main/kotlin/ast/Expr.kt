@@ -24,8 +24,7 @@ sealed class Expr : Node() {
         }
     }
 
-    class ArrayAccess(val arr: Expr, val idx: Expr) : Expr() {
-        override val terminal: Terminal = TODO("Not yet implemented")
+    class ArrayAccess(val arr: Expr, val idx: Expr, override val terminal: Terminal) : Expr() {
 
         override fun write(printer: SExpPrinter) {
             printer.startList()

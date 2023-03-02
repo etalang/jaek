@@ -10,8 +10,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
-import errors.LexicalError
-import errors.SemanticError
+import errors.*
 import java_cup.runtime.Symbol
 import typechecker.TypeChecker
 import java.io.File
@@ -72,7 +71,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
                     typeCheck(ast, absLibpath.toString(), typedFile)
-                } catch (e : Exception) {
+                } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
                             println("Lexical error beginning at ${it.name}:${e.line}:${e.column}: ${e.details()}")
@@ -80,7 +79,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                             parsedFile?.appendText(e.msg)
                             typedFile?.appendText(e.msg)
                         }
-                        is errors.ParseError -> {
+                        is ParseError -> {
                             val badSym = e.sym
                             var err = ""
                             if (badSym is Token<*>) {

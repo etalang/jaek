@@ -1,4 +1,6 @@
-import errors.LexicalError;
+import java.util.ArrayList;
+import java.math.BigInteger;
+import errors.*;
 
 %%
 
@@ -8,7 +10,6 @@ import errors.LexicalError;
 %function nextToken
 %line
 %column
-%char
 %yylexthrow LexicalError
 
 %unicode
@@ -34,14 +35,9 @@ import errors.LexicalError;
     public int column() {
         return yycolumn + 1;
     }
-
-    public long charr() {
-        return yychar;
-    }
 %}
 
 Whitespace = [ \t\f\r\n]
-NewLine = [\u000B\u000C\u0085\u2028\u2029\r\n]
 Letter = [a-zA-Z]
 Digit = [0-9]
 Unicode = "\\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
@@ -59,7 +55,6 @@ MinInteger = "-"([ \t])*"9223372036854775808"
 %%
 
 <YYINITIAL> {
-    {NewLine}         { System.out.println(charr());}
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
