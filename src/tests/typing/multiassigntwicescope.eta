@@ -1,0 +1,7 @@
+f() : int, int, int {
+  return 1, 2, 3;
+}
+
+main(){
+  x : int, x, a : int = f();
+}

@@ -1,0 +1,7 @@
+f() : int {
+    return 1;
+}
+
+main() {
+    b : bool = f();
+}
