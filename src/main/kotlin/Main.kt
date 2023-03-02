@@ -12,7 +12,6 @@ import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import java_cup.runtime.Symbol
-import typechecker.Context
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -74,8 +73,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
-                    val topGamma = kompiler.createTopLevelContext(ast, absLibpath.toString(), currFile)
-                    typeCheck(ast, typedFile, topGamma)
+                    typeCheck(ast, typedFile, absLibpath.toString(), currFile, kompiler)
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
@@ -157,9 +155,18 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         return AST
     }
 
-    private fun typeCheck(ast : Node, typedFile: File?, topGamma : Context) {
+    private fun typeCheck(
+        ast: Node,
+        typedFile: File?,
+        libpath: String,
+        currFile: CurrFile,
+        kompiler: Kompiler
+    ) {
         try {
-            TypeChecker(topGamma).typeCheck(ast)
+            val topGamma = kompiler.createTopLevelContext(ast, libpath, currFile)
+            if (ast !is Interface) {
+                TypeChecker(topGamma).typeCheck(ast)
+            }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
             typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
