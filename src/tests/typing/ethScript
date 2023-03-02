@@ -1,6 +1,14 @@
 build
 
 etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
+    arrayassign1.eta;
+    arrayassign2.eta;
+    arrayassign3.eta;
+    arrayassign4.eta;
+    arrayinits.eta;
+    badarray1.eta;
+    badarray2.eta;
+    badarray3.eta;
     badeti.eti (Semantic, "Mismatch in type of function f among interfaces/programs");
     badetiparse.eti (Syntax, "use");
     badetiparseuse.eta (Syntax, "use");
