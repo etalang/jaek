@@ -96,4 +96,10 @@ public abstract class Token<T> extends Symbol {
             super(attribute, LexUtil.getSym(attribute), lineNum, col);
         }
     }
+
+    static class EOFToken extends Token<String> {
+        public EOFToken(int lineNum, int col) {
+            super("<<EOF>>", SymbolTable.EOF, lineNum, col);
+        }
+    }
 }
