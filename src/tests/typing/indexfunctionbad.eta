@@ -1,0 +1,7 @@
+f() : bool[] {
+    return {true}
+}
+
+main(){
+    a : int = f()[0]
+}

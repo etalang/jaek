@@ -12,4 +12,5 @@ etac ("Test --lex") "--lex" {
     singlequote.eta (Lexical, "Unmatched \"'\"");
     tab.eta;
     toolargeint.eta (Lexical, "Not a valid integer");
+    unicode.eta;
 }

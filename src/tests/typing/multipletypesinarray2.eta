@@ -1,0 +1,4 @@
+main(){
+ b : bool = true;
+ i : int = {0, b, 4}[1]
+}

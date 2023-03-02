@@ -1,0 +1,6 @@
+f(a:int) {
+}
+
+main(){
+    f(true);
+}

@@ -1,0 +1,7 @@
+f(a:int) : int {
+    return 1;
+}
+
+main(){
+    a: int = f(true);
+}

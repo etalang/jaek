@@ -1,0 +1,7 @@
+f() : int[] {
+    return {3}
+}
+
+main(){
+    a : int = f()[0]
+}

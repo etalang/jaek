@@ -22,7 +22,7 @@ terminal BinaryOp.Operation PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, 
 
 terminal IF, ELSE, WHILE, RETURN, USE, LENGTH,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS, LITMINUS;
+  COLON, COMMA, SEMICOLON, UNDERSCORE, UMINUS;
 
 terminal INTERFACE, PROGRAM;
 
@@ -35,6 +35,7 @@ nonterminal Use use;
 nonterminal ArrayList<Definition> allDefinitions;
 nonterminal Definition definition;
 nonterminal Method methodHeader;
+nonterminal ArrayList<Method> methodHeaders;
 nonterminal Method method;
 nonterminal GlobalDecl globalDecl;
 nonterminal ArrayList<Type> typelst;
@@ -54,18 +55,18 @@ nonterminal Statement elseOptional; // might have to add empty list in empty cas
 nonterminal Statement.Procedure procedureCall;
 nonterminal Expr.FunctionCall functionCall;
 nonterminal MultiAssign multiAssign;
-nonterminal Statement.ArrayInit arrayInit, arrayNonBlank;
+nonterminal Statement.ArrayInit arrayInit;
 nonterminal VarDecl.InitArr arrayInitStatement;
 nonterminal ArrayList<Expr> exprList;
 nonterminal AssignTarget assignable;
 nonterminal ArrayList<AssignTarget> assignables;
 nonterminal VarDecl.RawVarDecl methodArg;
 nonterminal VarDecl.RawVarDecl varDecl;
-//nonterminal varDeclOrArrayInit;
 nonterminal semi;
 nonterminal BinaryOp binop;
 nonterminal UnaryOp.Operation unop;
-nonterminal Expr arrayAccess, indexable;
+nonterminal Expr.ArrayAccess arrayAccess, arrayLiteralAccess;
+nonterminal Expr indexable, arrayLiteral;
 
 /* Precedences */
 precedence left OR;
@@ -75,7 +76,6 @@ precedence left LT, LEQ, GT, GEQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, HIGHTIMES, DIVIDE, MODULO;
 precedence left UMINUS, NOT;
-precedence left LITMINUS;
 precedence left COMMA, OPEN_BRACKET, CLOSE_BRACKET, ELSE;
 precedence left OPEN_PAREN, CLOSE_PAREN;
 
@@ -84,8 +84,7 @@ precedence left OPEN_PAREN, CLOSE_PAREN;
 start with file;
 file            ::= INTERFACE interface:It                      {: RESULT = It; :}
                     | PROGRAM program:P                         {: RESULT = P;  :};
-interface       ::= interface:it methodHeader:am                {: ArrayList<Method> ml = it.getMethodHeaders(); ml.add(am); RESULT = new Interface(ml); :}
-                    |                                           {: RESULT = new Interface(new ArrayList<>());:};
+interface       ::= methodHeaders:Mh                            {: RESULT = new Interface(Mh); :};
 program         ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -97,7 +96,7 @@ use             ::= USE IDENTIFIER:id semi                      {: RESULT = new 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
 allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :} //could be sketch
-                    |                                           {: RESULT = new ArrayList<>(); :};
+                    | definition:d                              {: RESULT = ParseUtil.singleton(d); :};
 definition      ::= method:m                                    {: RESULT = m; :}
                     | globalDecl:dc semi                        {: RESULT = dc; :};
 
@@ -105,9 +104,13 @@ definition      ::= method:m                                    {: RESULT = m; :
 // a : int[6] ILLEGAL
 // b : int[] = 5
 globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null); :};
-globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :};
+globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl); :}
+                    | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n             {: if (n.data.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n.data, n.line, n.column)); }
+                                                                                             RESULT = new GlobalDecl(id, t, new Literal.IntLit(Long.parseLong(n.data))); :};
 
 /* =============> [Global] Methods <============= */
+methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
+                    | methodHeader:am                                                        {: RESULT = ParseUtil.singleton(am); :};
 methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts); :}
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>()); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts); :}
@@ -163,25 +166,23 @@ return          ::= RETURN semi                                                 
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
 varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDecl(id, t); :};
-assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ExprAssign(e1); :} //TODO: THOROUGHLY THINK ABOUT THIS ONE
+assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ArrayAssign(e1); :}
                     | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
                     | UNDERSCORE                                   {: RESULT = new AssignTarget.Underscore(); :}
-                    | IDENTIFIER:id                                {: RESULT = new AssignTarget.ExprAssign(new Expr.Identifier(id)); :};
+                    | IDENTIFIER:id                                {: RESULT = new AssignTarget.IdAssign(new Expr.Identifier(id)); :};
 assignables     ::= assignable:at                                  {: RESULT = ParseUtil.singleton(at); :}
                     | assignables:atl COMMA assignable:at          {: atl.add(at); RESULT = atl; :} ; //LEFT RECURSIVE
 multiAssign     ::= assignables:tg EQUALS exprList:exprs           {: RESULT = new MultiAssign(tg, exprs);:};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
-arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                             {: RESULT = new VarDecl.InitArr(id, ar); :};
-arrayInit          ::= arrayNonBlank:anb                                            {: RESULT = anb;:} //TODO: this is a hack really bad structure
-                       |  arrayInit:ai OPEN_BRACKET CLOSE_BRACKET                   {: ai.getDimensions().add(0, null); RESULT = ai; :};
-arrayNonBlank      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
-                       | arrayNonBlank:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
-                       | arrayNonBlank:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
-method          ::= methodHeader:am returnableBlock:b                               {: am.setBody(b); RESULT = am; :};
-typelst         ::= type:t                                                          {: RESULT = ParseUtil.singleton(t);:}
-                    | typelst:tl COMMA type:t                                       {: tl.add(t); RESULT = tl;:}; //LR
+arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         {: RESULT = new VarDecl.InitArr(id, ar); :};
+arrayInit      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
+                       | arrayInit:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
+                       | arrayInit:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
+method          ::= methodHeader:am returnableBlock:b                           {: am.setBody(b); RESULT = am; :};
+typelst         ::= type:t                                                      {: RESULT = ParseUtil.singleton(t);:}
+                    | typelst:tl COMMA type:t                                   {: tl.add(t); RESULT = tl;:}; //LR
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
@@ -191,8 +192,8 @@ expr            ::= binop:op                                       {: RESULT = o
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
                     | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s); :}
-                    | OPEN_BRACE exprList:el CLOSE_BRACE           {: RESULT = new Literal.ArrayLit(el); :}  //array literal
-                    | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}  //array literal
+                    | arrayLiteral:al                              {: RESULT = al; :}
+                    | arrayLiteralAccess:ala                       {: RESULT = ala; :}
                     | arrayAccess:aa                               {: RESULT = aa; :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e); :};
@@ -202,9 +203,13 @@ arrayAccess       ::= indexable:e1 OPEN_BRACKET expr:e2 CLOSE_BRACKET {: RESULT 
 indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id); :}
                     | arrayAccess:aa                               {: RESULT = aa; :};
-primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.IntegerToken(n.data, n.line, n.column)); }
+arrayLiteral     ::= OPEN_BRACE exprList:el CLOSE_BRACE            {: RESULT = new Literal.ArrayLit(el); :}
+                    | OPEN_BRACE exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el); :}
+                    | OPEN_BRACE CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>()); :};
+arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e); :}
+                    | arrayLiteralAccess:ala OPEN_BRACKET expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e); :};
+primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data.equals("9223372036854775808")) { throw new ParseError(new Token.StringToken(n.data, n.line, n.column)); }
                                                                         RESULT = new Literal.IntLit(Long.parseLong(n.data)); :}
-                    | MINUS INTEGER_LITERAL:n                      {: RESULT = new Literal.IntLit(Long.parseLong("-" + n.data)); :} %prec LITMINUS
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c); :}
                     | FALSE                                        {: RESULT = new Literal.BoolLit(false); :}
                     | TRUE                                         {: RESULT = new Literal.BoolLit(true); :};

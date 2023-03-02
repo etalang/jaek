@@ -1,0 +1,14 @@
+f() {}
+
+f1() {
+ while (true) if (true) f()
+ while (true) if (true) f() else f()
+ while (true) while (true) f()
+ while (true) f()
+ while (true) {}
+ while (true) x:int[0]
+}
+
+f2(int x, int y) {
+ while (true) x = y
+}

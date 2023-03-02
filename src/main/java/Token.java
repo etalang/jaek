@@ -20,6 +20,9 @@ public abstract class Token<T> extends Symbol {
     public String location() {
         return lineNum + ":" + col;
     }
+
+    public int getLine() {return lineNum;}
+    public int getCol() {return col;}
     public String lexInfo() {
         return location() + " " + type() + stringVal();
     }
@@ -90,6 +93,12 @@ public abstract class Token<T> extends Symbol {
     static class SymbolToken extends Token<String> {
         public SymbolToken(String attribute, int lineNum, int col) {
             super(attribute, LexUtil.getSym(attribute), lineNum, col);
+        }
+    }
+
+    static class EOFToken extends Token<String> {
+        public EOFToken(int lineNum, int col) {
+            super("<<EOF>>", SymbolTable.EOF, lineNum, col);
         }
     }
 }
