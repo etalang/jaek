@@ -62,7 +62,7 @@ nonterminal VarDecl.RawVarDecl methodArg;
 nonterminal VarDecl.RawVarDecl varDecl;
 nonterminal semi;
 nonterminal BinaryOp binop;
-nonterminal UnaryOp.Operation unop;
+nonterminal ParseUtil.UnOpBundle unop;
 nonterminal Expr.ArrayAccess arrayAccess, arrayLiteralAccess;
 nonterminal Expr indexable, arrayLiteral;
 
@@ -186,8 +186,7 @@ typelst         ::= type:t                                                      
 /* Expressions */
 expr            ::= binop:op                                       {: RESULT = op; :}
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
-                    | UMINUS:o expr:arg                              {: RESULT = new UnaryOp(UnaryOp.Operation.NEG, arg,new Terminal(oleft,oright)); :} %prec UMINUS
-                    | NOT:o expr:arg                                 {: RESULT = new UnaryOp(UnaryOp.Operation.NOT, arg,new Terminal(oleft,oright)); :}
+                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
                     | IDENTIFIER:id                                {: RESULT = new Literal.Identifier(id,new Terminal(idleft,idright)); :} //amazing work
                     | functionCall:fc                              {: RESULT = fc; :}
                     | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s,new Terminal(sleft,sright)); :}
@@ -214,6 +213,8 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.data
                     | TRUE:o                                         {: RESULT = new Literal.BoolLit(true,new Terminal(oleft,oright)); :};
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl,new Terminal(idleft,idright));:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>(),new Terminal(idleft,idright));:};
+unop            ::= MINUS:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NEG,new Terminal(uleft,uright)); :}  // cannot differentiate identical token but need diff prec
+                    | NOT:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NOT,new Terminal(uleft,uright)); :}; // need to take expr
 binop           ::= expr:r PLUS:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.PLUS,r,l,new Terminal(oleft,oright)); :}
                     | expr:r TIMES:o expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l,new Terminal(oleft,oright)); :}
                     | expr:r MINUS:o expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.MINUS,r,l,new Terminal(oleft,oright)); :}

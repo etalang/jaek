@@ -95,9 +95,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                         is SemanticError -> {
                             println("Semantic error beginning at ${it.name}:${e.line}:${e.column}: ${e.desc}")
                         }
-                        else -> {
-                            println("An unexpected error has thrown during validity checking.")
-                        }
                     }
 
                 }
