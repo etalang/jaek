@@ -6,4 +6,8 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     badetiparseuse.eta (Syntax, "use");
     fun1.eta (Semantic, "Invalid function shadowing");
     shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
+    arrayassign1.eta;
+    arrayassign2.eta;
+    arrayassign3.eta;
+    arrayassign4.eta;
 }
