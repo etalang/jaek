@@ -1,9 +1,0 @@
-(
-  (
-    (print ((str ([] int))) ())
-    (println ((str ([] int))) ())
-    (readln () (([] int)))
-    (getchar () (int))
-    (eof () (bool))
-  )
-)

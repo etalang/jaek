@@ -1,1 +1,0 @@
-2:3 error:Name x cannot be resolved
