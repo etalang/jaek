@@ -4,6 +4,19 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     badeti.eti (Semantic, "Mismatch in type of function f among interfaces/programs");
     badetiparse.eti (Syntax, "use");
     badetiparseuse.eta (Syntax, "use");
+    badetiuse.eta (Semantic, "Mismatch in type of function f among interfaces/programs");
+    badprocedurecalls.eta (Semantic, "Procedures may not return any values");
+    booleanprecedence.eta;
+    eti1.eti;
+    eti2.eti;
+    eti3.eti;
+    exampleprogram.eta;
     fun1.eta (Semantic, "Invalid function shadowing");
+    implementalleti.eta;
+    length.eta;
+    multipletypesinarray.eta (Semantic, "Array elements must be consistent type");
+    multipletypesinarray2.eta (Semantic, "Array elements must be consistent type");
+    mutuallyrecursive.eta;
+    noimplementalleti.eta;
     shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
 }

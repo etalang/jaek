@@ -1,5 +1,3 @@
-use booleanprecedence
-
 main(args: int[][]) {
     b1 : bool = true;
     b2 : bool = false;
