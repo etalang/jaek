@@ -19,8 +19,8 @@ import java.io.FileNotFoundException
 import java.lang.Exception
 
 
-class TypeChecker(val libpath : String) {
-    var Gamma : Context = Context()
+class TypeChecker(topGamma : Context) {
+    var Gamma : Context = topGamma
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {
@@ -30,10 +30,6 @@ class TypeChecker(val libpath : String) {
     fun typeCheck(n : Node) {
         when (n) {
             is Program -> {
-                // add interface bindings to the program first
-                for (u in n.imports) {
-                    typeCheck(u)
-                }
                 // first pass
                 for (defn in n.definitions) {
                     when (defn) {
@@ -150,48 +146,13 @@ class TypeChecker(val libpath : String) {
                 }
             }
             is Statement -> { typeCheckStmt(n) }
-            is Interface -> {
-                for (method in n.methodHeaders) {
-                    var domainList = ArrayList<OrdinaryType>()
-                    for (decl in method.args) {
-                        domainList.add(translateType(decl.type))
-                    }
-                    var codomainList = ArrayList<OrdinaryType>()
-                    for (t in method.returnTypes){
-                        codomainList.add(translateType(t))
-                    }
-                    val currFunType = FunType(ExpandedType(domainList), ExpandedType(codomainList), true)
-                    if (Gamma.contains(method.id) ) {
-                        if (Gamma.lookup(method.id) != currFunType) {
-                            semanticError(method, "Mismatch in type of function ${method.id} among interfaces/programs")
-                        }
-                    }
-                    else {
-                        Gamma.bind(method.id, currFunType)
-                    }
-                }
-
-            }
             is Expr -> typeCheckExpr(n)
-            is Use -> {
-                val filepath = File(libpath, n.lib + ".eti") // needs to use library path
-                try {
-                    val interfaceAST = ASTUtil.getAST(filepath)
-                    if (interfaceAST is Interface)
-                        typeCheck(interfaceAST)
-                    else {
-                        semanticError(n, "Could not import interface ${n.lib} AST")
-                    }
-                } catch (e : FileNotFoundException) {
-                    semanticError(n, "Could not find interface ${n.lib} file")
-
-                }
-            }
             else -> {
                 semanticError(n,"Unreachable, calling typeCheck on Node that should not be type-checked explicitly")
                 // AssignTarget case -> do nothing, should never be typechecked from here
                 // Type nodes -> should never actually be checked, only referenced and read
                 // Definition -> handled at the top level in Program with the multiple passes
+                // Interface, Use should be handled by top-level constructor
             }
         }
     }

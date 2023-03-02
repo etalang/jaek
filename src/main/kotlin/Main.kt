@@ -12,6 +12,7 @@ import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import java_cup.runtime.Symbol
+import typechecker.Context
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -50,18 +51,21 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
-
+    data class CurrFile(var file : File)
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
      */
     override fun run() {
+
         val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
 
         val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
         folderFiles.forEach {
+            val currFile = CurrFile(it) //holds the currently processing file for error reporting
+            val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
@@ -70,11 +74,12 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
-                    typeCheck(ast, absLibpath.toString(), typedFile)
+                    val topGamma = kompiler.createTopLevelContext(ast, absLibpath.toString(), currFile)
+                    typeCheck(ast, typedFile, topGamma)
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
-                            println("Lexical error beginning at ${it.name}:${e.line}:${e.column}: ${e.details()}")
+                            println("Lexical error beginning at ${currFile.file.name}:${e.line}:${e.column}: ${e.details()}")
                             //lexical error goes in remaining out files, do not pass GO
                             parsedFile?.appendText(e.msg)
                             typedFile?.appendText(e.msg)
@@ -84,7 +89,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                             var err = ""
                             if (badSym is Token<*>) {
                                 err = "${badSym.location()} error:${badSym.stringVal()}"
-                                println("Syntax error beginning at ${it.name}:${badSym.line}:${badSym.col}: ${badSym.stringVal()}")
+                                println("Syntax error beginning at ${currFile.file.name}:${badSym.line}:${badSym.col}: ${badSym.stringVal()}")
                             } else {
                                 err = "Unexpected error while parsing."
                             }
@@ -93,7 +98,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                         }
                         is SemanticError -> {
-                            println("Semantic error beginning at ${it.name}:${e.line}:${e.column}: ${e.desc}")
+                            println("Semantic error beginning at ${currFile.file.name}:${e.line}:${e.column}: ${e.desc}")
                         }
                     }
 
@@ -152,14 +157,15 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         return AST
     }
 
-    private fun typeCheck(ast : Node, libpath : String, typedFile: File?) {
+    private fun typeCheck(ast : Node, typedFile: File?, topGamma : Context) {
         try {
-            TypeChecker(libpath).typeCheck(ast)
+            TypeChecker(topGamma).typeCheck(ast)
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
             typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
             throw e
         }
     }
+
 }
 fun main(args: Array<String>) = Etac().main(args)
