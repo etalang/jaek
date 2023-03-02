@@ -46,6 +46,7 @@ Character = [^"\\""'"]|"\\"("\\"|"\""|"'"|"n"|"t"|"r")|{Unicode}
 Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
 CharLiteral = "'"({Character}|"\"")"'"
+MinInteger = "-"([ \t])*"9223372036854775808"
 
 %state COMMENT
 %state STRING
@@ -56,6 +57,7 @@ CharLiteral = "'"({Character}|"\"")"'"
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
+    {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column());}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
     {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column()); }
     {CharLiteral}     { return new Token.CharacterToken(yytext(), lineNumber(), column()); }
@@ -63,16 +65,18 @@ CharLiteral = "'"({Character}|"\"")"'"
     "//"              { yybegin(COMMENT); }
     "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column());}
     "'"               { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());}
+    <<EOF>>           { return new Token.EOFToken(lineNumber(), column()); }
     [^]               { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());}
 }
 <COMMENT> {
     "\n"              { yybegin(YYINITIAL); }
+    <<EOF>>           { return new Token.EOFToken(lineNumber(), column()); }
     [^]               { }
 }
 <STRING> {
     "\""              { Token.StringToken t = currentString.complete(); yybegin(YYINITIAL); return t;}
     "\n"              { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
-    ({Character}|"'") { currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
+    ({Character}|"'") { yycolumn -= LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
     "\\"([^])         { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column()); }
     <<EOF>>           { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
     [^]               { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
