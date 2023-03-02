@@ -49,18 +49,21 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
+    data class CurrFile(var file : File)
 
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
      */
     override fun run() {
+
         val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
 
         val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
         folderFiles.forEach {
+            val currFile = CurrFile(it) //holds the currently processing file for error reporting
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
                 var lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
@@ -69,11 +72,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
-                    typeCheck(ast, absLibpath.toString(), typedFile)
+                    typeCheck(ast, absLibpath.toString(), typedFile, currFile)
                 } catch (e : Exception) {
                     when (e) {
                         is LexicalError -> {
-                            println("Lexical error beginning at ${it.name}:${e.line}:${e.col}: ${e.details()}")
+                            println("Lexical error beginning at ${currFile.file.name}:${e.line}:${e.col}: ${e.details()}")
                             //lexical error goes in remaining out files, do not pass GO
                             parsedFile?.appendText(e.msg)
                             typedFile?.appendText(e.msg)
@@ -83,7 +86,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                             var err = ""
                             if (badSym is Token<*>) {
                                 err = "${badSym.location()} error:${badSym.stringVal()}"
-                                println("Syntax error beginning at ${it.name}:${badSym.line}:${badSym.col}: ${badSym.stringVal()}")
+                                println("Syntax error beginning at ${currFile.file.name}:${badSym.line}:${badSym.col}: ${badSym.stringVal()}")
                             } else {
                                 err = "Unexpected error while parsing."
                             }
@@ -92,7 +95,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                         }
                         is SemanticError -> {
-                            println("Semantic error beginning at ${it.name}:${e.line}:${e.col}: ${e.desc}")
+                            println("Semantic error beginning at ${currFile.file.name}:${e.line}:${e.col}: ${e.desc}")
                         }
                         else -> {
                             println("An unexpected error has thrown during validity checking.")
@@ -154,9 +157,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         return AST
     }
 
-    private fun typeCheck(ast : Node, libpath : String, typedFile: File?) {
+    private fun typeCheck(ast : Node, libpath : String, typedFile: File?, currFile : CurrFile) {
         try {
-            TypeChecker(libpath).typeCheck(ast)
+            TypeChecker(libpath, currFile).typeCheck(ast)
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
             typedFile?.appendText("${e.line}:${e.col} error:${e.desc}")

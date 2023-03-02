@@ -1,0 +1,5 @@
+use badint
+
+a : int = 5
+
+//b : bool = a

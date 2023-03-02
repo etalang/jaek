@@ -1,6 +1,7 @@
 package typechecker
 
 import ASTUtil
+import Etac
 import SemanticError
 import ast.*
 import ast.BinaryOp.Operation.*
@@ -15,10 +16,9 @@ import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
 import java.io.File
-import java.io.FileNotFoundException
 
 
-class TypeChecker(val libpath : String) {
+class TypeChecker(val libpath : String, val currFile : Etac.CurrFile) {
     var Gamma : Context = Context()
 
     fun typeCheck(n : Node) {
@@ -168,17 +168,19 @@ class TypeChecker(val libpath : String) {
             is Expr -> typeCheckExpr(n)
             is Use -> {
                 val filepath = File(libpath, n.lib + ".eti") // needs to use library path
-                try {
-                    val interfaceAST = ASTUtil.getAST(filepath)
-                    if (interfaceAST is Interface)
-                        typeCheck(interfaceAST)
-                    else {
-                        throw SemanticError(0, 0, "Could not import interface ${n.lib} AST")
+                    if (filepath.exists()) {
+                        val prevFile = currFile.file
+                        currFile.file = filepath
+                        val interfaceAST = ASTUtil.getAST(filepath)
+                        if (interfaceAST is Interface)
+                            typeCheck(interfaceAST)
+                        else {
+                            throw SemanticError(0, 0, "Could not import interface ${n.lib} AST") // will throw in eti file :(
+                        }
+                        currFile.file = prevFile
+                    } else {
+                        throw SemanticError(0, 0, "Could not find interface ${n.lib} file")
                     }
-                } catch (e : FileNotFoundException) {
-                    throw SemanticError(0, 0, "Could not find interface ${n.lib} file")
-
-                }
             }
             else -> {
                 throw SemanticError(0,0,"Unreachable, calling typeCheck on Node that should not be type-checked explicitly")
