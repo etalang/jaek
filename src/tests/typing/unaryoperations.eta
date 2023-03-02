@@ -1,0 +1,13 @@
+main(){
+    b : bool = true;
+    x : int = 5;
+    y :int = -x;
+    a : bool = !true;
+
+    while (!b) {
+        x = x + 1;
+        if (x == 10) {
+            b = false;
+        }
+    }
+}

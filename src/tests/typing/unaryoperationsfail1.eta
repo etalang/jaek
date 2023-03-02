@@ -1,0 +1,5 @@
+main(){
+    a : int = 3;
+
+    b : bool = !a;
+}
