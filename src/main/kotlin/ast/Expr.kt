@@ -3,7 +3,8 @@ package ast
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
 sealed class Expr : Node() {
-    class FunctionCall(val fn: String, val args: ArrayList<Expr>) : Expr() {
+    class FunctionCall(val fn: String, val args: ArrayList<Expr>, override val terminal: Terminal) : Expr() {
+
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom(fn)
@@ -11,7 +12,8 @@ sealed class Expr : Node() {
             printer.endList()
         }
 
-        class LengthFn(val arg : Expr) : Expr() {
+        class LengthFn(val arg: Expr, override val terminal: Terminal) : Expr() {
+
             override fun write(printer: SExpPrinter) {
                 printer.startList()
                 printer.printAtom("length")
@@ -22,7 +24,8 @@ sealed class Expr : Node() {
         }
     }
 
-    class ArrayAccess(val arr: Expr, val idx: Expr) : Expr() {
+    class ArrayAccess(val arr: Expr, val idx: Expr, override val terminal: Terminal) : Expr() {
+
         override fun write(printer: SExpPrinter) {
             printer.startList()
             printer.printAtom("[]")
@@ -32,7 +35,8 @@ sealed class Expr : Node() {
         }
     }
 
-    class Identifier(val name: String) : Expr() {
+    class Identifier(val name: String, override val terminal: Terminal) : Expr() {
+
         override fun write(printer: SExpPrinter) {
             printer.printAtom(name)
         }

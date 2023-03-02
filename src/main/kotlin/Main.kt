@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
+import errors.*
 import java_cup.runtime.Symbol
 import typechecker.Context
 import typechecker.TypeChecker
@@ -67,15 +68,15 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
-                var lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
-                var parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
-                var typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
+                val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
+                val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
                     val topGamma = kompiler.createTopLevelContext(ast, absLibpath.toString(), currFile)
                     typeCheck(ast, typedFile, topGamma)
-                } catch (e : Exception) {
+                } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
                             println("Lexical error beginning at ${currFile.file.name}:${e.line}:${e.col}: ${e.details()}")
@@ -97,10 +98,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                         }
                         is SemanticError -> {
-                            println("Semantic error beginning at ${currFile.file.name}:${e.line}:${e.col}: ${e.desc}")
-                        }
-                        else -> {
-                            println("An unexpected error has thrown during validity checking.")
+                            println("Semantic error beginning at ${it.name}:${e.line}:${e.column}: ${e.desc}")
                         }
                     }
 
@@ -164,7 +162,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             TypeChecker(topGamma).typeCheck(ast)
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
-            typedFile?.appendText("${e.line}:${e.col} error:${e.desc}")
+            typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
             throw e
         }
     }

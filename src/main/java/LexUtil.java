@@ -1,10 +1,10 @@
-import java_cup.runtime.Symbol;
+import errors.LexicalError;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 
 public class LexUtil {
-    private final static BigInteger maxVal = new BigInteger("9223372036854775808");
+    private final static BigInteger maxVal = new BigInteger("9223372036854775807");
 
     /** [formatChar(n)] outputs the printable version of a Character. */
     public static String formatChar(Integer character) {
@@ -22,9 +22,17 @@ public class LexUtil {
         return Character.toString(asciiChar);
     }
 
+    public static int unicodeAdjustment(String matched) {
+        if (matched.length() == 2 && matched.charAt(0) != '\\'){
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
     /**
      * [parseToChar(matched)] converts the matched string to the integer representing
-     * the character. Throws an LexicalError if the string does not correspond to a
+     * the character. Throws an errors.LexicalError if the string does not correspond to a
      * character.
      */
     public static int parseToChar(String matched, int lineNum, int col) throws LexicalError {
@@ -67,6 +75,7 @@ public class LexUtil {
      * [parseToInt(matched)] asserts that the number contained in matched is valid.
      */
     public static String parseToInt(String matched, int lineNum, int col) throws LexicalError{
+        matched = matched.replaceAll("\\s", "");
         BigInteger intVal = new BigInteger(matched);
         if (intVal.compareTo(maxVal) <= 0) {
             return matched;

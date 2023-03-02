@@ -1,3 +1,4 @@
+import errors.LexicalError;
 import java_cup.runtime.Symbol;
 
 import java.io.IOException;
