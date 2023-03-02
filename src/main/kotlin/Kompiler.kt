@@ -1,6 +1,8 @@
+
 import ast.Interface
 import ast.Node
 import ast.Program
+import errors.SemanticError
 import typechecker.Context
 import typechecker.EtaType
 import java.io.File
@@ -34,8 +36,7 @@ class Kompiler {
                             if (returnGamma.contains(method.id)) {
                                 if (returnGamma.lookup(method.id) != currFunType) {
                                     throw SemanticError(
-                                        0,
-                                        0,
+                                        method.terminal.line,method.terminal.column,
                                         "Mismatch in type of function ${method.id} among interfaces"
                                     )
                                 }
@@ -47,11 +48,11 @@ class Kompiler {
                     }
                     else {
                         currFile.file = prevFile
-                        throw SemanticError(0, 0, "Could not import interface ${import.lib} AST")
+                        throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST")
                     }
                     currFile.file = prevFile
                 } else {
-                    throw SemanticError(0, 0, "Could not find interface ${import.lib} file")
+                    throw SemanticError(import.terminal.line,import.terminal.column, "Could not find interface ${import.lib} file")
                 }
             }
         } else {
