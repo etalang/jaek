@@ -1,0 +1,12 @@
+foo() : int, int, bool {
+	return 1, 2, true
+}
+
+main(args: int[][]) {
+	x:int[] = {1,2,3}
+	y:int
+	z:bool
+	x[2],y,z = 1,2,false
+	x[1],b:int,z = foo()
+}
+

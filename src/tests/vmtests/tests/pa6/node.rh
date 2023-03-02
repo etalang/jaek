@@ -1,0 +1,41 @@
+use io
+use conv
+
+record Node {
+    value: int
+    next: Node
+}
+
+buildLinkedList(n: int): Node {
+    head, prev, curr: Node
+    i: int
+    while (i < n) {
+        curr = Node(i, null)
+        if (head == null) {
+            head = curr 
+        }
+        if (prev != null) {
+            prev.next = curr
+        }
+        prev = curr
+        i = i + 1
+    }
+    return head
+}
+
+displayLinkedList(h: Node) {
+    n: Node = h
+    while (n != null) {
+        print(unparseInt(n.value))
+        if (n.next != null) {
+            print(", ")
+        }
+        n = n.next
+    }
+    println("")
+}
+
+main(args: int[][]) {
+    h: Node = buildLinkedList(5)
+    displayLinkedList(h)
+}

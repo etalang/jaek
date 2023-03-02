@@ -1,0 +1,10 @@
+hi() : int, bool, int {
+	return 1, true, 3
+}
+
+main(args: int[][]) {
+	x:int[] = {1,2,3}
+	y:bool
+	x[1],y,c:int = hi()
+}
+

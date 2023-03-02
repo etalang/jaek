@@ -1,0 +1,8 @@
+foo(a:int) : int {
+	return a
+}
+
+main() {
+	// x has not been declared yet when evaluating foo
+	x:int = foo(x)
+}

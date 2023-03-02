@@ -1,0 +1,35 @@
+use io
+use conv
+
+record Point {
+    x, y: int
+}
+
+createPoint(x: int, y: int): Point {
+    return Point(x, y)
+}
+
+pointX(p: Point): int {
+    return p.x
+}
+
+pointY(p: Point): int {
+    return p.y
+}
+
+display(p: Point) {
+    println("(" + unparseInt(pointX(p)) + "," + unparseInt(pointY(p)) + ")")
+}
+
+swap(p: Point) {
+    t: int = p.x
+    p.x = p.y
+    p.y = t
+}
+
+main(args: int[][]) {
+    p: Point = createPoint(24, 42)
+    display(p)
+    swap(p)
+    display(p)
+}
