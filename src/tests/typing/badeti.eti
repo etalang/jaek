@@ -1,0 +1,5 @@
+f(str: int[])
+g(str: int[])
+h() : bool[]
+i() : int
+f()     // duplicate name

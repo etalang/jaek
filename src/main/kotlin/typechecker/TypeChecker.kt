@@ -138,6 +138,7 @@ class TypeChecker(val libpath : String) {
                                 }
                                 // OK, PASS THROUGH
                             }
+                            Gamma.leaveScope()
                         }
                     }
                 }
@@ -265,7 +266,7 @@ class TypeChecker(val libpath : String) {
                         typeCheck(n.stmts[i])
                         val t = n.stmts[i].etaType
                         if (i < n.stmts.size - 1 && t !is UnitType) {
-                            throw SemanticError(0, 0, "Function block should have void type")
+                            throw SemanticError(0, 0, "All but the last statement in a block must be of type Unit")
                         }
                     }
                     n.etaType = n.stmts[n.stmts.size - 1].etaType
