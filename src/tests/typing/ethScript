@@ -26,6 +26,8 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     implementalleti.eta;
     indexfunctionbad.eta; 
     length.eta;
+    multiassign.eta;
+    multiassigntwicescope.eta;
     multipletypesinarray.eta (Semantic, "Array elements must be consistent type");
     multipletypesinarray2.eta (Semantic, "Array elements must be consistent type");
     mutuallyrecursive.eta;
@@ -35,6 +37,13 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     samefunction.eti;
     shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
     shadow2.eta (Semantic, "Invalid function shadowing");
+    unboundvariable.eta (Semantic, "Cannot assign to non-assignable of type null");
+    usecompatibleetis.eta;
+    useincompatibleetis.eta (Semantic, "incompatible types in interface (not a real error message)");
     variableassign.eta (Semantic, "Cannot assign type bool to variable of type int");
+    variableshadowing.eta (Semantic, "function parameter n shadows variable in global scope");
+    wrongargument1.eta (Semantic, "type mismatch as argument to function");
+    wrongargument2.eta (Semantic, "type mismatch as argument to function");
+    wrongfunctionoutput.eta (Semantic, "Assigned expression type does not match expected type bool");
     wrongtypeinarrayassign.eta (Semantic, "Assigned expression type does not match expected type ast.Primitive$INT@527e5409");
 }
