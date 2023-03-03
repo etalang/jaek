@@ -1,22 +1,18 @@
 package typechecker
 
-import ASTUtil
-import errors.SemanticError
 import ast.*
 import ast.BinaryOp.Operation.*
 import ast.Expr.FunctionCall.LengthFn
 import ast.Literal.*
 import ast.UnaryOp.Operation.NEG
 import ast.UnaryOp.Operation.NOT
+import errors.SemanticError
 import typechecker.EtaType.*
 import typechecker.EtaType.Companion.translateType
 import typechecker.EtaType.ContextType.*
 import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
-import java.io.File
-import java.io.FileNotFoundException
-import java.lang.Exception
 
 
 class TypeChecker(topGamma : Context) {
@@ -326,7 +322,7 @@ class TypeChecker(topGamma : Context) {
                                     }
                                     else {
                                         if (t != translateType(target.decl.type)) {
-                                            semanticError(target.decl,"Assigned expression type does not match expected type ${target.decl.type}")
+                                            semanticError(target.decl,"Assigned expression type does not match expected type ${translateType(target.decl.type)}")
                                         }
                                         Gamma.bind(target.decl.id, VarBind(t))
                                         n.etaType = UnitType()

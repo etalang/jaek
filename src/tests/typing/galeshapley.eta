@@ -1,4 +1,4 @@
-public static void main(String[] args) throws IOException {
+public static void main(args : int[][]) {
     //number of things to be matched
     int n = 1000
     pLinkedQueue : int[n]
@@ -15,7 +15,6 @@ public static void main(String[] args) throws IOException {
     //[rPairs] stores the current pairings for the respondents. Ex. rPairs[0] stores
     //the proposer that respondent 0 is paired with.
     rPairs : int[n]
-
 
     //initializes current pairings to -1 which corresponds to no pairings
     i : int = 0

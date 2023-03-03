@@ -5,6 +5,9 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     arrayassign2.eta;
     arrayassign3.eta;
     arrayassign4.eta;
+    arrayassign5.eta;
+    arrayassign6.eta;
+    arrayindex.eta;
     arrayinits.eta;
     badarray1.eta;
     badarray2.eta;
@@ -26,7 +29,12 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     implementalleti.eta;
     indexfunctionbad.eta; 
     length.eta;
-    multiassign.eta;
+    multiassign1.eta;
+    multiassign2.eta;
+    multiassign3.eta;
+    multiassignfail1.eta (Semantic, "Number of assignment targets mismatch from function");
+    multiassignfail2.eta (Semantic, "Number of assignment targets does not match number of assignments");
+    multiassignfail3.eta (Semantic, "Shadowing old variable x in multiassignment");
     multiassigntwicescope.eta;
     multipletypesinarray.eta (Semantic, "Array elements must be consistent type");
     multipletypesinarray2.eta (Semantic, "Array elements must be consistent type");
@@ -37,6 +45,9 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     samefunction.eti;
     shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
     shadow2.eta (Semantic, "Invalid function shadowing");
+    unaryoperations.eta;
+    unaryoperationsfail1.eta (Semantic, "Not must be applied to boolean");
+    unaryoperationsfail2.eta (Semantic, "Negative must be applied to integer");
     unboundvariable.eta (Semantic, "Cannot assign to non-assignable of type null");
     usecompatibleetis.eta;
     useincompatibleetis.eta (Semantic, "incompatible types in interface (not a real error message)");
