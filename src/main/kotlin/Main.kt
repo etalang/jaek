@@ -61,7 +61,14 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
 
-        val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
+        val expandedFiles = files.map{
+            File(expandPath(it.path).toString())
+        }
+
+        val folderFiles = expandedFiles.map {
+            if (it.isAbsolute) it else File(absSourcepath.toString(), it.path)
+        }
+
         folderFiles.forEach {
             val currFile = CurrFile(it) //holds the currently processing file for error reporting
             val kompiler = Kompiler()
@@ -107,28 +114,38 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         }
     }
 
+    /**
+     * Takes a path string and expands beginning home reference ~ along with any instances of . and ..
+     */
+    private fun expandPath(inPath : String) : Path {
+        return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
+    }
+
+    /**
+     * Expand and make absolute a possibly relative directory path. Validate the directory existence.
+     * @throws BadParameterValue when the directory is invalid
+     */
     private fun processDirPath(inPath : String, option : OptionWithValues<String,String,String>) : Path {
-        val expandedInPath = Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
+        val expandedInPath = expandPath(inPath)
 
         val absInPath = when {
             (expandedInPath.isAbsolute) -> expandedInPath
             else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
         }
 
-//        println(absInPath)
         if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
             text = "The file location must be an existing directory.", option = option
         )
         return absInPath
     }
     private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String) : File {
-        val lexedFileName = inFile.nameWithoutExtension + extension
-        val lexedFile = File(diagnosticPath.toString(), lexedFileName)
-        if (lexedFile.exists() && !lexedFile.isDirectory) {
-            lexedFile.delete()
+        val outFileName = inFile.nameWithoutExtension + extension
+        val outFile = File(diagnosticPath.toString(), outFileName)
+        if (outFile.exists() && !outFile.isDirectory) {
+            outFile.delete()
         }
-        lexedFile.createNewFile()
-        return lexedFile
+        outFile.createNewFile()
+        return outFile
     }
     private fun lex(inFile: File, lexedFile : File?) {
         val jFlexLexer = JFlexLexer(inFile.bufferedReader())
