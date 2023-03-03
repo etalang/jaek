@@ -361,6 +361,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
 
   /* user code: */
     private LexUtil.StringTokenBuilder currentString;
+    private String file;
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {
@@ -378,7 +379,8 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
    *
    * @param   in  the java.io.Reader to read input from.
    */
-  public JFlexLexer(java.io.Reader in) {
+  public JFlexLexer(java.io.Reader in, String file) {
+    this.file = file;
     this.zzReader = in;
   }
 
@@ -771,7 +773,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             }  // fall though
             case 91: break;
             case STRING: {
-              throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column());
+              throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column(), file);
             }  // fall though
             case 92: break;
             default:
@@ -782,7 +784,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1:
-            { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());
+            { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column(), file);
             }
             // fall through
           case 18: break;
@@ -802,7 +804,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 21: break;
           case 5:
-            { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());
+            { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column(), file);
             }
             // fall through
           case 22: break;
@@ -827,12 +829,12 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 26: break;
           case 10:
-            { yycolumn -= LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column()));
+            { yycolumn -= LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column(), file));
             }
             // fall through
           case 27: break;
           case 11:
-            { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column());
+            { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column(), file);
             }
             // fall through
           case 28: break;
@@ -842,7 +844,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 29: break;
           case 13:
-            { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column());
+            { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column(), file);
             }
             // fall through
           case 30: break;
@@ -857,12 +859,12 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 32: break;
           case 16:
-            { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column());
+            { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column(), file);
             }
             // fall through
           case 33: break;
           case 17:
-            { return new Token.CharacterToken(yytext(), lineNumber(), column());
+            { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(),file);
             }
             // fall through
           case 34: break;

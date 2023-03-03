@@ -15,12 +15,12 @@ import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
 
 
-class TypeChecker(topGamma : Context) {
+class TypeChecker(topGamma: Context, val file: String) {
     var Gamma : Context = topGamma
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {
-        throw SemanticError(node.terminal.line,node.terminal.column,msg)
+        throw SemanticError(node.terminal.line,node.terminal.column,msg,file);
     }
 
     fun typeCheck(n : Node) {

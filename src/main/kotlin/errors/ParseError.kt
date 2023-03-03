@@ -3,7 +3,7 @@ package errors
 import Token
 import java_cup.runtime.Symbol
 
-class ParseError(val sym: Symbol) : CompilerError(
+class ParseError(val sym: Symbol, file: String) : CompilerError(
     when (sym) {
         is Token<*> -> sym.line
         else -> {
@@ -14,16 +14,15 @@ class ParseError(val sym: Symbol) : CompilerError(
         else -> {
             sym.right
         }
-    }, "Syntax Error"
+    }, "Syntax Error", file
 ) {
-    override fun log(file: String): String {
-        return "Syntax error beginning at ${file}:${line}:${column}${
-            when (sym) {
-                is Token<*> -> ": ${sym.stringVal()}"
-                else -> ""
-            }
-        }"
-    }
+    override val log: String = "Syntax error beginning at ${file}:${line}:${column}${
+        when (sym) {
+            is Token<*> -> ": ${sym.stringVal()}"
+            else -> ""
+        }
+    }"
+
 
     override val mini: String = "${line}:${column} error${
         when (sym) {

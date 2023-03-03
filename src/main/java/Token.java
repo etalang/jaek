@@ -59,8 +59,8 @@ public abstract class Token<T> extends Symbol {
     }
 
     static class CharacterToken extends Token<Integer> {
-        CharacterToken(String lex, int lineNum, int col) throws LexicalError {
-            super(LexUtil.parseToChar(lex.substring(1, lex.length() - 1), lineNum, col), SymbolTable.CHARACTER_LITERAL, lineNum, col);
+        CharacterToken(String lex, int lineNum, int col, String file) throws LexicalError {
+            super(LexUtil.parseToChar(lex.substring(1, lex.length() - 1), lineNum, col,file), SymbolTable.CHARACTER_LITERAL, lineNum, col);
         }
 
         @Override

@@ -29,11 +29,11 @@ class Kompiler {
                     }
                     else {
                         currFile.file = prevFile
-                        throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST")
+                        throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST","TODO")
                     }
                     currFile.file = prevFile
                 } else {
-                    throw SemanticError(import.terminal.line,import.terminal.column, "Could not find interface ${import.lib} file")
+                    throw SemanticError(import.terminal.line,import.terminal.column, "Could not find interface ${import.lib} file","TODO")
                 }
             }
         } else {
@@ -64,7 +64,7 @@ class Kompiler {
                 if (returnGamma.lookup(method.id) != currFunType) {
                     throw SemanticError(
                         method.terminal.line, method.terminal.column,
-                        "Mismatch in type of function ${method.id} among interfaces"
+                        "Mismatch in type of function ${method.id} among interfaces", "TODO"
                     )
                 }
             } else {

@@ -83,19 +83,19 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
-                            println(e.log(currFile.file.name))
+                            println(e.log)
                             parsedFile?.appendText(e.mini)
                             typedFile?.appendText(e.mini)
                         }
 
                         is ParseError -> {
-                            println(e.log(currFile.file.name))
+                            println(e.log)
                             parsedFile?.appendText(e.mini)
                             typedFile?.appendText(e.mini)
                         }
 
                         is SemanticError -> {
-                            println(e.log(currFile.file.name))
+                            println(e.log)
                         }
                     }
 
@@ -143,7 +143,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
     @Throws(LexicalError::class)
     private fun lex(inFile: File, lexedFile: File?) {
-        val jFlexLexer = JFlexLexer(inFile.bufferedReader())
+        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile.name)
         while (true) {
             try {
                 val t: Symbol = (jFlexLexer.next_token() ?: break)
@@ -179,7 +179,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         try {
             val topGamma = kompiler.createTopLevelContext(ast, libpath, typedFile, currFile)
             if (ast !is Interface) {
-                TypeChecker(topGamma).typeCheck(ast)
+                TypeChecker(topGamma,"TODO").typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
