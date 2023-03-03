@@ -1,0 +1,5 @@
+main(){
+    b : bool = false;
+    a : bool = {{true},{b}}[1][1]
+    i : int = {{1,1,1}}[0][0]
+}

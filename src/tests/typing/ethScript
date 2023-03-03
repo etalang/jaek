@@ -7,7 +7,11 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     arrayassign4.eta;
     arrayassign5.eta;
     arrayassign6.eta;
-    arrayindex.eta;
+    arrayindex1.eta;
+    arrayindex2.eta;
+    arrayindex3.eta;
+    arrayindex4.eta;
+    arrayindexfail.eta (Semantic, "Expression not indexable");
     arrayinits.eta;
     badarray1.eta;
     badarray2.eta;
