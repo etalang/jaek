@@ -24,7 +24,6 @@ import kotlin.io.path.Path
  */
 class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
-    // TODO: accept relative paths
     private val files: List<File> by argument(
         help = "Input files to compiler.", name = "<source files>"
     ).file(canBeDir = false).multiple()
@@ -50,7 +49,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
-    data class CurrFile(var file : File)
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
@@ -69,7 +67,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         }
 
         folderFiles.forEach {
-            val currFile = CurrFile(it) //holds the currently processing file for error reporting
             val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
@@ -79,7 +76,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
-                    typeCheck(ast, typedFile, absLibpath.toString(), currFile, kompiler)
+                    typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
@@ -124,7 +121,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
         }
 
-//        println(absInPath)
         if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
             text = "The file location must be an existing directory.", option = option
         )
@@ -169,16 +165,16 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
     @Throws(SemanticError::class)
     private fun typeCheck(
+        inFile: File,
         ast: Node,
         typedFile: File?,
         libpath: String,
-        currFile: CurrFile,
         kompiler: Kompiler
     ) {
         try {
-            val topGamma = kompiler.createTopLevelContext(ast, libpath, typedFile, currFile)
+            val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
             if (ast !is Interface) {
-                TypeChecker(topGamma,"TODO").typeCheck(ast)
+                TypeChecker(topGamma,inFile.name).typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
