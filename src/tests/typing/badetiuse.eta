@@ -5,9 +5,6 @@ f(str: int[])      {
 g(str: int[]) {
     return;
 }
-h() : bool[] {
-    return int[2][2];
-}
 i() : int {
     return 1;
 }

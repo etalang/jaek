@@ -9,7 +9,7 @@ import java.io.File
 
 class Kompiler {
     var libraries : MutableMap<String, Node> = HashMap()
-    fun createTopLevelContext(ast: Node, libpath: String, currFile: Etac.CurrFile) : Context {
+    fun createTopLevelContext(ast: Node, libpath: String, typedFile: File?, currFile: Etac.CurrFile) : Context {
         var returnGamma = Context()
         if (ast is Program) {
             for (import in ast.imports){
@@ -19,8 +19,13 @@ class Kompiler {
                     currFile.file = filepath
                     val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(filepath)
                     if (interfaceAST is Interface) {
-                        returnGamma = bindInterfaceMethods(interfaceAST, returnGamma)
-                        libraries[import.lib] = interfaceAST
+                        try {
+                            returnGamma = bindInterfaceMethods(interfaceAST, returnGamma)
+                            libraries[import.lib] = interfaceAST
+                        } catch (e : SemanticError) {
+                            typedFile?.appendText("${import.terminal.line}:${import.terminal.column} error:Error in interface file ${import.lib} preventing 'use'")
+                            throw e
+                        }
                     }
                     else {
                         currFile.file = prevFile

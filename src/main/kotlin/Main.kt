@@ -180,13 +180,13 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         kompiler: Kompiler
     ) {
         try {
-            val topGamma = kompiler.createTopLevelContext(ast, libpath, currFile)
+            val topGamma = kompiler.createTopLevelContext(ast, libpath, typedFile, currFile)
             if (ast !is Interface) {
                 TypeChecker(topGamma).typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
-            typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
+            if (typedFile != null && typedFile.length() == 0L) typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
             throw e
         }
     }
