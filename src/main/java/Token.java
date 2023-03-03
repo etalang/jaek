@@ -48,8 +48,8 @@ public abstract class Token<T> extends Symbol {
     }
 
     static class IntegerToken extends Token<String> {
-        public IntegerToken(String attribute, int lineNum, int col) throws LexicalError {
-            super(LexUtil.parseToInt(attribute, lineNum, col), SymbolTable.INTEGER_LITERAL, lineNum, col);
+        public IntegerToken(String attribute, int lineNum, int col, String file) throws LexicalError {
+            super(LexUtil.parseToInt(attribute, lineNum, col, file), SymbolTable.INTEGER_LITERAL, lineNum, col);
         }
 
         @Override

@@ -809,7 +809,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 22: break;
           case 6:
-            { return new Token.IntegerToken(yytext(), lineNumber(), column());
+            { return new Token.IntegerToken(yytext(), lineNumber(), column(), file);
             }
             // fall through
           case 23: break;
@@ -864,7 +864,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
             // fall through
           case 33: break;
           case 17:
-            { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(),file);
+            { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(), file);
             }
             // fall through
           case 34: break;

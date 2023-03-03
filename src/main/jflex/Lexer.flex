@@ -65,9 +65,9 @@ MinInteger = "-"([ \t])*"9223372036854775808"
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
-    {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column());}
+    {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column(), file);}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
-    {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column()); }
+    {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column(), file); }
     {CharLiteral}     { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(), file); }
     "\""              { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING); }
     "//"              { yybegin(COMMENT); }
