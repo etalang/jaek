@@ -1,2 +1,3 @@
 unicode : int[] = "🅰";
 england : int[] = "🏴󠁧󠁢󠁥󠁮󠁧󠁿";
+unicode2 : int  = '🅰';
