@@ -522,6 +522,11 @@ class TypeChecker(topGamma: Context, val file: String) {
                         semanticError(n.idx,"Index must be an integer")
                     }
                 }
+                else if (arrt is UnknownType) {
+                    if (idxt is IntType) {
+                        n.etaType = UnknownType(true)
+                    }
+                }
                 else {
                     semanticError(n.arr,"Expression is not indexable")
                 }

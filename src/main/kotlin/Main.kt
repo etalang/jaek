@@ -179,7 +179,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
-            if (typedFile != null && typedFile.length() == 0L) typedFile?.appendText(e.mini)
+            if (typedFile != null && typedFile.length() == 0L) typedFile.appendText(e.mini)
             throw e
         }
     }
