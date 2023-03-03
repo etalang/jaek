@@ -1,7 +1,11 @@
 build
 
 etac ("Test --parse") "--parse" {
+    arrayblankbetween.eta;
+    arrayliteralaccess.eta;
+    blocksinblocks.eta;
     booleanprecedence.eta;
+    earlyreturn.eta (Syntax, "a");
     exampleprogram.eta;
     functioncalls.eta;
     globaldeclarations.eta;
@@ -16,8 +20,9 @@ etac ("Test --parse") "--parse" {
     invalidarrayinit4.eta (Syntax, "Unexpected index 3");
     invalideti1.eti (Syntax, "unexpected character {, interface function cannot have block");
     invalideti2.eti (Syntax, "unexpected token :, declaration cannot occur in eti file");
+    invalidlargeint.eta (Syntax, "-9223372036854775808");
     invalidsinglereturn.eta (Syntax, "return");
-    invalidsubtraction.eta (Syntax, "9223372036854775808");
+    invalidsubtraction.eta (Syntax, "-9223372036854775808");
     largeint.eta;
     largeintfail.eta (Syntax, "this number too big");
     length.eta;
@@ -30,7 +35,9 @@ etac ("Test --parse") "--parse" {
     multideclaration.eta (Syntax, "Unexpected token ]");
     mutuallyrecursive.eta;
     nestedifstatements.eta;
+    nomethodbody.eta (Syntax, "<<EOF>>");
     operatorprecedence.eta;
     trailingcomma.eta;
+    variabledeclarations.eta;
     whilenoblock.eta;
 }

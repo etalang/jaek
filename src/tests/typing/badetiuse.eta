@@ -1,0 +1,10 @@
+use badeti
+f(str: int[])      {
+    return;
+}
+g(str: int[]) {
+    return;
+}
+i() : int {
+    return 1;
+}

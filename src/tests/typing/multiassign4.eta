@@ -1,0 +1,7 @@
+f(x : int) : int{
+    return 3
+}
+main () {
+    x : int = 5
+    x, y : int = 1, f(x)
+}

@@ -11,7 +11,6 @@ import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import java_cup.runtime.Symbol
-import typechecker.Context
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -51,9 +50,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
-
-    data class CurrFile(var file: File)
-
+    data class CurrFile(var file : File)
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
@@ -63,7 +60,14 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
 
-        val folderFiles = files.map { File(absSourcepath.toString(), it.path) }
+        val expandedFiles = files.map{
+            File(expandPath(it.path).toString())
+        }
+
+        val folderFiles = expandedFiles.map {
+            if (it.isAbsolute) it else File(absSourcepath.toString(), it.path)
+        }
+
         folderFiles.forEach {
             val currFile = CurrFile(it) //holds the currently processing file for error reporting
             val kompiler = Kompiler()
@@ -73,12 +77,10 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
                 try {
-                    //THE PIPELINE
-                    lex(it, lexedFile)                                                                  //LEX
-                    val ast = parse(it, parsedFile)                                                     //PARSE
-                    val topGamma = kompiler.createTopLevelContext(ast, absLibpath.toString(), currFile) //PREPARE
-                    typeCheck(ast, typedFile, topGamma)                                                 //TYPECHECK
-                } catch (e: CompilerError) {
+                    lex(it, lexedFile)
+                    val ast = parse(it, parsedFile)
+                    typeCheck(ast, typedFile, absLibpath.toString(), currFile, kompiler)
+                } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
                             println(e.log(currFile.file.name))
@@ -104,28 +106,39 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         }
     }
 
-    private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
-        val expandedInPath = Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
+    /**
+     * Takes a path string and expands beginning home reference ~ along with any instances of . and ..
+     */
+    private fun expandPath(inPath : String) : Path {
+        return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
+    }
+
+    /**
+     * Expand and make absolute a possibly relative directory path. Validate the directory existence.
+     * @throws BadParameterValue when the directory is invalid
+     */
+    private fun processDirPath(inPath : String, option : OptionWithValues<String,String,String>) : Path {
+        val expandedInPath = expandPath(inPath)
 
         val absInPath = when {
             (expandedInPath.isAbsolute) -> expandedInPath
             else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
         }
 
+//        println(absInPath)
         if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
             text = "The file location must be an existing directory.", option = option
         )
         return absInPath
     }
-
-    private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String): File {
-        val lexedFileName = inFile.nameWithoutExtension + extension
-        val lexedFile = File(diagnosticPath.toString(), lexedFileName)
-        if (lexedFile.exists() && !lexedFile.isDirectory) {
-            lexedFile.delete()
+    private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String) : File {
+        val outFileName = inFile.nameWithoutExtension + extension
+        val outFile = File(diagnosticPath.toString(), outFileName)
+        if (outFile.exists() && !outFile.isDirectory) {
+            outFile.delete()
         }
-        lexedFile.createNewFile()
-        return lexedFile
+        outFile.createNewFile()
+        return outFile
     }
 
     @Throws(LexicalError::class)
@@ -156,12 +169,21 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     }
 
     @Throws(SemanticError::class)
-    private fun typeCheck(ast: Node, typedFile: File?, topGamma: Context) {
+    private fun typeCheck(
+        ast: Node,
+        typedFile: File?,
+        libpath: String,
+        currFile: CurrFile,
+        kompiler: Kompiler
+    ) {
         try {
-            TypeChecker(topGamma).typeCheck(ast)
+            val topGamma = kompiler.createTopLevelContext(ast, libpath, typedFile, currFile)
+            if (ast !is Interface) {
+                TypeChecker(topGamma).typeCheck(ast)
+            }
             typedFile?.appendText("Valid Eta Program")
-        } catch (e: SemanticError) {
-            typedFile?.appendText(e.mini)
+        } catch (e : SemanticError) {
+            if (typedFile != null && typedFile.length() == 0L) typedFile?.appendText(e.mini)
             throw e
         }
     }

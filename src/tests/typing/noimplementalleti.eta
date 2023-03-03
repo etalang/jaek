@@ -1,0 +1,15 @@
+use eti1
+
+f (a : int) : bool {
+    return true
+}
+g (a : int) : int[] {
+    return {1,2,3}
+}
+h (b : bool, k:int[][][]) : int[][] {
+    return {{1,2,3},{4,5,6}}
+}
+
+main() {
+
+}

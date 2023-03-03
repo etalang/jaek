@@ -1,0 +1,4 @@
+main(){
+    return;
+    a : int = 1;
+}

@@ -1,0 +1,9 @@
+f(x : int) : int {
+    return 2;
+}
+
+main() {
+    x : int;
+    a : int[2][][];
+    b : int[f(x)][][];
+}

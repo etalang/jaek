@@ -1,1 +1,1 @@
-2:17 error:foo is not a function
+2:17 error: inconsistent number of values to unpack, expected 1 got 0

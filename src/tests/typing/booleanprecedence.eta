@@ -1,0 +1,7 @@
+a : bool = false
+b : bool = true
+
+foo() {
+    c : bool = a & b | b != (a == !b) | a
+    d : bool = (-100 > 2) == (5 < 2)
+}
