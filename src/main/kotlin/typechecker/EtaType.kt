@@ -78,6 +78,10 @@ sealed class EtaType {
                 }
             }
         }
+
+        override fun toString(): String {
+            return lst.toString()
+        }
     }
 
     sealed class StatementType : EtaType() {
