@@ -27,7 +27,9 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     guardif.eta;
     guardwhile.eta;
     implementalleti.eta;
-    indexfunctionbad.eta; 
+    indexfunctionbad.eta;
+    int1.eti;
+    invalidarrayassign.eta (Semantic, "Type mismatch on array assignment");
     length.eta;
     multiassign1.eta;
     multiassign2.eta;
@@ -51,6 +53,7 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     unboundvariable.eta (Semantic, "Cannot assign to non-assignable of type null");
     usecompatibleetis.eta;
     useincompatibleetis.eta (Semantic, "incompatible types in interface (not a real error message)");
+    validarrayassign.eta;
     variableassign.eta (Semantic, "Cannot assign type bool to variable of type int");
     variableshadowing.eta (Semantic, "function parameter n shadows variable in global scope");
     wrongargument1.eta (Semantic, "type mismatch as argument to function");
