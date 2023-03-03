@@ -4,7 +4,7 @@ package errors
 class LexicalError(private val errorType: errType, line: Int, col: Int) : CompilerError(
     line, col, "Lexical Error"
 ) {
-    val msg: String = line.toString() + ":" + col + " error:" + details()
+    override val mini: String = line.toString() + ":" + col + " error:" + details()
 
     fun details(): String {
         return when (errorType) {
@@ -22,7 +22,7 @@ class LexicalError(private val errorType: errType, line: Int, col: Int) : Compil
         BadString, CharWrong, CharNotEnd, UnicodeTooBig, InvalidId, InvalidInteger
     }
 
-//    override fun output(file: String): String {
-//        return "Lexical error beginning at ${file}:${line}:${column}: ${details()}"
-//    }
+    override fun log(file: String): String {
+        return "Lexical error beginning at ${file}:${line}:${column}: ${details()}"
+    }
 }

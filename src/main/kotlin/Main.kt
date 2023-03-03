@@ -1,4 +1,3 @@
-
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
@@ -29,6 +28,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     private val files: List<File> by argument(
         help = "Input files to compiler.", name = "<source files>"
     ).file(canBeDir = false).multiple()
+
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
@@ -56,7 +56,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
      * preprocessed into vars above.
      */
     override fun run() {
-
         val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
@@ -84,26 +83,19 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
-                            println("Lexical error beginning at ${currFile.file.name}:${e.line}:${e.column}: ${e.details()}")
-                            //lexical error goes in remaining out files, do not pass GO
-                            parsedFile?.appendText(e.msg)
-                            typedFile?.appendText(e.msg)
+                            println(e.log(currFile.file.name))
+                            parsedFile?.appendText(e.mini)
+                            typedFile?.appendText(e.mini)
                         }
-                        is ParseError -> {
-                            val badSym = e.sym
-                            var err = ""
-                            if (badSym is Token<*>) {
-                                err = "${badSym.location()} error:${badSym.stringVal()}"
-                                println("Syntax error beginning at ${currFile.file.name}:${badSym.line}:${badSym.col}: ${badSym.stringVal()}")
-                            } else {
-                                err = "Unexpected error while parsing."
-                            }
-                            parsedFile?.appendText(err)
-                            typedFile?.appendText(err)
 
+                        is ParseError -> {
+                            println(e.log(currFile.file.name))
+                            parsedFile?.appendText(e.mini)
+                            typedFile?.appendText(e.mini)
                         }
+
                         is SemanticError -> {
-                            println("Semantic error beginning at ${currFile.file.name}:${e.line}:${e.column}: ${e.desc}")
+                            println(e.log(currFile.file.name))
                         }
                     }
 
@@ -133,6 +125,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
         }
 
+//        println(absInPath)
         if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
             text = "The file location must be an existing directory.", option = option
         )
@@ -147,7 +140,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         outFile.createNewFile()
         return outFile
     }
-    private fun lex(inFile: File, lexedFile : File?) {
+
+    @Throws(LexicalError::class)
+    private fun lex(inFile: File, lexedFile: File?) {
         val jFlexLexer = JFlexLexer(inFile.bufferedReader())
         while (true) {
             try {
@@ -155,15 +150,16 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 if (t.sym == SymbolTable.EOF) break
                 lexedFile?.appendText((t as Token<*>).lexInfo() + "\n")
             } catch (e: LexicalError) {
-                lexedFile?.appendText("${e.msg}\n")
-                throw e // should throw uncaught error to main pipeline
+                lexedFile?.appendText("${e.mini}\n")
+                throw e
             }
         }
     }
 
-    private fun parse(inFile: File, parsedFile : File?) : Node {
+    @Throws(ParseError::class)
+    private fun parse(inFile: File, parsedFile: File?): Node {
         val AST = ASTUtil.getAST(inFile.absoluteFile)
-        if (parsedFile != null) {
+        parsedFile?.let {
             val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
             AST.write(writer)
             writer.flush()
@@ -172,6 +168,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         return AST
     }
 
+    @Throws(SemanticError::class)
     private fun typeCheck(
         ast: Node,
         typedFile: File?,
@@ -186,10 +183,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : SemanticError) {
-            if (typedFile != null && typedFile.length() == 0L) typedFile?.appendText("${e.line}:${e.column} error:${e.desc}")
+            if (typedFile != null && typedFile.length() == 0L) typedFile?.appendText(e.mini)
             throw e
         }
     }
 
 }
+
 fun main(args: Array<String>) = Etac().main(args)

@@ -47,9 +47,9 @@ public abstract class Token<T> extends Symbol {
         }
     }
 
-    static class IntegerToken extends Token<IntLitInfo> {
+    static class IntegerToken extends Token<String> {
         public IntegerToken(String attribute, int lineNum, int col) throws LexicalError {
-            super(new IntLitInfo(LexUtil.parseToInt(attribute, lineNum, col), lineNum, col), SymbolTable.INTEGER_LITERAL, lineNum, col);
+            super(attribute, SymbolTable.INTEGER_LITERAL, lineNum, col);
         }
 
         @Override
