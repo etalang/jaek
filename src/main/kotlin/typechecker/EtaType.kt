@@ -31,7 +31,7 @@ sealed class EtaType {
         class IntType : OrdinaryType()
         class BoolType : OrdinaryType()
         class ArrayType(val t : OrdinaryType) : OrdinaryType()
-        class UnknownType: OrdinaryType() // for empty arrays, underscores
+        class UnknownType(val possiblyBool : Boolean): OrdinaryType() // for empty arrays, underscores
 
         override fun equals(other: Any?): Boolean {
             when (other) {
@@ -39,10 +39,11 @@ sealed class EtaType {
                     if (this is IntType || this is UnknownType) { return true }
                 }
                 is BoolType -> {
-                    if (this is BoolType || this is UnknownType) { return true }
+                    if (this is BoolType || (this is UnknownType && this.possiblyBool)) { return true }
                 }
                 is ArrayType -> {
-                    if (this !is ArrayType) { return false }
+                    if (this is UnknownType) { return true }
+                    else if (this !is ArrayType) { return false }
                     else return (this.t == other.t)
                 }
                 is UnknownType -> return true

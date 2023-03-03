@@ -215,7 +215,7 @@ class TypeChecker(topGamma : Context) {
                         n.etaType = t.item
                     }
                 }
-                is AssignTarget.Underscore -> { n.etaType = UnknownType() }
+                is AssignTarget.Underscore -> { n.etaType = UnknownType(true) }
             }
             return gammai
         }
@@ -572,8 +572,8 @@ class TypeChecker(topGamma : Context) {
                                     if (leftBase is UnknownType && rightBase !is UnknownType) {
                                         n.etaType = rtype
                                     }
-                                    else if (leftBase is UnknownType) {
-                                        n.etaType = ArrayType(UnknownType())
+                                    else if (leftBase is UnknownType && rightBase is UnknownType) {
+                                        n.etaType = ArrayType(UnknownType(leftBase.possiblyBool && rightBase.possiblyBool))
                                     }
                                     else {
                                         n.etaType = ltype
@@ -605,8 +605,13 @@ class TypeChecker(topGamma : Context) {
                             }
                             is BoolType -> {
                                 if (n.op in listOf(EQB, NEQB, AND, OR)){
-                                    n.etaType = BoolType()
-                                n.left.etaType = BoolType()
+                                    if (ltype.possiblyBool) {
+                                        n.etaType = BoolType()
+                                        n.left.etaType = BoolType()
+                                    }
+                                    else {
+                                        semanticError(n, "Unknown type variable cannot be a bool")
+                                    }
                                 }
                                 else {
                                     semanticError(n,"Booleans cannot be used with ${n.op}")
@@ -624,14 +629,24 @@ class TypeChecker(topGamma : Context) {
                                         n.left.etaType = ArrayType(rightBase)
                                     }
                                     else {
-                                        n.etaType = ArrayType(UnknownType())
+                                        n.etaType = ArrayType(UnknownType(rightBase.possiblyBool))
                                     }
                                 }
                                 else {
                                     semanticError(n,"Unknown array cannot be used with ${n.op}")
                                 }
                             }
-                            is UnknownType -> { n.etaType = UnknownType() }
+                            is UnknownType -> {
+                                if (n.op in listOf( MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO)) {
+                                    n.etaType = IntType()
+                                }
+                                else if (n.op in listOf(EQB, NEQB, LT, LEQ, GT, GEQ)) {
+                                    n.etaType = BoolType()
+                                }
+                                else if (n.op == PLUS) {
+                                    n.etaType = UnknownType(false)
+                                }
+                            }
                             else -> {
                                 semanticError(n, "Cannot do expression operation with non-expression type")
                             }
@@ -702,7 +717,7 @@ class TypeChecker(topGamma : Context) {
                             typeList.add(et)
                         }
                         if (typeList.size == 0){
-                            n.etaType = ArrayType(UnknownType())
+                            n.etaType = ArrayType(UnknownType(true))
                         }
                         else {
                             val t = typeList[0]
