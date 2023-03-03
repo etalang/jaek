@@ -1,0 +1,7 @@
+a : bool = false
+
+
+
+main() {
+    a : bool = true;
+}
