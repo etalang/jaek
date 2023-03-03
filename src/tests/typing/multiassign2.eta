@@ -1,0 +1,12 @@
+f() : int {
+    return 1
+}
+
+g(a : int) : int {
+    return a
+}
+
+main() {
+  a : int = 6;
+  x : int , y : int, z : int = 1, f(), g(a);
+}

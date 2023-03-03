@@ -1,0 +1,7 @@
+f() : int, int {
+    return 1, 1
+}
+
+main() {
+  x : int ,y : int, z : int = 1, f()
+}
