@@ -34,6 +34,7 @@ etac ("Test --typecheck") "-libpath $(testpath) --typecheck" {
     multiassign1.eta;
     multiassign2.eta;
     multiassign3.eta;
+    multiassign4.eta;
     multiassignfail1.eta (Semantic, "Number of assignment targets mismatch from function");
     multiassignfail2.eta (Semantic, "Number of assignment targets does not match number of assignments");
     multiassignfail3.eta (Semantic, "Shadowing old variable x in multiassignment");
