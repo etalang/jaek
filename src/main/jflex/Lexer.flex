@@ -68,7 +68,7 @@ MinInteger = "-"([ \t])*"9223372036854775808"
     {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column());}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
     {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column()); }
-    {CharLiteral}     {yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(),file); }
+    {CharLiteral}     { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(), file); }
     "\""              { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING); }
     "//"              { yybegin(COMMENT); }
     "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column(), file);}
