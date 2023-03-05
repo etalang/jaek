@@ -83,22 +83,21 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 } catch (e : CompilerError) {
                     when (e) {
                         is LexicalError -> {
-                            println(e.log(currFile.file.name))
+                            println(e.log)
                             parsedFile?.appendText(e.mini)
                             typedFile?.appendText(e.mini)
                         }
 
                         is ParseError -> {
-                            println(e.log(currFile.file.name))
+                            println(e.log)
                             parsedFile?.appendText(e.mini)
                             typedFile?.appendText(e.mini)
                         }
 
                         is SemanticError -> {
-                            println(e.log(currFile.file.name))
+                            println(e.log)
                         }
                     }
-
                 }
             } else {
                 echo("Skipping $it due to invalid file.")
