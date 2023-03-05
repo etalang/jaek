@@ -22,8 +22,14 @@ public abstract class Token<T> extends Symbol {
         return lineNum + ":" + col;
     }
 
-    public int getLine() {return lineNum;}
-    public int getCol() {return col;}
+    public int getLine() {
+        return lineNum;
+    }
+
+    public int getCol() {
+        return col;
+    }
+
     public String lexInfo() {
         return location() + " " + type() + stringVal();
     }
@@ -48,8 +54,8 @@ public abstract class Token<T> extends Symbol {
     }
 
     static class IntegerToken extends Token<String> {
-        public IntegerToken(String attribute, int lineNum, int col) throws LexicalError {
-            super(LexUtil.parseToInt(attribute, lineNum, col), SymbolTable.INTEGER_LITERAL, lineNum, col);
+        public IntegerToken(String attribute, int lineNum, int col, String file) throws LexicalError {
+            super(LexUtil.parseToInt(attribute, lineNum, col, file), SymbolTable.INTEGER_LITERAL, lineNum, col);
         }
 
         @Override
@@ -60,7 +66,7 @@ public abstract class Token<T> extends Symbol {
 
     static class CharacterToken extends Token<Integer> {
         CharacterToken(String lex, int lineNum, int col, String file) throws LexicalError {
-            super(LexUtil.parseToChar(lex.substring(1, lex.length() - 1), lineNum, col,file), SymbolTable.CHARACTER_LITERAL, lineNum, col);
+            super(LexUtil.parseToChar(lex.substring(1, lex.length() - 1), lineNum, col, file), SymbolTable.CHARACTER_LITERAL, lineNum, col);
         }
 
         @Override
