@@ -73,28 +73,25 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                var ast : Node? = null
                 try {
                     lex(it, lexedFile)
-                    val ast = parse(it, parsedFile)
-                    typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                } catch (e : LexicalError) {
+                    println(e.log)
+                    parsedFile?.appendText(e.mini)
+                    typedFile?.appendText(e.mini)
+                }
+                try {
+                    ast = parse(it, parsedFile)
+                } catch (e : ParseError){
+                    println(e.log)
+                    parsedFile?.appendText(e.mini)
+                    typedFile?.appendText(e.mini)
+                }
+                try {
+                    if (ast != null) typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
                 } catch (e : CompilerError) {
-                    when (e) {
-                        is LexicalError -> {
-                            println(e.log)
-                            parsedFile?.appendText(e.mini)
-                            typedFile?.appendText(e.mini)
-                        }
-
-                        is ParseError -> {
-                            println(e.log)
-                            parsedFile?.appendText(e.mini)
-                            typedFile?.appendText(e.mini)
-                        }
-
-                        is SemanticError -> {
-                            println(e.log)
-                        }
-                    }
+                    println(e.log)
                 }
             } else {
                 echo("Skipping $it due to invalid file.")
@@ -177,7 +174,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 TypeChecker(topGamma,inFile).typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
-        } catch (e : SemanticError) {
+        } catch (e : CompilerError) {
             if (typedFile != null && typedFile.length() == 0L) typedFile.appendText(e.mini)
             throw e
         }

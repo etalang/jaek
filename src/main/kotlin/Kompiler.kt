@@ -2,6 +2,9 @@
 import ast.Interface
 import ast.Node
 import ast.Program
+import errors.CompilerError
+import errors.LexicalError
+import errors.ParseError
 import errors.SemanticError
 import typechecker.Context
 import typechecker.EtaType
@@ -15,18 +18,18 @@ class Kompiler {
             for (import in ast.imports){
                 val filepath = File(libpath, import.lib + ".eti") // needs to use library path
                 if (filepath.exists()) {
-                    val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(filepath)
-                    if (interfaceAST is Interface) {
-                        try {
+                    try {
+                        val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(filepath)
+                        if (interfaceAST is Interface) {
                             returnGamma = bindInterfaceMethods(filepath, interfaceAST, returnGamma)
                             libraries[import.lib] = interfaceAST
-                        } catch (e : SemanticError) {
-                            typedFile?.appendText("${import.terminal.line}:${import.terminal.column} error:Error in interface file ${import.lib} preventing 'use'")
-                            throw e
                         }
-                    }
-                    else {
-                        throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST", inFile)
+                        else {
+                            throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST", inFile)
+                        }
+                    } catch (e : CompilerError) {
+                        typedFile?.appendText("${import.terminal.line}:${import.terminal.column} error:Error in interface file ${import.lib} preventing 'use'")
+                        throw e
                     }
                 } else {
                     throw SemanticError(import.terminal.line,import.terminal.column, "Could not find interface ${import.lib} file", inFile)
