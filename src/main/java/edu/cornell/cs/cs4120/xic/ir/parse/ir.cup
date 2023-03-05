@@ -1,0 +1,300 @@
+package edu.cornell.cs.cs4120.xic.ir.parse;
+
+import edu.cornell.cs.cs4120.xic.ir.*;
+
+import java_cup.runtime.ComplexSymbolFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
+parser IRParser {:
+
+    protected IRNodeFactory nf;
+
+    public IRParser(IRLexer lexer, IRNodeFactory nf) {
+        super(lexer, new ComplexSymbolFactory());
+        this.nf = nf;
+    }
+:};
+
+terminal LPAREN, RPAREN;
+terminal MOVE, CALL_STMT, EXP, SEQ, JUMP, CJUMP, LABEL, RETURN;
+terminal CONST, TEMP, MEM, CALL, NAME, ESEQ;
+terminal ADD, SUB, MUL, HMUL, DIV, MOD, AND, OR, XOR;
+terminal LSHIFT, RSHIFT, ARSHIFT, EQ, NEQ, LT, ULT, GT, LEQ, GEQ;
+terminal FUNC, DATA, COMPUNIT;
+terminal String ATOM;
+terminal Long NUMBER;
+
+nonterminal IRCompUnit compunit;
+nonterminal List<Object> ctor_or_data_or_funcdecl_list, ctor_or_data_or_funcdecl_list_non_empty;
+nonterminal Object ctor_or_data_or_funcdecl;
+nonterminal IRFuncDecl funcdecl;
+nonterminal List<IRStmt> stmts;
+nonterminal IRStmt stmt, bare_stmt;
+nonterminal List<IRExpr> exprs_opt, exprs;
+nonterminal String name;
+nonterminal IRData data;
+nonterminal List<Long> number_list, number_list_non_empty;
+nonterminal IRExpr expr, bare_expr, op, dest;
+nonterminal Long num;
+
+start with compunit;
+
+compunit ::=
+    LPAREN COMPUNIT name:n ctor_or_data_or_funcdecl_list:cdf_list RPAREN {:
+        RESULT = parser.nf.IRCompUnit(n);
+
+        for (Object cdf : cdf_list){
+            if (cdf instanceof String) {
+                RESULT.appendCtor((String) cdf);
+            } else if (cdf instanceof IRData) {
+                RESULT.appendData((IRData) cdf);
+            } else if (cdf instanceof IRFuncDecl) {
+                RESULT.appendFunc((IRFuncDecl) cdf);
+            }
+        }
+    :}
+;
+
+ctor_or_data_or_funcdecl_list ::=
+    /* empty */ {: RESULT = Collections.emptyList(); :}
+    | ctor_or_data_or_funcdecl_list_non_empty:l {: RESULT = l; :}
+;
+
+ctor_or_data_or_funcdecl_list_non_empty ::=
+    LPAREN ctor_or_data_or_funcdecl:cdf RPAREN {:
+        RESULT = new ArrayList<>();
+        RESULT.add(cdf);
+    :}
+    | ctor_or_data_or_funcdecl_list_non_empty:cdf_list LPAREN ctor_or_data_or_funcdecl:cdf RPAREN {:
+        RESULT = cdf_list;
+        RESULT.add(cdf);
+    :}
+;
+
+ctor_or_data_or_funcdecl ::=
+    name:c {:
+        RESULT = c;
+    :}
+    | data:d {:
+        RESULT = d;
+    :}
+    | funcdecl:fd {:
+        RESULT = fd;
+    :}
+;
+
+data ::= DATA ATOM:a LPAREN number_list:n_list RPAREN {:
+    int s = n_list.size();
+    long[] rawData = new long[s];
+    for (int i = 0; i < s; i++) {
+        rawData[i] = n_list.get(i);
+    }
+    RESULT = new IRData(a, rawData);
+:};
+
+number_list ::=
+    /* empty */ {: RESULT = Collections.emptyList(); :}
+    | number_list_non_empty:l {: RESULT = l; :}
+;
+
+number_list_non_empty ::=
+    num:n {:
+        RESULT = new ArrayList<>();
+        RESULT.add(n);
+    :}
+    | number_list_non_empty:n_list num:n {:
+        RESULT = n_list;
+        RESULT.add(n);
+    :}
+;
+
+funcdecl ::=
+    FUNC name:n stmt:s {:
+        RESULT = parser.nf.IRFuncDecl(n, s);
+    :}
+;
+
+name ::=
+    ATOM:a {:
+        RESULT = a;
+    :}
+;
+
+stmt ::=
+    LPAREN bare_stmt:s RPAREN {:
+        RESULT = s;
+    :}
+;
+
+bare_stmt ::=
+    MOVE dest:dest expr:e {:
+        RESULT = parser.nf.IRMove(dest, e);
+    :}
+    | CALL_STMT num:n expr:target exprs_opt:args {:
+        RESULT = parser.nf.IRCallStmt(target, n, args);
+    :}
+    | EXP expr:e {:
+        RESULT = parser.nf.IRExp(e);
+    :}
+    | SEQ stmts:l {:
+        RESULT = parser.nf.IRSeq(l);
+    :}
+    | JUMP expr:e {:
+        RESULT = parser.nf.IRJump(e);
+    :}
+    | CJUMP expr:e name:trueLabel name:falseLabel {:
+        RESULT = parser.nf.IRCJump(e, trueLabel, falseLabel);
+    :}
+    | CJUMP expr:e name:trueLabel {:
+        RESULT = parser.nf.IRCJump(e, trueLabel);
+    :}
+    | LABEL name:n {:
+        RESULT = parser.nf.IRLabel(n);
+    :}
+    | RETURN LPAREN RPAREN {:
+        RESULT = parser.nf.IRReturn(Collections.emptyList());
+    :}
+    | RETURN exprs_opt:args {:
+        RESULT = parser.nf.IRReturn(args);
+    :}
+;
+
+dest ::=
+    LPAREN TEMP name:n RPAREN {:
+        RESULT = parser.nf.IRTemp(n);
+    :}
+    | LPAREN MEM expr:e RPAREN {:
+        RESULT = parser.nf.IRMem(e);
+    :}
+;
+
+expr ::=
+    LPAREN bare_expr:e RPAREN {:
+        RESULT = e;
+    :}
+;
+
+bare_expr ::=
+    CONST num:n {:
+        RESULT = parser.nf.IRConst(n);
+    :}
+    | TEMP name:n {:
+        RESULT = parser.nf.IRTemp(n);
+    :}
+    | op:o {:
+        RESULT = o;
+    :}
+    | MEM expr:e {:
+        RESULT = parser.nf.IRMem(e);
+    :}
+    | CALL expr:target exprs_opt:args {:
+        RESULT = parser.nf.IRCall(target, args);
+    :}
+    | NAME name:n {:
+        RESULT = parser.nf.IRName(n);
+    :}
+    | ESEQ stmt:s expr:e {:
+        RESULT = parser.nf.IRESeq(s, e);
+    :}
+;
+
+num ::=
+    NUMBER:n {:
+        RESULT = n;
+    :}
+;
+
+op ::=
+    ADD expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.ADD, x,y);
+    :}
+    | SUB expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.SUB, x,y);
+    :}
+    | MUL expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.MUL, x,y);
+    :}
+    | HMUL expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.HMUL, x,y);
+    :}
+    | DIV expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.DIV, x,y);
+    :}
+    | MOD expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.MOD, x,y);
+    :}
+    | AND expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.AND, x,y);
+    :}
+    | OR expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.OR, x,y);
+    :}
+    | XOR expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.XOR, x,y);
+    :}
+    | LSHIFT expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.LSHIFT, x,y);
+    :}
+    | RSHIFT expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.RSHIFT, x,y);
+    :}
+    | ARSHIFT expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.ARSHIFT, x,y);
+    :}
+    | EQ expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.EQ, x,y);
+    :}
+    | NEQ expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.NEQ, x,y);
+    :}
+    | LT expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.LT, x,y);
+    :}
+    | ULT expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.ULT, x,y);
+    :}
+    | GT expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.GT, x,y);
+    :}
+    | LEQ expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.LEQ, x,y);
+    :}
+    | GEQ expr:x expr:y {:
+        RESULT = parser.nf.IRBinOp(IRBinOp.OpType.GEQ, x,y);
+    :}
+;
+
+stmts ::=
+    stmt:s {:
+        RESULT = new LinkedList<>();
+        RESULT.add(s);
+    :}
+    | stmts:l stmt:s {:
+        RESULT = l;
+        RESULT.add(s);
+    :}
+;
+
+exprs_opt ::=
+    /* empty */ {:
+        RESULT = Collections.emptyList();
+    :}
+    | exprs:l {:
+        RESULT = l;
+    :}
+;
+
+exprs ::=
+    expr:e {:
+        RESULT = new LinkedList<>();
+        RESULT.add(e);
+    :}
+    | exprs:l expr:e {:
+        RESULT = l;
+        RESULT.add(e);
+    :}
+;
