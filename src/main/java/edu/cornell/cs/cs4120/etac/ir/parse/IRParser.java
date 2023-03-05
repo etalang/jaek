@@ -3,7 +3,6 @@
 package edu.cornell.cs.cs4120.etac.ir.parse;
 
 import edu.cornell.cs.cs4120.etac.ir.*;
-import edu.cornell.cs.cs4120.xic.ir.*;
 import java_cup.runtime.ComplexSymbolFactory;
 import java.util.ArrayList;
 import java.util.Collections;
