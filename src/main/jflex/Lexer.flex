@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.math.BigInteger;
+import java.io.File;
 import errors.*;
 
 %%
@@ -21,7 +22,7 @@ import errors.*;
    return new java_cup.runtime.Symbol(SymbolTable.EOF);
 %eofval}
 
-%ctorarg String file
+%ctorarg File file
 
 %init{
   this.file = file;
@@ -31,7 +32,7 @@ import errors.*;
 
 %{
     private LexUtil.StringTokenBuilder currentString;
-    private String file;
+    private File file;
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {

@@ -13,9 +13,10 @@ import typechecker.EtaType.ContextType.*
 import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
+import java.io.File
 
 
-class TypeChecker(topGamma: Context, val file: String) {
+class TypeChecker(topGamma: Context, val file: File) {
     var Gamma : Context = topGamma
 
     @Throws(SemanticError::class)

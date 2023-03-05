@@ -1,6 +1,7 @@
 import errors.LexicalError;
 import java_cup.runtime.Symbol;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -12,7 +13,7 @@ public class UltimateLexer extends JFlexLexer {
      * Creates a new scanner
      *
      */
-    public UltimateLexer(Reader in, HeaderToken header, String file) {
+    public UltimateLexer(Reader in, HeaderToken header, File file) {
         super(in, file);
         this.hasAbsorbed = false;
         this.header = header;

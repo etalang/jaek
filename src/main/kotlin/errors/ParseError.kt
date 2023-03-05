@@ -2,8 +2,9 @@ package errors
 
 import Token
 import java_cup.runtime.Symbol
+import java.io.File
 
-class ParseError(val sym: Symbol, file: String) : CompilerError(
+class ParseError(val sym: Symbol, file: File) : CompilerError(
     when (sym) {
         is Token<*> -> sym.line
         else -> {
@@ -16,7 +17,7 @@ class ParseError(val sym: Symbol, file: String) : CompilerError(
         }
     }, "Syntax Error", file
 ) {
-    override val log: String = "Syntax error beginning at ${file}:${line}:${column}${
+    override val log: String = "Syntax error beginning at ${file.name}:${line}:${column}${
         when (sym) {
             is Token<*> -> ": ${sym.stringVal()}"
             else -> ""

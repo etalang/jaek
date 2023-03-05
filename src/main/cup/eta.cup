@@ -1,14 +1,15 @@
 import ast.*;
 import java.util.*;
 import errors.*;
+import java.io.File;
 
 parser code  {:
   public void syntax_error(java_cup.runtime.Symbol cur_token) {}
   public void unrecovered_syntax_error(java_cup.runtime.Symbol current) throws ParseError {
     throw new ParseError(current,file);
   }
-  private String file;
-  public void setFile(String file) {this.file = file;}
+  private File file;
+  public void setFile(File file) {this.file = file;}
 :};
 scan with {: return getScanner().next_token(); :};
 

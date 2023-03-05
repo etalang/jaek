@@ -4,6 +4,7 @@
 
 import java.util.ArrayList;
 import java.math.BigInteger;
+import java.io.File;
 import errors.*;
 
 
@@ -361,7 +362,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
 
   /* user code: */
     private LexUtil.StringTokenBuilder currentString;
-    private String file;
+    private File file;
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {
@@ -379,7 +380,7 @@ public class JFlexLexer implements java_cup.runtime.Scanner {
    *
    * @param   in  the java.io.Reader to read input from.
    */
-  public JFlexLexer(java.io.Reader in, String file) {
+  public JFlexLexer(java.io.Reader in, File file) {
     this.file = file;
     this.zzReader = in;
   }

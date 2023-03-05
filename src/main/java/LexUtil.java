@@ -1,5 +1,6 @@
 import errors.LexicalError;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
@@ -35,7 +36,7 @@ public class LexUtil {
      * the character. Throws an errors.LexicalError if the string does not correspond to a
      * character.
      */
-    public static int parseToChar(String matched, int lineNum, int col, String file) throws LexicalError {
+    public static int parseToChar(String matched, int lineNum, int col, File file) throws LexicalError {
         // normal case
         if (matched.length() == 1) {
             return matched.codePointAt(0);
@@ -74,7 +75,7 @@ public class LexUtil {
     /**
      * [parseToInt(matched)] asserts that the number contained in matched is valid.
      */
-    public static String parseToInt(String matched, int lineNum, int col, String file) throws LexicalError{
+    public static String parseToInt(String matched, int lineNum, int col, File file) throws LexicalError{
         matched = matched.replaceAll("\\s", "");
         BigInteger intVal = new BigInteger(matched);
         if (intVal.compareTo(maxVal) <= 0) {

@@ -1,7 +1,9 @@
 package errors
 
+import java.io.File
+
 /** [LexicalError] are exceptions that can be thrown by the lexer while parsing.  */
-class LexicalError(private val errorType: errType, line: Int, col: Int, file: String) : CompilerError(
+class LexicalError(private val errorType: errType, line: Int, col: Int, file: File) : CompilerError(
     line, col, "Lexical Error", file
 ) {
     override val mini: String = line.toString() + ":" + col + " error:" + details()
@@ -23,5 +25,5 @@ class LexicalError(private val errorType: errType, line: Int, col: Int, file: St
     }
 
     override val log: String =
-        "Lexical error beginning at ${file}:${line}:${column}: ${details()}"
+        "Lexical error beginning at ${file.name}:${line}:${column}: ${details()}"
 }
