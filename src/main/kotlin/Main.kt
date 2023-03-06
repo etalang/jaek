@@ -73,25 +73,25 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
-                var ast : Node? = null
+                var ast : Node?
                 try {
                     lex(it, lexedFile)
+                    try {
+                        ast = parse(it, parsedFile)
+                        try {
+                            if (ast != null) typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                        } catch (e : CompilerError) {
+                            println(e.log)
+                        }
+                    } catch (e : ParseError){
+                        println(e.log)
+                        parsedFile?.appendText(e.mini)
+                        typedFile?.appendText(e.mini)
+                    }
                 } catch (e : LexicalError) {
                     println(e.log)
                     parsedFile?.appendText(e.mini)
                     typedFile?.appendText(e.mini)
-                }
-                try {
-                    ast = parse(it, parsedFile)
-                } catch (e : ParseError){
-                    println(e.log)
-                    parsedFile?.appendText(e.mini)
-                    typedFile?.appendText(e.mini)
-                }
-                try {
-                    if (ast != null) typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
-                } catch (e : CompilerError) {
-                    println(e.log)
                 }
             } else {
                 echo("Skipping $it due to invalid file.")
