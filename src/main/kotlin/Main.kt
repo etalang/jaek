@@ -79,7 +79,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     try {
                         ast = parse(it, parsedFile)
                         try {
-                            if (ast != null) typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
                         } catch (e : CompilerError) {
                             println(e.log)
                         }
@@ -175,7 +175,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             }
             typedFile?.appendText("Valid Eta Program")
         } catch (e : CompilerError) {
-            if (typedFile != null && typedFile.length() == 0L) typedFile.appendText(e.mini)
+            // only append if error in import has not already been appended inside cTLC
+            if (e.file == inFile) typedFile?.appendText(e.mini)
             throw e
         }
     }
