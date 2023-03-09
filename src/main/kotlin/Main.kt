@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
+import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.TypeChecker
 import java.io.File
@@ -32,6 +33,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
+    private val outputIR: Boolean by option("--irgen", help = "Generate intermediate representation as SExpr").flag()
     private val dOpt = option(
         "-D",
         metavar = "<folder>",
@@ -50,7 +52,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
-    data class CurrFile(var file : File)
+
+    data class CurrFile(var file: File)
+
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
@@ -60,7 +64,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
 
-        val expandedFiles = files.map{
+        val expandedFiles = files.map {
             File(expandPath(it.path).toString())
         }
 
@@ -76,11 +80,24 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
                 try {
                     lex(it, lexedFile)
                     val ast = parse(it, parsedFile)
                     typeCheck(ast, typedFile, absLibpath.toString(), currFile, kompiler)
-                } catch (e : CompilerError) {
+
+
+//                    ╔════════════════════════════════╗
+//                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
+//                    ╚════════════════════════════════╝
+                    val ir = IRTranslator(ast as Program,it.nameWithoutExtension).irgen()
+                    irFile?.let {
+                        val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
+                        ir.printSExp(writer)
+                        writer.flush()
+                        writer.close()
+                    }
+                } catch (e: CompilerError) {
                     when (e) {
                         is LexicalError -> {
                             println(e.log(currFile.file.name))
@@ -109,7 +126,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     /**
      * Takes a path string and expands beginning home reference ~ along with any instances of . and ..
      */
-    private fun expandPath(inPath : String) : Path {
+    private fun expandPath(inPath: String): Path {
         return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
     }
 
@@ -117,7 +134,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
      * Expand and make absolute a possibly relative directory path. Validate the directory existence.
      * @throws BadParameterValue when the directory is invalid
      */
-    private fun processDirPath(inPath : String, option : OptionWithValues<String,String,String>) : Path {
+    private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
         val expandedInPath = expandPath(inPath)
 
         val absInPath = when {
@@ -131,7 +148,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         )
         return absInPath
     }
-    private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String) : File {
+
+    private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String): File {
         val outFileName = inFile.nameWithoutExtension + extension
         val outFile = File(diagnosticPath.toString(), outFileName)
         if (outFile.exists() && !outFile.isDirectory) {
@@ -182,7 +200,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 TypeChecker(topGamma).typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
-        } catch (e : SemanticError) {
+        } catch (e: SemanticError) {
             if (typedFile != null && typedFile.length() == 0L) typedFile.appendText(e.mini)
             throw e
         }
