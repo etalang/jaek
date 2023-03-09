@@ -30,6 +30,7 @@ sealed class IRExpr : IRNode() {
 
     }
 
+    /** IRMem(address) evaluates [address] and looks up the memory contents in [address]**/
     class IRMem(val address: IRExpr) : IRExpr() {
         override val java: JIRMem = TODO("Not yet implemented")
 

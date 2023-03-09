@@ -73,11 +73,14 @@ class IRTranslator(val AST: Program, val name:String) {
             is Expr.Identifier -> IRTemp("your mom")
             is Expr.FunctionCall.LengthFn -> TODO()
             is Literal.ArrayLit -> TODO()
-            is Literal.BoolLit -> TODO() // IRConst(n.bool ? 1 else 0)
-            is Literal.CharLit -> TODO()
-            is Literal.IntLit -> TODO()
+            is Literal.BoolLit -> IRExpr.IRConst(if (n.bool) 1 else 0)
+            is Literal.CharLit -> IRExpr.IRConst(n.char.toLong())
+            is Literal.IntLit -> IRExpr.IRConst(n.num)
             is Literal.StringLit -> TODO()
-            is UnaryOp -> TODO()
+            is UnaryOp -> when (n.op) {
+                UnaryOp.Operation.NOT -> TODO()
+                UnaryOp.Operation.NEG -> TODO()
+            }
         }
     }
 
