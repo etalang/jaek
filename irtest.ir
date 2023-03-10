@@ -1,2 +1,2 @@
-(COMPUNIT irtest (DATA c3po (5)) (FUNC main (LABEL ignoreThis)))
+(COMPUNIT irtest (DATA c3po (5)) (FUNC _Imain__ (SEQ)))
 
