@@ -24,7 +24,6 @@ import kotlin.io.path.Path
  */
 class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
-    // TODO: accept relative paths
     private val files: List<File> by argument(
         help = "Input files to compiler.", name = "<source files>"
     ).file(canBeDir = false).multiple()
@@ -50,7 +49,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
-    data class CurrFile(var file : File)
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
      * preprocessed into vars above.
@@ -69,36 +67,31 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         }
 
         folderFiles.forEach {
-            val currFile = CurrFile(it) //holds the currently processing file for error reporting
             val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                var ast : Node?
                 try {
                     lex(it, lexedFile)
-                    val ast = parse(it, parsedFile)
-                    typeCheck(ast, typedFile, absLibpath.toString(), currFile, kompiler)
-                } catch (e : CompilerError) {
-                    when (e) {
-                        is LexicalError -> {
-                            println(e.log(currFile.file.name))
-                            parsedFile?.appendText(e.mini)
-                            typedFile?.appendText(e.mini)
+                    try {
+                        ast = parse(it, parsedFile)
+                        try {
+                            typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                        } catch (e : CompilerError) {
+                            println(e.log)
                         }
-
-                        is ParseError -> {
-                            println(e.log(currFile.file.name))
-                            parsedFile?.appendText(e.mini)
-                            typedFile?.appendText(e.mini)
-                        }
-
-                        is SemanticError -> {
-                            println(e.log(currFile.file.name))
-                        }
+                    } catch (e : ParseError){
+                        println(e.log)
+                        parsedFile?.appendText(e.mini)
+                        typedFile?.appendText(e.mini)
                     }
-
+                } catch (e : LexicalError) {
+                    println(e.log)
+                    parsedFile?.appendText(e.mini)
+                    typedFile?.appendText(e.mini)
                 }
             } else {
                 echo("Skipping $it due to invalid file.")
@@ -125,7 +118,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
         }
 
-//        println(absInPath)
         if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
             text = "The file location must be an existing directory.", option = option
         )
@@ -143,7 +135,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
     @Throws(LexicalError::class)
     private fun lex(inFile: File, lexedFile: File?) {
-        val jFlexLexer = JFlexLexer(inFile.bufferedReader())
+        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile)
         while (true) {
             try {
                 val t: Symbol = (jFlexLexer.next_token() ?: break)
@@ -170,20 +162,21 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
     @Throws(SemanticError::class)
     private fun typeCheck(
+        inFile: File,
         ast: Node,
         typedFile: File?,
         libpath: String,
-        currFile: CurrFile,
         kompiler: Kompiler
     ) {
         try {
-            val topGamma = kompiler.createTopLevelContext(ast, libpath, typedFile, currFile)
+            val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
             if (ast !is Interface) {
-                TypeChecker(topGamma).typeCheck(ast)
+                TypeChecker(topGamma,inFile).typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
-        } catch (e : SemanticError) {
-            if (typedFile != null && typedFile.length() == 0L) typedFile.appendText(e.mini)
+        } catch (e : CompilerError) {
+            // only append if error in import has not already been appended inside cTLC
+            if (e.file == inFile) typedFile?.appendText(e.mini)
             throw e
         }
     }

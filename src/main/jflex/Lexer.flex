@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.math.BigInteger;
+import java.io.File;
 import errors.*;
 
 %%
@@ -21,10 +22,17 @@ import errors.*;
    return new java_cup.runtime.Symbol(SymbolTable.EOF);
 %eofval}
 
+%ctorarg File file
+
+%init{
+  this.file = file;
+%init}
+
 %pack
 
 %{
     private LexUtil.StringTokenBuilder currentString;
+    private File file;
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {
@@ -58,16 +66,16 @@ MinInteger = "-"([ \t])*"9223372036854775808"
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
-    {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column());}
+    {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column(),file);}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
-    {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column()); }
-    {CharLiteral}     { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column()); }
+    {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column(),file); }
+    {CharLiteral}     {yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(),file); }
     "\""              { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING); }
     "//"              { yybegin(COMMENT); }
-    "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column());}
-    "'"               { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column());}
+    "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column(), file);}
+    "'"               { throw new LexicalError(LexicalError.errType.CharNotEnd, lineNumber(), column(), file);}
     <<EOF>>           { return new Token.EOFToken(lineNumber(), column()); }
-    [^]               { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column());}
+    [^]               { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column(), file);}
 }
 <COMMENT> {
     "\n"              { yybegin(YYINITIAL); }
@@ -76,11 +84,11 @@ MinInteger = "-"([ \t])*"9223372036854775808"
 }
 <STRING> {
     "\""              { Token.StringToken t = currentString.complete(); yybegin(YYINITIAL); return t;}
-    "\n"              { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
-    ({Character}|"'") { yycolumn -= LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column())); }
-    "\\"([^])         { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column()); }
-    <<EOF>>           { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
-    [^]               { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column()); }
+    "\n"              { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column(), file); }
+    ({Character}|"'") { yycolumn -= LexUtil.unicodeAdjustment(yytext()); currentString.append(LexUtil.parseToChar(yytext(), currentString.lineNumber(), currentString.column(), file)); }
+    "\\"([^])         { throw new LexicalError(LexicalError.errType.CharWrong, currentString.lineNumber(), currentString.column(), file); }
+    <<EOF>>           { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column(), file); }
+    [^]               { throw new LexicalError(LexicalError.errType.BadString, currentString.lineNumber(), currentString.column(), file); }
 }
 
 [^] {  } // end of file?

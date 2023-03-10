@@ -13,8 +13,9 @@ class ASTUtil {
                 "eti" -> HeaderToken.INTERFACE
                 else -> null
             }
-            val lexer = UltimateLexer(file.bufferedReader(), fileType)
+            val lexer = UltimateLexer(file.bufferedReader(), fileType,file)
             @Suppress("DEPRECATION") val parser = parser(lexer)
+            parser.setFile(file)
             return parser.parse().value as Node
         }
     }

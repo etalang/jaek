@@ -1,9 +1,13 @@
 package errors
 
-class SemanticError(line: Int, col: Int, val desc: String) : CompilerError(line, col, "Semantic Error") {
+import java.io.File
+
+class SemanticError(line: Int, col: Int, val desc: String, file: File) : CompilerError(
+    line, col, "Semantic Error",
+    file
+) {
     override val mini: String = "${line}:${column} error: ${desc}"
 
-    override fun log(file: String): String {
-        return "Semantic error beginning at ${file}:${line}:${column}: ${desc}"
-    }
+    override val log: String =
+        "Semantic error beginning at ${file.name}:${line}:${column}: ${desc}"
 }
