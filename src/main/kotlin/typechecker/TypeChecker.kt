@@ -13,14 +13,15 @@ import typechecker.EtaType.ContextType.*
 import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.StatementType.UnitType
 import typechecker.EtaType.StatementType.VoidType
+import java.io.File
 
 
-class TypeChecker(topGamma : Context) {
+class TypeChecker(topGamma: Context, val file: File) {
     var Gamma : Context = topGamma
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {
-        throw SemanticError(node.terminal.line,node.terminal.column,msg)
+        throw SemanticError(node.terminal.line,node.terminal.column,msg,file);
     }
 
     fun typeCheck(n : Node) {

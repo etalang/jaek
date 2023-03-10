@@ -1,6 +1,8 @@
 package errors
 
-sealed class CompilerError(val line: Int, val column: Int, message: String) : Exception(message) {
+import java.io.File
+
+sealed class CompilerError(val line: Int, val column: Int, message: String, val file: File) : Exception(message) {
     abstract val mini: String
-    abstract fun log(file: String): String
+    abstract val log: String
 }

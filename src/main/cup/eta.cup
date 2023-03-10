@@ -1,12 +1,15 @@
 import ast.*;
 import java.util.*;
 import errors.*;
+import java.io.File;
 
 parser code  {:
   public void syntax_error(java_cup.runtime.Symbol cur_token) {}
   public void unrecovered_syntax_error(java_cup.runtime.Symbol current) throws ParseError {
-    throw new ParseError(current);
+    throw new ParseError(current,file);
   }
+  private File file;
+  public void setFile(File file) {this.file = file;}
 :};
 scan with {: return getScanner().next_token(); :};
 
@@ -104,7 +107,7 @@ definition      ::= method:m                                    {: RESULT = m; :
 // b : int[] = 5
 globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null, new Terminal(idleft,idright)); :};
 globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl, new Terminal(idleft,idright)); :}
-                    | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n             {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright)); }
+                    | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n             {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
                                                                                              RESULT = new GlobalDecl(id, t, new Literal.IntLit(Long.parseLong(n), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :};
 
 /* =============> [Global] Methods <============= */
@@ -207,7 +210,7 @@ arrayLiteral     ::= OPEN_BRACE:b exprList:el CLOSE_BRACE            {: RESULT =
                     | OPEN_BRACE:b CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>(), new Terminal(bleft,bright)); :};
 arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET:b expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e,new Terminal(bleft,bright)); :}
                     | arrayLiteralAccess:ala OPEN_BRACKET:b expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e,new Terminal(bleft,bright)); :};
-primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.equals("9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright)); }
+primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.equals("9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
                                                                         RESULT = new Literal.IntLit(Long.parseLong(n),new Terminal(nleft,nright)); :}
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c,new Terminal(cleft,cright)); :}
                     | FALSE:o                                        {: RESULT = new Literal.BoolLit(false,new Terminal(oleft,oright)); :}
