@@ -8,7 +8,57 @@ import ir.mid.IRStmt.*
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
-class IRTranslator(val AST: Program, val name:String) {
+class IRTranslator(val AST: Program, val name: String) {
+    private var freshLabelCount = 0
+
+    private fun freshLabel(): IRLabel {
+        return IRLabel(freshLabelCount.toString())
+    }
+
+    private fun mangleType(t: EtaType): String {
+        return when (t) {
+            is EtaType.OrdinaryType.ArrayType -> "a" + mangleType(t.t)
+            is EtaType.OrdinaryType.BoolType -> "b"
+            is EtaType.OrdinaryType.IntType -> "i"
+            else -> "Charles' mom <3"
+        }
+    }
+
+    private fun mangleMethodName(method: Method): String {
+        return method.etaType?.let { mangleMethodName(method.id, it) }.orEmpty()
+    }
+
+    private fun mangleMethodName(name: String, type: EtaType?): String {
+        return when (type) {
+            is EtaType.ContextType.FunType -> {
+                val retType = when (val s = type.codomain.lst.size) {
+                    0 -> "p"
+                    1 -> mangleType(type.codomain.lst.first())
+                    else -> "t" + s.toString() + type.codomain.lst.fold("") { acc, e -> acc + mangleType(e) }
+                }
+
+                return "_I" + name.replace(
+                    "_", "__"
+                ) + "_" + retType + type.domain.lst.fold("") { acc, e -> acc + mangleType(e) }
+            }
+
+            else -> {
+                "WHAT"
+                // throw Exception("what the")
+            }
+        }
+    }
+
+//    private fun mangleMethodName(method: Method): String {
+//        if (method.returnTypes.size > 1) "t"
+//        return "_I" + method.id.replace("_", "__") + "_" + // INNOVATIVE USE OF MAP jk
+//
+//                method.returnTypes.fold("") { acc, e -> acc + mangleType(e) } +//CS 3110
+//                method.args.fold("") { acc, e -> acc + mangleType(e.type) }  // KATE + ZAK APPROVED
+//
+//    }
+
+
     fun irgen(optimize: Boolean = false): JIRNode {
         return translateCompUnit(AST).java
     }
