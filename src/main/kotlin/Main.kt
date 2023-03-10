@@ -75,13 +75,25 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
-                var ast : Node?
+                val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
+
+                val ast : Node?
                 try {
                     lex(it, lexedFile)
                     try {
                         ast = parse(it, parsedFile)
                         try {
                             typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+//                    ╔════════════════════════════════╗
+//                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
+//                    ╚════════════════════════════════╝
+                            val ir = IRTranslator(ast as Program,it.nameWithoutExtension).irgen()
+                            irFile?.let {
+                                val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
+                                ir.printSExp(writer)
+                                writer.flush()
+                                writer.close()
+                            }
                         } catch (e : CompilerError) {
                             println(e.log)
                         }
