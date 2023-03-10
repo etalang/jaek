@@ -90,7 +90,7 @@ class IRTranslator(val AST: Program, val name: String) {
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
-        return IRFuncDecl(n.id, translateStatement(n.body!!)) //WOOHOOOOOOO lol
+        return IRFuncDecl(mangleMethodName(n), translateStatement(n.body!!))
     }
 
     private fun translateStatement(n: Statement): IRStmt {
