@@ -111,12 +111,6 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
 
     private fun translateStatement(n: Statement): IRStmt {
         return when (n) {
-            is Statement.ArrayInit -> {
-                val tempA = IRTemp("a")
-                val moves = arrayInitMoves(17, tempA) // TODO: need to evaluate dimension
-                IRSeq(moves)
-            }
-
             is Statement.Block -> {
                 IRSeq(n.stmts.map { translateStatement(it) })
             }
@@ -141,13 +135,51 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
                 IRSeq(assignList)
             }
             is Statement.Procedure -> {
-//                println(mangleMethodName(n.id, n.etaType))
                 IRExp(IRCall(IRName(functionMap[n.id]!!), n.args.map { translateExpr(it) }))
-                // TODO: use IRCallStmt?
             }
 
             is Statement.Return -> IRReturn(n.args.map { translateExpr(it) })
-            is VarDecl.InitArr -> TODO()
+            is VarDecl.InitArr -> {
+//                val currTemp : IRTemp
+//                val currSeq : List<IRStmt>
+//                for (i in 0 until n.arrInit.dimensions.size) { // REVERSE ORDER [][][C][B][A] if t[A][B][C][][]
+//                    val currDim = n.arrInit.dimensions[i]
+//                    if (currDim == null) {
+//                        continue
+//                    } else {
+//                        val tempN = freshTemp()
+//                        val tempM = freshTemp()
+//                        // move transl expr (int length) into temp size
+//                        val dimensionMove = IRMove(tempN, translateExpr(currDim))
+//                        // allocate arr based on temp size
+//                        val moves = arrayInitMoves(tempN, tempM)
+//                        // move length field from temp size
+//                        val storeLength = IRMove()
+//                        // move new address into temp with arr name
+//                    }
+//                }
+//                // TODO: need to handle mutlidims
+//                IRSeq(moves)
+                val tempN = freshTemp()
+                val tempM = freshTemp()
+                val currDim = n.arrInit.dimensions[n.arrInit.dimensions.size - 1]
+                if (currDim == null) {
+                    throw Exception("charles sherk is sad about this :pensive:")
+                }
+                else {
+                    IRSeq(
+                        listOf(
+                            IRMove(tempN, translateExpr(currDim)),
+                            IRMove(
+                                tempM,
+                                IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))
+                            ), //IRConst((lstLength * 8 + 8).toLong())))),
+                            IRMove(IRMem(tempM), tempN),
+                            IRMove(tempM, IROp(ADD, tempM, IRConst(8)))
+                        )
+                    )
+                }
+            }
             is VarDecl.RawVarDecl -> IRMove(IRTemp(n.id), IRConst(0)) //INIT 0
             is Statement.While -> {
                 val trueLabel = freshLabel()
@@ -166,6 +198,25 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             }
         }
     }
+
+    // precondition -- lst always has at least one element
+//    private fun arrayInitHelp(lst : List<Expr>) : Pair<IRTemp, IRSeq> {
+//        return if (lst.size <= 1) {
+//            val tempN = freshTemp()
+//            val tempM = freshTemp()
+//            Pair(tempM,
+//            IRSeq(listOf(
+//                    IRMove(tempN, translateExpr(lst[0])),
+//                    IRMove(tempM, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+//                    IRMove(IRMem(tempM), tempN),
+//                    IRMove(tempM, IROp(ADD, tempM, IRConst(8)))
+//                )
+//            ))
+//        }
+//        else {
+//
+//        }
+//    }
 
     private fun translateExpr(n: Expr): IRExpr {
         return when (n) {
@@ -252,7 +303,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             is Expr.FunctionCall.LengthFn -> IRCall(IRName("_Ilength_iai"), listOf(translateExpr(n.arg)))
             is Literal.ArrayLit -> {
                 val tempM = IRTemp("m")
-                val moves = arrayInitMoves(n.list.size, tempM)
+                val moves = arrayInitMoves(IRConst(n.list.size.toLong()), tempM)
                 for (i in 0 until n.list.size) {
                     moves.add(IRMove(IRMem(IROp(ADD, tempM, IRConst((8 * (i+1)).toLong()))), translateExpr(n.list[i])))
                 }
@@ -268,7 +319,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             is Literal.StringLit -> {
                 val stringPtr = IRTemp("s")
 
-                val moves = arrayInitMoves(n.text.length, stringPtr)
+                val moves = arrayInitMoves(IRConst(n.text.length.toLong()), stringPtr)
 
                 for (i in 0 until n.text.length) {
                     moves.add(IRMove(IRMem(IROp(ADD, stringPtr, IRConst((8 * (i+1)).toLong()))), IRConst(n.text[i].code.toLong())))
@@ -286,11 +337,10 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             }
         }
     }
-    fun arrayInitMoves(lstLength : Int, ptr : IRTemp) : MutableList<IRMove> {
+    fun arrayInitMoves(lstLength : IRExpr, ptr : IRTemp) : MutableList<IRMove> {
         val moves = mutableListOf(
-            IRMove(ptr, IRCall(IRName("_xi_alloc"), listOf(IRConst((lstLength * 8 + 8).toLong())))),
-            IRMove(IRMem(ptr), IRConst(lstLength.toLong())),
-        )
+            IRMove(ptr, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, lstLength, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+            IRMove(IRMem(ptr), lstLength))
         return moves
     }
 
