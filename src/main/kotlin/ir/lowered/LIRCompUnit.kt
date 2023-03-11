@@ -1,12 +1,12 @@
-package ir.mid
+package ir.lowered
 
 import ir.IRData
 import edu.cornell.cs.cs4120.etac.ir.IRCompUnit as JIRCompUnit
 
 /** IRCompUnit represents a compilation unit**/
-class IRCompUnit(
-    val name: String, val functions: List<IRFuncDecl>, val globals: List<IRData>
-) : IRNode() {
+class LIRCompUnit(
+    val name: String, val functions: List<LIRFuncDecl>, val globals: List<IRData>
+) : LIRNode() {
 
     override val java: JIRCompUnit
         get() {

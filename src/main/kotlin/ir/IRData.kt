@@ -1,4 +1,4 @@
-package ir.mid
+package ir
 
 import edu.cornell.cs.cs4120.etac.ir.IRData as JIRData
 

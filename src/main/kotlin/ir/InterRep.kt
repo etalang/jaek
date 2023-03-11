@@ -1,8 +1,8 @@
 package ir
 
-import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
+import edu.cornell.cs.cs4120.etac.ir.IRNodeFactory_c
 
 /** InterRep represents the intermediate representation**/
 abstract class InterRep {
-    abstract val java: JIRNode
+    val factory = IRNodeFactory_c()
 }
