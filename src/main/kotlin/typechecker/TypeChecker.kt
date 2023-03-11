@@ -76,7 +76,9 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 for (t in defn.returnTypes) {
                                     outputTypes.add(translateType(t))
                                 }
-                                Gamma.bind(defn.id, FunType(ExpandedType(inputTypes), ExpandedType(outputTypes), false))
+                                val funType = FunType(ExpandedType(inputTypes), ExpandedType(outputTypes), false)
+                                defn.etaType = funType
+                                Gamma.bind(defn.id, funType)
                             }
                         }
                     }

@@ -8,11 +8,19 @@ import ir.mid.IRStmt.*
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
-class IRTranslator(val AST: Program, val name: String) {
+class IRTranslator(val AST: Program, val name: String, functions : Map<String,EtaType.ContextType.FunType>) {
+    private var functionMap = functions.mapValues { mangleMethodName(it.key,it.value) }
     private var freshLabelCount = 0
+    private var freshTempCount = 0
 
     private fun freshLabel(): IRLabel {
-        return IRLabel(freshLabelCount.toString())
+        freshLabelCount++
+        return IRLabel("_@"+freshLabelCount.toString())//TODO: THIS COULD CLASH
+    }
+
+    private fun freshTemp(): IRTemp {
+        freshTempCount++
+        return IRTemp("_@"+freshTempCount.toString()) //TODO: THIS COULD CLASH
     }
 
     private fun mangleType(t: EtaType): String {
@@ -20,12 +28,8 @@ class IRTranslator(val AST: Program, val name: String) {
             is EtaType.OrdinaryType.ArrayType -> "a" + mangleType(t.t)
             is EtaType.OrdinaryType.BoolType -> "b"
             is EtaType.OrdinaryType.IntType -> "i"
-            else -> "Charles' mom <3"
+            else -> "Charles Sherk <3"
         }
-    }
-
-    private fun mangleMethodName(method: Method): String {
-        return method.etaType?.let { mangleMethodName(method.id, it) }.orEmpty()
     }
 
     private fun mangleMethodName(name: String, type: EtaType?): String {
@@ -43,7 +47,7 @@ class IRTranslator(val AST: Program, val name: String) {
             }
 
             else -> {
-                "WHAT"
+                "what the fuck"
                 // throw Exception("what the")
             }
         }
@@ -90,24 +94,38 @@ class IRTranslator(val AST: Program, val name: String) {
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
-        return IRFuncDecl(mangleMethodName(n), translateStatement(n.body!!))
+        return IRFuncDecl(functionMap[n.id]!!, translateStatement(n.body!!))
+//            .let { if (it == null) {
+//            System.err.println("THIS SHOULD NOT HAPPEN!"); ""} else it }
+    }
+
+    private fun translateAssignTarget(n:AssignTarget) : IRExpr {
+        return when (n) {
+            is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign)
+            is AssignTarget.DeclAssign -> IRTemp(n.decl.id)
+            is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
+            is AssignTarget.Underscore -> freshTemp()
+        }
+
     }
 
     private fun translateStatement(n: Statement): IRStmt {
         return when (n) {
             is Statement.ArrayInit -> {
-                TODO()
+                val tempA = IRTemp("a")
+                val moves = arrayInitMoves(17, tempA) // TODO: need to evaluate dimension
+                IRSeq(moves)
             }
 
             is Statement.Block -> {
                 IRSeq(n.stmts.map { translateStatement(it) })
             }
 
-            is Statement.If -> { // TODO: use control translate
+            is Statement.If -> {
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
                 val sequence = mutableListOf(
-                    IRCJump(translateExpr(n.guard), trueLabel, falseLabel),
+                    translateControl(n.guard, trueLabel, falseLabel),
                     trueLabel,
                     translateStatement(n.thenBlock),
                     falseLabel
@@ -116,10 +134,16 @@ class IRTranslator(val AST: Program, val name: String) {
                 IRSeq(sequence)
             }
 
-            is MultiAssign -> TODO()
+            is MultiAssign -> {
+                val targetList : List<IRExpr> = n.targets.map { translateAssignTarget(it) }
+                val translatedExprs : List<IRExpr> = n.vals.map { translateExpr(it) }
+                val assignList : List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
+                IRSeq(assignList)
+            }
             is Statement.Procedure -> {
 //                println(mangleMethodName(n.id, n.etaType))
-                IRExp(IRCall(IRName(mangleMethodName(n.id, n.etaType)), n.args.map { translateExpr(it) }))
+                IRExp(IRCall(IRName(functionMap[n.id]!!), n.args.map { translateExpr(it) }))
+                // TODO: use IRCallStmt?
             }
 
             is Statement.Return -> IRReturn(n.args.map { translateExpr(it) })
@@ -146,8 +170,8 @@ class IRTranslator(val AST: Program, val name: String) {
     private fun translateExpr(n: Expr): IRExpr {
         return when (n) {
             is Expr.ArrayAccess -> {
-                val tempA = IRTemp("a")
-                val tempI = IRTemp("i")
+                val tempA = freshTemp()
+                val tempI = freshTemp()
                 val successLabel = freshLabel()
                 IRESeq(
                     IRSeq(
@@ -177,50 +201,133 @@ class IRTranslator(val AST: Program, val name: String) {
                     BinaryOp.Operation.GEQ -> GEQ
                     BinaryOp.Operation.EQB -> EQ
                     BinaryOp.Operation.NEQB -> NEQ
-                    BinaryOp.Operation.AND -> AND // TODO: use control translate
+                    BinaryOp.Operation.AND -> AND
                     BinaryOp.Operation.OR -> OR
                 }
-                IROp(opType, translateExpr(n.left), translateExpr(n.right))
+                if (opType == AND) {
+                    val tempX = freshTemp()
+                    val label1 = freshLabel()
+                    val label2 = freshLabel()
+                    val labelF = freshLabel()
+                    IRESeq(
+                        IRSeq(
+                            listOf(
+                                IRMove(tempX,IRConst(0)),
+                                IRCJump(translateExpr(n.left), label1, labelF),
+                                label1,
+                                IRCJump(translateExpr(n.right), label2, labelF),
+                                label2,
+                                IRMove(tempX, IRConst(1)),
+                                labelF
+                            )
+                        ),
+                        tempX
+                    )
+                }
+                if (opType == OR) {
+                    val tempX = freshTemp()
+                    val label1 = freshLabel()
+                    val label2 = freshLabel()
+                    val labelT = freshLabel()
+                    IRESeq (
+                        IRSeq(listOf(
+                            IRMove(tempX, IRConst(1)),
+                            IRCJump(translateExpr(n.left), labelT, label1),
+                            label1,
+                            IRCJump(translateExpr(n.right), labelT, label2),
+                            label2,
+                            IRMove(tempX,IRConst(0)),
+                            labelT
+                        ))
+                        , tempX)
+                } else {
+                    IROp(opType, translateExpr(n.left), translateExpr(n.right))
+                }
             }
 
-            is Expr.FunctionCall -> IRCall(IRName(mangleMethodName(n.fn, n.etaType)),
+            is Expr.FunctionCall -> IRCall(IRName(functionMap[n.fn]!!),
                 n.args.map { translateExpr(it) })
 
             is Expr.Identifier -> IRTemp(n.name)
             is Expr.FunctionCall.LengthFn -> IRCall(IRName("_Ilength_iai"), listOf(translateExpr(n.arg)))
-            is Literal.ArrayLit -> { // TODO: deal with nested arrays https://edstem.org/us/courses/34931/discussion/2754450
-                val tempN = IRTemp("n")
+            is Literal.ArrayLit -> {
                 val tempM = IRTemp("m")
-
-                val moves = mutableListOf(
-                    IRMove(tempN, IRCall(IRName("malloc"), listOf(IRConst((n.list.size * 8 + 8).toLong())))),
-                    IRMove(IRMem(tempM), IRConst(n.list.size.toLong())),
-                )
+                val moves = arrayInitMoves(n.list.size, tempM)
                 for (i in 0 until n.list.size) {
-                    moves.add(IRMove(IRMem(IROp(ADD, tempM, IRConst((8 * i).toLong()))), translateExpr(n.list[i])))
+                    moves.add(IRMove(IRMem(IROp(ADD, tempM, IRConst((8 * (i+1)).toLong()))), translateExpr(n.list[i])))
                 }
-
                 IRESeq(
                     IRSeq(
                         moves
                     ), IROp(ADD, tempM, IRConst(8))
                 )
             }
-
             is Literal.BoolLit -> IRConst(if (n.bool) 1 else 0)
             is Literal.CharLit -> IRConst(n.char.toLong())
             is Literal.IntLit -> IRConst(n.num)
-            is Literal.StringLit -> IRConst(0) //TODO LOL
+            is Literal.StringLit -> {
+                val stringPtr = IRTemp("s")
+
+                val moves = arrayInitMoves(n.text.length, stringPtr)
+
+                for (i in 0 until n.text.length) {
+                    moves.add(IRMove(IRMem(IROp(ADD, stringPtr, IRConst((8 * (i+1)).toLong()))), IRConst(n.text[i].code.toLong())))
+                }
+
+                return IRESeq(
+                    IRSeq(
+                        moves
+                    ), IROp(ADD, stringPtr, IRConst(8))
+                )
+            }
             is UnaryOp -> when (n.op) {
                 UnaryOp.Operation.NOT -> IROp(XOR, IRConst(1), translateExpr(n.arg))
                 UnaryOp.Operation.NEG -> IROp(SUB, IRConst(0), translateExpr(n.arg))
             }
         }
     }
+    fun arrayInitMoves(lstLength : Int, ptr : IRTemp) : MutableList<IRMove> {
+        val moves = mutableListOf(
+            IRMove(ptr, IRCall(IRName("_xi_alloc"), listOf(IRConst((lstLength * 8 + 8).toLong())))),
+            IRMove(IRMem(ptr), IRConst(lstLength.toLong())),
+        )
+        return moves
+    }
 
     fun translateControl(n: Expr, trueLabel: IRLabel, falseLabel: IRLabel): IRStmt {
         return when (n) {
             is Literal.BoolLit -> if (n.bool) IRJump(IRName(trueLabel.l)) else IRJump(IRName(falseLabel.l))
+            is UnaryOp -> {
+                if (n.op == UnaryOp.Operation.NOT) {
+                    translateControl(n, falseLabel, trueLabel)
+                }
+                else { //shouldn't typecheck
+                    throw Exception("")
+                }
+            }
+            is BinaryOp -> {
+                if (n.op == BinaryOp.Operation.AND) {
+                    val label1 = freshLabel()
+                    IRSeq(
+                        listOf(
+                            translateControl(n.left,label1, falseLabel),
+                            label1,
+                            translateControl(n.right, trueLabel, falseLabel)
+                        )
+                    )
+                } else if (n.op == BinaryOp.Operation.OR) {
+                    val label1 = freshLabel()
+                    IRSeq(
+                        listOf(
+                            translateControl(n.left, trueLabel, label1),
+                            label1,
+                            translateControl(n.right, trueLabel, falseLabel)
+                        )
+                    )
+                } else {
+                    throw Exception("")
+                }
+            }
             else -> IRCJump(translateExpr(n), trueLabel, falseLabel)
         }
     }

@@ -12,6 +12,7 @@ import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
+import typechecker.EtaType
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -83,11 +84,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                     try {
                         ast = parse(it, parsedFile)
                         try {
-                            typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
 //                    ╔════════════════════════════════╗
 //                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
 //                    ╚════════════════════════════════╝
-                            val ir = IRTranslator(ast as Program,it.nameWithoutExtension).irgen()
+                            val ir = IRTranslator(ast as Program,it.nameWithoutExtension,context.getFunctions()).irgen()
                             irFile?.let {
                                 val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
                                 ir.printSExp(writer)
@@ -181,13 +182,15 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         typedFile: File?,
         libpath: String,
         kompiler: Kompiler
-    ) {
+    ) : typechecker.Context {
         try {
             val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
+            var tc = TypeChecker(topGamma, inFile)
             if (ast !is Interface) {
-                TypeChecker(topGamma,inFile).typeCheck(ast)
+                tc.typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
+            return tc.Gamma
         } catch (e : CompilerError) {
             // only append if error in import has not already been appended inside cTLC
             if (e.file == inFile) typedFile?.appendText(e.mini)
