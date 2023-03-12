@@ -67,8 +67,8 @@ nonterminal VarDecl.RawVarDecl varDecl;
 nonterminal semi;
 nonterminal BinaryOp binop;
 nonterminal ParseUtil.UnOpBundle unop;
-nonterminal Expr.ArrayAccess arrayAccess, arrayLiteralAccess;
-nonterminal Expr assignableIndexable, indexable, arrayLiteral;
+nonterminal Expr.ArrayAccess arrayAccess;
+nonterminal Expr indexable, arrayLiteral;
 
 /* Precedences */
 precedence left OR;
@@ -191,25 +191,21 @@ typelst         ::= type:t                                                      
 expr            ::= binop:op                                       {: RESULT = op; :}
                     | primitiveLiteral:pl                          {: RESULT = pl; :}
                     | unop:op expr:arg                             {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
-                    | indexable:i                                  {: RESULT = i; :}
-                    | OPEN_PAREN expr:e1 CLOSE_PAREN OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1, e2, new Terminal(bleft,bright)); :}
+                    | indexable:in                                 {: RESULT = in; :}
+                    | arrayLiteral:al                              {: RESULT = al; :}
+                    | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s,new Terminal(sleft,sright)); :}
+                    | expr:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1, e2, new Terminal(bleft,bright)); :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
                     | LENGTH:l OPEN_PAREN expr:e CLOSE_PAREN       {: RESULT = new Expr.FunctionCall.LengthFn(e, new Terminal(lleft,lright)); :};
-indexable         ::= assignableIndexable:in                       {: RESULT = in; :}
-                    | arrayLiteral:al                              {: RESULT = al; :}
-                    | arrayLiteralAccess:ala                       {: RESULT = ala; :};
 exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
                     | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
-arrayAccess       ::= assignableIndexable:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2,new Terminal(bleft,bright)); :};
-assignableIndexable ::= functionCall:fc                              {: RESULT = fc; :}
+arrayAccess       ::= indexable:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2,new Terminal(bleft,bright)); :};
+indexable         ::= functionCall:fc                              {: RESULT = fc; :}
                     | IDENTIFIER:id                                  {: RESULT = new Literal.Identifier(id,new Terminal(idleft,idright)); :}
                     | arrayAccess:aa                                 {: RESULT = aa; :};
 arrayLiteral     ::= OPEN_BRACE:b exprList:el CLOSE_BRACE            {: RESULT = new Literal.ArrayLit(el, new Terminal(bleft,bright)); :}
                     | OPEN_BRACE:b exprList:el COMMA CLOSE_BRACE     {: RESULT = new Literal.ArrayLit(el, new Terminal(bleft,bright)); :}
-                    | OPEN_BRACE:b CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>(), new Terminal(bleft,bright)); :}
-                    | STRING_LITERAL:s                               {: RESULT = new Literal.StringLit(s,new Terminal(sleft,sright)); :};
-arrayLiteralAccess ::= arrayLiteral:al OPEN_BRACKET:b expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(al,e,new Terminal(bleft,bright)); :}
-                    | arrayLiteralAccess:ala OPEN_BRACKET:b expr:e CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(ala,e,new Terminal(bleft,bright)); :};
+                    | OPEN_BRACE:b CLOSE_BRACE                       {: RESULT = new Literal.ArrayLit(new ArrayList<Expr>(), new Terminal(bleft,bright)); :};
 primitiveLiteral  ::= INTEGER_LITERAL:n                            {: if (n.equals("9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
                                                                         RESULT = new Literal.IntLit(Long.parseLong(n),new Terminal(nleft,nright)); :}
                     | CHARACTER_LITERAL:c                          {: RESULT = new Literal.CharLit(c,new Terminal(cleft,cright)); :}
