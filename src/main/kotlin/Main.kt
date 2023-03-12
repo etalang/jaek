@@ -1,6 +1,7 @@
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.OptionWithValues
@@ -33,7 +34,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
-    private val outputIR: Boolean by option("--irgen", help = "Generate intermediate representation as SExpr").flag()
+    private val initOutputIR: Boolean by option("--irgen", help = "Generate intermediate representation as SExpr").flag()
+    private val runIR: Boolean by option("--irrun", help = "Generate and interpret intermediate representation (not fully supported)").flag()
     private val dOpt = option(
         "-D",
         metavar = "<folder>",
@@ -57,6 +59,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
      * preprocessed into vars above.
      */
     override fun run() {
+        // the irrun flag should also generate the IR, just like irgen
+        val outputIR = if (runIR) true else initOutputIR
         val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
@@ -89,6 +93,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 //                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
 //                    ╚════════════════════════════════╝
                             val ir = IRTranslator(ast as Program,it.nameWithoutExtension,context.getFunctions()).irgen()
+                            // we are sticking with the class IR rep, and do not implement irrun
+                            if (runIR) throw ProgramResult(2)
                             irFile?.let {
                                 val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
                                 ir.printSExp(writer)
