@@ -15,12 +15,12 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
 
     private fun freshLabel(): IRLabel {
         freshLabelCount++
-        return IRLabel("_@"+freshLabelCount.toString())//TODO: THIS COULD CLASH
+        return IRLabel("\$L$freshLabelCount")
     }
 
     private fun freshTemp(): IRTemp {
         freshTempCount++
-        return IRTemp("_@"+freshTempCount.toString()) //TODO: THIS COULD CLASH
+        return IRTemp("\$T$freshTempCount")
     }
 
     private fun mangleType(t: EtaType): String {
@@ -138,7 +138,9 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
                 IRExp(IRCall(IRName(functionMap[n.id]!!), n.args.map { translateExpr(it) }))
             }
 
-            is Statement.Return -> IRReturn(n.args.map { translateExpr(it) })
+            is Statement.Return -> {
+//            print("RETURNING....${n.args}")
+                IRReturn(n.args.map { translateExpr(it) })}
             is VarDecl.InitArr -> {
 //                val currTemp : IRTemp
 //                val currSeq : List<IRStmt>
@@ -344,7 +346,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
         return moves
     }
 
-    fun translateControl(n: Expr, trueLabel: IRLabel, falseLabel: IRLabel): IRStmt {
+    private fun translateControl(n: Expr, trueLabel: IRLabel, falseLabel: IRLabel): IRStmt {
         return when (n) {
             is Literal.BoolLit -> if (n.bool) IRJump(IRName(trueLabel.l)) else IRJump(IRName(falseLabel.l))
             is UnaryOp -> {
@@ -352,7 +354,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
                     translateControl(n, falseLabel, trueLabel)
                 }
                 else { //shouldn't typecheck
-                    throw Exception("")
+                    throw Exception("used a non-not unary as a guard, unreachable")
                 }
             }
             is BinaryOp -> {
@@ -375,7 +377,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
                         )
                     )
                 } else {
-                    throw Exception("")
+                    IRCJump(translateExpr(n), trueLabel, falseLabel)
                 }
             }
             else -> IRCJump(translateExpr(n), trueLabel, falseLabel)
