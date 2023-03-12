@@ -94,9 +94,10 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
-        return IRFuncDecl(functionMap[n.id]!!, translateStatement(n.body!!))
-//            .let { if (it == null) {
-//            System.err.println("THIS SHOULD NOT HAPPEN!"); ""} else it }
+        return if (n.returnTypes.size != 0)
+            IRFuncDecl(functionMap[n.id]!!, translateStatement(n.body!!))
+        else // if the method is a proc, add empty return
+            IRFuncDecl(functionMap[n.id]!!, IRSeq(listOf(translateStatement(n.body!!), IRReturn(listOf()))))
     }
 
     private fun translateAssignTarget(n:AssignTarget) : IRExpr {
@@ -142,45 +143,13 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
 //            print("RETURNING....${n.args}")
                 IRReturn(n.args.map { translateExpr(it) })}
             is VarDecl.InitArr -> {
-//                val currTemp : IRTemp
-//                val currSeq : List<IRStmt>
-//                for (i in 0 until n.arrInit.dimensions.size) { // REVERSE ORDER [][][C][B][A] if t[A][B][C][][]
-//                    val currDim = n.arrInit.dimensions[i]
-//                    if (currDim == null) {
-//                        continue
-//                    } else {
-//                        val tempN = freshTemp()
-//                        val tempM = freshTemp()
-//                        // move transl expr (int length) into temp size
-//                        val dimensionMove = IRMove(tempN, translateExpr(currDim))
-//                        // allocate arr based on temp size
-//                        val moves = arrayInitMoves(tempN, tempM)
-//                        // move length field from temp size
-//                        val storeLength = IRMove()
-//                        // move new address into temp with arr name
-//                    }
-//                }
-//                // TODO: need to handle mutlidims
-//                IRSeq(moves)
-                val tempN = freshTemp()
-                val tempM = freshTemp()
-                val currDim = n.arrInit.dimensions[n.arrInit.dimensions.size - 1]
-                if (currDim == null) {
-                    throw Exception("charles sherk is sad about this :pensive:")
-                }
-                else {
-                    IRSeq(
-                        listOf(
-                            IRMove(tempN, translateExpr(currDim)),
-                            IRMove(
-                                tempM,
-                                IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))
-                            ), //IRConst((lstLength * 8 + 8).toLong())))),
-                            IRMove(IRMem(tempM), tempN),
-                            IRMove(tempM, IROp(ADD, tempM, IRConst(8)))
-                        )
+                val (arrLoc, arrInstrs) = arrayInitHelp(n.arrInit.dimensions.toList().filterNotNull())
+                IRSeq(
+                    listOf(
+                        arrInstrs,
+                        IRMove(IRTemp(n.id), arrLoc)
                     )
-                }
+                )
             }
             is VarDecl.RawVarDecl -> IRMove(IRTemp(n.id), IRConst(0)) //INIT 0
             is Statement.While -> {
@@ -202,23 +171,49 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
     }
 
     // precondition -- lst always has at least one element
-//    private fun arrayInitHelp(lst : List<Expr>) : Pair<IRTemp, IRSeq> {
-//        return if (lst.size <= 1) {
-//            val tempN = freshTemp()
-//            val tempM = freshTemp()
-//            Pair(tempM,
-//            IRSeq(listOf(
-//                    IRMove(tempN, translateExpr(lst[0])),
-//                    IRMove(tempM, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
-//                    IRMove(IRMem(tempM), tempN),
-//                    IRMove(tempM, IROp(ADD, tempM, IRConst(8)))
-//                )
-//            ))
-//        }
-//        else {
-//
-//        }
-//    }
+    private fun arrayInitHelp(lst : List<Expr>) : Pair<IRTemp, IRSeq> {
+        return if (lst.size <= 1) {
+            val tempN = freshTemp()
+            val tempM = freshTemp()
+            Pair(tempM,
+            IRSeq(listOf(
+                    IRMove(tempN, translateExpr(lst[0])),
+                    IRMove(tempM, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+                    IRMove(IRMem(tempM), tempN),
+                    IRMove(tempM, IROp(ADD, tempM, IRConst(8)))
+                )
+            ))
+        }
+        else {
+            val loopLabel = freshLabel()
+            val complete = freshLabel()
+            val counter = freshTemp()
+            val arrSize = freshTemp()
+            val memTemp = freshTemp()
+            val loop = mutableListOf(
+                IRMove(arrSize, translateExpr(lst.first())),
+                IRMove(memTemp, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, arrSize, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+                IRMove(IRMem(memTemp), arrSize),
+                IRMove(memTemp, IROp(ADD, memTemp, IRConst(8))),
+                IRMove(counter, IRConst(0)),
+                loopLabel
+                 )
+            val (subtemp, subarray) = arrayInitHelp(lst.drop(1))
+            loop.add(subarray)
+            loop.addAll(listOf(
+                // the array assignment of subtemp into array hole
+                IRMove(IRMem(IROp(ADD, memTemp, IROp(MUL, counter, IRConst(8)))),subtemp),
+                IRMove(counter, IROp(ADD, counter, IRConst(1))),
+                IRCJump(IROp(GT, counter, arrSize), complete,loopLabel),
+                complete))
+            //make a for loop that will run the allocation instruction as many times as needed
+            Pair(
+                memTemp,
+                IRSeq(loop)
+            )
+        }
+    }
+
 
     private fun translateExpr(n: Expr): IRExpr {
         return when (n) {
@@ -304,7 +299,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             is Expr.Identifier -> IRTemp(n.name)
             is Expr.FunctionCall.LengthFn -> IRCall(IRName("_Ilength_iai"), listOf(translateExpr(n.arg)))
             is Literal.ArrayLit -> {
-                val tempM = IRTemp("m")
+                val tempM = freshTemp()
                 val moves = arrayInitMoves(IRConst(n.list.size.toLong()), tempM)
                 for (i in 0 until n.list.size) {
                     moves.add(IRMove(IRMem(IROp(ADD, tempM, IRConst((8 * (i+1)).toLong()))), translateExpr(n.list[i])))
@@ -319,7 +314,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             is Literal.CharLit -> IRConst(n.char.toLong())
             is Literal.IntLit -> IRConst(n.num)
             is Literal.StringLit -> {
-                val stringPtr = IRTemp("s")
+                val stringPtr = freshTemp()
 
                 val moves = arrayInitMoves(IRConst(n.text.length.toLong()), stringPtr)
 
