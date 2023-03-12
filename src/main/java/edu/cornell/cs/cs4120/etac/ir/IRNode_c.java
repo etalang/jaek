@@ -1,12 +1,12 @@
 package edu.cornell.cs.cs4120.etac.ir;
 
-import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter;
-import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.visit.AggregateVisitor;
 import edu.cornell.cs.cs4120.etac.ir.visit.CheckCanonicalIRVisitor;
+import edu.cornell.cs.cs4120.etac.ir.visit.InsnMapsBuilder;
+import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter;
+import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.visit.CheckConstFoldedIRVisitor;
 import edu.cornell.cs.cs4120.etac.ir.visit.IRVisitor;
-import edu.cornell.cs.cs4120.etac.ir.visit.InsnMapsBuilder;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

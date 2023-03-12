@@ -1,4 +1,4 @@
-package edu.cornell.cs.cs4120.etac.ir.parse;
+package edu.cornell.cs.cs4120.xic.ir.parse;
 
 import edu.cornell.cs.cs4120.etac.ir.parse.IRSym;import java_cup.runtime.ComplexSymbolFactory;
 import java_cup.runtime.ComplexSymbolFactory.ComplexSymbol;

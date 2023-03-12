@@ -1,12 +1,10 @@
 package edu.cornell.cs.cs4120.etac.ir.interpret;
 
-import edu.cornell.cs.cs4120.etac.ir.parse.IRLexer;
-import edu.cornell.cs.cs4120.etac.ir.parse.IRParser;
 import edu.cornell.cs.cs4120.etac.ir.visit.CheckCanonicalIRVisitor;
-import edu.cornell.cs.cs4120.etac.ir.visit.CheckConstFoldedIRVisitor;
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter;
 import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp;
+import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType;
 import edu.cornell.cs.cs4120.etac.ir.IRCallStmt;
 import edu.cornell.cs.cs4120.etac.ir.IRCompUnit;
 import edu.cornell.cs.cs4120.etac.ir.IRConst;
@@ -18,6 +16,9 @@ import edu.cornell.cs.cs4120.etac.ir.IRReturn;
 import edu.cornell.cs.cs4120.etac.ir.IRSeq;
 import edu.cornell.cs.cs4120.etac.ir.IRStmt;
 import edu.cornell.cs.cs4120.etac.ir.IRTemp;
+import edu.cornell.cs.cs4120.etac.ir.parse.IRLexer;
+import edu.cornell.cs.cs4120.etac.ir.parse.IRParser;
+import edu.cornell.cs.cs4120.etac.ir.visit.CheckConstFoldedIRVisitor;
 
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -113,7 +114,7 @@ public class Main {
                         new IRMove(new IRTemp("j"), new IRTemp(arg2)),
                         new IRReturn(
                                 new IRTemp("i"),
-                                new IRBinOp(IRBinOp.OpType.MUL, new IRConst(2), new IRTemp("j"))));
+                                new IRBinOp(OpType.MUL, new IRConst(2), new IRTemp("j"))));
         IRFuncDecl aFunc = new IRFuncDecl("_Ia_t2iiii", aBody);
 
         IRStmt bBody =
@@ -124,9 +125,9 @@ public class Main {
                         new IRMove(new IRTemp("y"), new IRTemp(ret2)),
                         new IRReturn(
                                 new IRBinOp(
-                                        IRBinOp.OpType.ADD,
+                                        OpType.ADD,
                                         new IRTemp("x"),
-                                        new IRBinOp(IRBinOp.OpType.MUL, new IRConst(5), new IRTemp("y")))));
+                                        new IRBinOp(OpType.MUL, new IRConst(5), new IRTemp("y")))));
         IRFuncDecl bFunc = new IRFuncDecl("b", bBody);
 
         IRCompUnit compUnit = new IRCompUnit("test");

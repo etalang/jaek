@@ -1,9 +1,9 @@
 package edu.cornell.cs.cs4120.etac.ir;
 
-import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.visit.AggregateVisitor;
 import edu.cornell.cs.cs4120.etac.ir.visit.CheckCanonicalIRVisitor;
 import edu.cornell.cs.cs4120.etac.ir.visit.IRVisitor;
+import edu.cornell.cs.cs4120.util.SExpPrinter;
 
 /**
  * An intermediate representation for a conditional transfer of control CJUMP(expr, trueLabel,

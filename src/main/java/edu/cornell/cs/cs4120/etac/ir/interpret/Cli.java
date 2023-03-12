@@ -1,9 +1,9 @@
 package edu.cornell.cs.cs4120.etac.ir.interpret;
 
-import edu.cornell.cs.cs4120.etac.ir.IRCompUnit;
-import edu.cornell.cs.cs4120.etac.ir.IRNodeFactory_c;
 import edu.cornell.cs.cs4120.etac.ir.parse.IRLexer;
 import edu.cornell.cs.cs4120.etac.ir.parse.IRParser;
+import edu.cornell.cs.cs4120.etac.ir.IRCompUnit;
+import edu.cornell.cs.cs4120.etac.ir.IRNodeFactory_c;
 
 import java.io.FileReader;
 
@@ -14,7 +14,7 @@ public class Cli {
      *  Usage: use the first command line argument to pass a filename
      */
     public static void main(String[] args) {
-        IRCompUnit ircli;
+        IRCompUnit ircli; 
         try (FileReader r = new FileReader(args[0])) {
             IRParser parser = new IRParser(new IRLexer(r), new IRNodeFactory_c());
             try {

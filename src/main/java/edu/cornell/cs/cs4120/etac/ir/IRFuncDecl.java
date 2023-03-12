@@ -2,8 +2,8 @@ package edu.cornell.cs.cs4120.etac.ir;
 
 import edu.cornell.cs.cs4120.etac.ir.visit.AggregateVisitor;
 import edu.cornell.cs.cs4120.etac.ir.visit.IRVisitor;
-import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.visit.InsnMapsBuilder;
+import edu.cornell.cs.cs4120.util.SExpPrinter;
 
 /** An IR function declaration */
 public class IRFuncDecl extends IRNode_c {

@@ -1,7 +1,7 @@
 package edu.cornell.cs.cs4120.etac.ir.visit;
 
-import edu.cornell.cs.cs4120.etac.ir.IRNode;
 import edu.cornell.cs.cs4120.util.InternalCompilerError;
+import edu.cornell.cs.cs4120.etac.ir.IRNode;
 
 import java.util.HashMap;
 import java.util.Map;

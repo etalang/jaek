@@ -1,5 +1,6 @@
 package edu.cornell.cs.cs4120.etac.ir.interpret;
 
+import edu.cornell.cs.cs4120.etac.ir.visit.InsnMapsBuilder;
 import edu.cornell.cs.cs4120.util.InternalCompilerError;
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp;
 import edu.cornell.cs.cs4120.etac.ir.IRCJump;
@@ -17,7 +18,6 @@ import edu.cornell.cs.cs4120.etac.ir.IRName;
 import edu.cornell.cs.cs4120.etac.ir.IRNode;
 import edu.cornell.cs.cs4120.etac.ir.IRReturn;
 import edu.cornell.cs.cs4120.etac.ir.IRTemp;
-import edu.cornell.cs.cs4120.etac.ir.visit.InsnMapsBuilder;
 
 import polyglot.util.SerialVersionUID;
 
@@ -97,8 +97,8 @@ public class IRSimulator {
         libraryFunctions.add("_IparseInt_t2ibai");
         libraryFunctions.add("_IunparseInt_aii");
         // special declarations
-        libraryFunctions.add("_xi_alloc");
-        libraryFunctions.add("_xi_out_of_bounds");
+        libraryFunctions.add("_eta_alloc");
+        libraryFunctions.add("_eta_out_of_bounds");
         // other declarations
         libraryFunctions.add("_Iassert_pb");
 
@@ -366,12 +366,12 @@ public class IRSimulator {
                         break;
                     }
                     // special declarations
-                case "_xi_alloc":
+                case "_eta_alloc":
                     {
                         ret.add(calloc(args[0]));
                         break;
                     }
-                case "_xi_out_of_bounds":
+                case "_eta_out_of_bounds":
                     {
                         throw new OutOfBoundTrap("Out of bounds!");
                     }

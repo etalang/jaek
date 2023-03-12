@@ -1,9 +1,9 @@
 package edu.cornell.cs.cs4120.etac.ir;
 
-import edu.cornell.cs.cs4120.util.InternalCompilerError;
-import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.visit.AggregateVisitor;
 import edu.cornell.cs.cs4120.etac.ir.visit.IRVisitor;
+import edu.cornell.cs.cs4120.util.InternalCompilerError;
+import edu.cornell.cs.cs4120.util.SExpPrinter;
 
 /** An intermediate representation for a memory location MEM(e) */
 public class IRMem extends IRExpr_c {

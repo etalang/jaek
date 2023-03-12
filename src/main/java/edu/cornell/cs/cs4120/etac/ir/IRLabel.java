@@ -1,7 +1,7 @@
 package edu.cornell.cs.cs4120.etac.ir;
 
-import edu.cornell.cs.cs4120.util.SExpPrinter;
 import edu.cornell.cs.cs4120.etac.ir.visit.InsnMapsBuilder;
+import edu.cornell.cs.cs4120.util.SExpPrinter;
 
 /** An intermediate representation for naming a memory address */
 public class IRLabel extends IRStmt {
