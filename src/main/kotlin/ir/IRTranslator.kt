@@ -178,7 +178,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             Pair(tempM,
             IRSeq(listOf(
                     IRMove(tempN, translateExpr(lst[0])),
-                    IRMove(tempM, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+                    IRMove(tempM, IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
                     IRMove(IRMem(tempM), tempN),
                     IRMove(tempM, IROp(ADD, tempM, IRConst(8)))
                 )
@@ -192,7 +192,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
             val memTemp = freshTemp()
             val loop = mutableListOf(
                 IRMove(arrSize, translateExpr(lst.first())),
-                IRMove(memTemp, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, arrSize, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+                IRMove(memTemp, IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, arrSize, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
                 IRMove(IRMem(memTemp), arrSize),
                 IRMove(memTemp, IROp(ADD, memTemp, IRConst(8))),
                 IRMove(counter, IRConst(0)),
@@ -336,7 +336,7 @@ class IRTranslator(val AST: Program, val name: String, functions : Map<String,Et
     }
     fun arrayInitMoves(lstLength : IRExpr, ptr : IRTemp) : MutableList<IRMove> {
         val moves = mutableListOf(
-            IRMove(ptr, IRCall(IRName("_xi_alloc"), listOf(IROp(ADD, IROp(MUL, lstLength, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
+            IRMove(ptr, IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, lstLength, IRConst(8)), IRConst(8))))), //IRConst((lstLength * 8 + 8).toLong())))),
             IRMove(IRMem(ptr), lstLength))
         return moves
     }
