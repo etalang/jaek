@@ -53,7 +53,7 @@ sealed class Statement : Node() {
         }
     }
 
-    class ArrayInit(val type: Type, initDim: Expr) : Statement() {
+    class ArrayInit(val type: Type, initDim: Expr) : Node() {
         /** dimensions gives the expressions in the initialization of the array in REVERSE order! */
         var dimensions: ArrayList<Expr?> = arrayListOf(initDim)
         override val terminal: Terminal = type.terminal

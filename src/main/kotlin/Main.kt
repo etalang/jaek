@@ -10,7 +10,9 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
+import ir.IRTranslator
 import java_cup.runtime.Symbol
+import typechecker.EtaType
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -31,6 +33,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
+    private val outputIR: Boolean by option("--irgen", help = "Generate intermediate representation as SExpr").flag()
     private val dOpt = option(
         "-D",
         metavar = "<folder>",
@@ -58,7 +61,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
 
-        val expandedFiles = files.map{
+        val expandedFiles = files.map {
             File(expandPath(it.path).toString())
         }
 
@@ -73,13 +76,25 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
-                var ast : Node?
+                val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
+
+                val ast : Node?
                 try {
                     lex(it, lexedFile)
                     try {
                         ast = parse(it, parsedFile)
                         try {
-                            typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+//                    ╔════════════════════════════════╗
+//                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
+//                    ╚════════════════════════════════╝
+                            val ir = IRTranslator(ast as Program,it.nameWithoutExtension,context.getFunctions()).irgen()
+                            irFile?.let {
+                                val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
+                                ir.printSExp(writer)
+                                writer.flush()
+                                writer.close()
+                            }
                         } catch (e : CompilerError) {
                             println(e.log)
                         }
@@ -167,13 +182,15 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         typedFile: File?,
         libpath: String,
         kompiler: Kompiler
-    ) {
+    ) : typechecker.Context {
         try {
             val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
+            var tc = TypeChecker(topGamma, inFile)
             if (ast !is Interface) {
-                TypeChecker(topGamma,inFile).typeCheck(ast)
+                tc.typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
+            return tc.Gamma
         } catch (e : CompilerError) {
             // only append if error in import has not already been appended inside cTLC
             if (e.file == inFile) typedFile?.appendText(e.mini)

@@ -67,6 +67,7 @@ class Kompiler {
                     )
                 }
             } else {
+                method.etaType = currFunType
                 returnGamma.bind(method.id, currFunType)
             }
         }
