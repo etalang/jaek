@@ -31,7 +31,7 @@ sealed class IRStmt : IRNode() {
 
     //TODO
     /** IRCJump represents a jump to [trueBranch] if [guard] is non-zero and a jump to [falseBranch] otherwise**/
-    class IRCJump(val guard: IRExpr, val trueBranch: IRLabel, val falseBranch: IRLabel?) : IRStmt() {
+    class IRCJump(val guard: IRExpr, val trueBranch: IRLabel, val falseBranch: IRLabel) : IRStmt() {
         override val java: JIRCJump =
             if (falseBranch != null)
                 factory.IRCJump(guard.java, trueBranch.l, falseBranch.l)

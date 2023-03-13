@@ -67,7 +67,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
 
     fun irgen(optimize: Boolean = false): JIRNode {
-        return translateCompUnit(AST).java
+        return IRLowerer().lowirgen(translateCompUnit(AST)).java
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
