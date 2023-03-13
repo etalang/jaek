@@ -6,20 +6,85 @@ import edu.cornell.cs.cs4120.etac.ir.IRSeq
 class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
     override val java: IRSeq = factory.IRSeq(block.map { it.java })
 
+    sealed class Node(
+        val statements: MutableList<FlatStmt>,
+        val label: String?,
+    ) {
+        abstract val edges: List<Node?>
+
+        class None(statements: MutableList<FlatStmt>, label: String?) : Node(statements, label) {
+            override val edges: List<Node> = listOf()
+        }
+
+        class Unconditional(statements: MutableList<FlatStmt>, label: String?, var unconEdge: Node?) :
+            Node(statements, label) {
+            override val edges = listOf(unconEdge)
+
+        }
+
+        class Conditional(
+            statements: MutableList<FlatStmt>, label: String?, var trueEdge: Node?, var falseEdge: Node?
+        ) : Node(statements, label) {
+            override val edges: List<Node?> = listOf(trueEdge, falseEdge)
+        }
+
+        sealed class Builder(
+            val statements: MutableList<FlatStmt>,
+            val block: BasicBlock?,
+        ) {
+            var built: Node? = null
+
+            abstract fun build()
+            abstract fun finish(map: Map<BasicBlock?, Node?>): Node
+
+            class None(statements: MutableList<FlatStmt>, block: BasicBlock) : Builder(statements, block) {
+                override fun build() {
+                    built = Node.None(statements, block?.label?.l)
+                }
+
+                override fun finish(map: Map<BasicBlock?, Node?>): Node {
+                    return built!!;
+                }
+            }
+
+            class Unconditional(statements: MutableList<FlatStmt>, block: BasicBlock, var lazyUncon: BasicBlock) :
+                Builder(statements, block) {
+                override fun build() {
+                    built = Node.Unconditional(statements, block?.label?.l, null)
+                }
+
+                override fun finish(map: Map<BasicBlock?, Node?>): Node {
+                    (built as Node.Unconditional).unconEdge = map[lazyUncon]
+                    return built!!;
+                }
+
+            }
+
+            class Conditional(
+                statements: MutableList<FlatStmt>,
+                label: BasicBlock,
+                var guard: LIRExpr,
+                var lazyTrue: BasicBlock?,
+                var lazyFalse: BasicBlock?
+            ) : Builder(statements, label) {
+                override fun build() {
+                    built = Node.Conditional(statements, block?.label?.l, null, null)
+                }
+
+                override fun finish(map: Map<BasicBlock?, Node?>): Node {
+                    (built as Node.Conditional).trueEdge = map[lazyTrue]
+                    (built as Node.Conditional).falseEdge = map[lazyFalse]
+                    return built!!;
+                }
+            }
+        }
+
+
+    }
+
     class BasicBlock(
         val label: LIRLabel?, val ordinary: List<FlatStmt>, val end: EndBlock?
     ) {
-        class Node(
-            val statements: MutableList<FlatStmt>,
-            var trueEdge: Node?,
-            var falseEdge: Node?,
-            var unconEdge: Node?
-        ) {
-            constructor(statements: MutableList<FlatStmt>) :
-                    this(statements, null, null, null)
-
-            val edges = listOfNotNull(trueEdge, falseEdge, unconEdge)
-        }
 
         class Builder() {
             var label: LIRLabel? = null
@@ -71,52 +136,67 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
     }
 
     //this caused me pain
-    fun buildCFG(blocks: List<BasicBlock>): List<BasicBlock.Node> {
-        val nodeMap = blocks.associateWith { BasicBlock.Node(ArrayList(it.ordinary)) }
-        val labelToNode = nodeMap.entries.filter { it.key.label != null }.associate { it.key.label to it.value }
-        val nodes: MutableList<BasicBlock.Node> = ArrayList()
-        blocks.forEachIndexed { index, basicBlock ->
-            val n = nodeMap[basicBlock]!!
+    fun buildCFG(blocks: List<BasicBlock>): List<Node> {
+//        val nodeMap = blocks.associateWith { Node(ArrayList(it.ordinary),it.label) }
+        val labelToBlock = blocks.filter { it.label != null }.associateBy { it.label }
+//        val nodes: MutableList<Node> = ArrayList()
+
+
+        val lazyNodes = blocks.mapIndexed { index, basicBlock ->
             when (val end = basicBlock.end) {
                 is LIRCJump -> {
-                    n.trueEdge = labelToNode[end.trueBranch]
-                    n.falseEdge = labelToNode[end.falseBranch]
-                    n.statements.add(end)
+                    Node.Builder.Conditional(
+                        ArrayList(basicBlock.ordinary),
+                        basicBlock,
+                        end.guard,
+                        labelToBlock[end.trueBranch],
+                        labelToBlock[end.falseBranch]
+                    )
                 }
 
                 is LIRJump, is LIRReturn -> {
-                    n.statements.add(end)
+                    Node.Builder.None(
+                        ArrayList(basicBlock.ordinary.plus(end)),
+                        basicBlock,
+                    )
                 }
 
                 is LIRTrueJump -> {
-                    n.trueEdge = labelToNode[end.trueBranch]
-                    n.statements.add(end)
+                    //TODO consider more thoughtfully
+                    throw Exception("how did you get here")
+//                    n.trueEdge = labelToNode[end.trueBranch]
+//                    n.statements.add(end)
                 }
 
-                null -> n.unconEdge = nodeMap[blocks[index + 1]]
+                null -> Node.Builder.Unconditional(
+                    ArrayList(basicBlock.ordinary), basicBlock, blocks[index + 1]
+                )
             }
         }
-        return nodes;
+        for (n in lazyNodes) n.build()
+
+        val labelToNode = lazyNodes.associate { it.block to it.built }
+        return lazyNodes.map { it.finish(labelToNode) }
     }
 
 
-    fun greedyTrace(blocks: List<BasicBlock.Node>): List<BasicBlock.Node> {
-        val unmarked: MutableSet<BasicBlock.Node> = blocks.toMutableSet()
-        val predecessors: Map<BasicBlock.Node, MutableList<BasicBlock.Node>> = blocks.associateWith { mutableListOf() }
+    fun greedyTrace(blocks: List<Node>): List<Node> {
+        val unmarked: MutableSet<Node> = blocks.toMutableSet()
+        val predecessors: Map<Node, MutableList<Node>> = blocks.associateWith { mutableListOf() }
         for (b in blocks) for (children in b.edges) {
             predecessors[children]?.add(b)
         }
 
-        fun head(): BasicBlock.Node? {
+        fun head(): Node? {
             for (n in unmarked) {
                 if (predecessors[n]?.isEmpty() == true) return n;
             }
             return unmarked.randomOrNull()
         }
 
-        val order: MutableList<BasicBlock.Node> = ArrayList()
+        val order: MutableList<Node> = ArrayList()
         while (!unmarked.isEmpty()) {
-            var head: BasicBlock.Node? = head()
+            var head: Node? = head()
             while (head != null) {
                 order.add(head)
                 unmarked.remove(head)
@@ -126,4 +206,24 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
         assert(order.containsAll(blocks))
         return order;
     }
+
+    fun fixJumps(nodes: List<Node>): List<FlatStmt> {
+        val fixed: List<BasicBlock> = nodes.mapIndexed { index, node ->
+            val statements = ArrayList(node.statements)
+            var jump: FlatStmt? = null;
+//            //TODO: dangerous LMAO
+//            if (index < nodes.size - 1 && node.trueEdge != null && node.trueEdge?.label == nodes[index + 1].label) {
+//                jump = LIRTrueJump(node.condition!!, node.trueEdge!!.label!!)
+//            }
+//            if (!(node.unconEdge?.label == nodes[index + 1].label)) {
+//                jump = LIRJump(node.condition!!)
+//            }
+
+            BasicBlock(null, if (jump != null) node.statements.plus(jump) else node.statements, null)
+        }
+
+        return
+    }
+
+
 }
