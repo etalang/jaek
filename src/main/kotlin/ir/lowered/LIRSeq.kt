@@ -99,4 +99,31 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
         return nodes;
     }
 
+
+    fun greedyTrace(blocks: List<BasicBlock.Node>): List<BasicBlock.Node> {
+        val unmarked: MutableSet<BasicBlock.Node> = blocks.toMutableSet()
+        val predecessors: Map<BasicBlock.Node, MutableList<BasicBlock.Node>> = blocks.associateWith { mutableListOf() }
+        for (b in blocks) for (children in b.edges) {
+            predecessors[children]?.add(b)
+        }
+
+        fun head(): BasicBlock.Node? {
+            for (n in unmarked) {
+                if (predecessors[n]?.isEmpty() == true) return n;
+            }
+            return unmarked.randomOrNull()
+        }
+
+        val order: MutableList<BasicBlock.Node> = ArrayList()
+        while (!unmarked.isEmpty()) {
+            var head: BasicBlock.Node? = head()
+            while (head != null) {
+                order.add(head)
+                unmarked.remove(head)
+                head = head.edges.filter { unmarked.contains(it) }.randomOrNull()
+            }
+        }
+        assert(order.containsAll(blocks))
+        return order;
+    }
 }
