@@ -69,4 +69,34 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
         }
         return blocks
     }
+
+    //this caused me pain
+    fun buildCFG(blocks: List<BasicBlock>): List<BasicBlock.Node> {
+        val nodeMap = blocks.associateWith { BasicBlock.Node(ArrayList(it.ordinary)) }
+        val labelToNode = nodeMap.entries.filter { it.key.label != null }.associate { it.key.label to it.value }
+        val nodes: MutableList<BasicBlock.Node> = ArrayList()
+        blocks.forEachIndexed { index, basicBlock ->
+            val n = nodeMap[basicBlock]!!
+            when (val end = basicBlock.end) {
+                is LIRCJump -> {
+                    n.trueEdge = labelToNode[end.trueBranch]
+                    n.falseEdge = labelToNode[end.falseBranch]
+                    n.statements.add(end)
+                }
+
+                is LIRJump, is LIRReturn -> {
+                    n.statements.add(end)
+                }
+
+                is LIRTrueJump -> {
+                    n.trueEdge = labelToNode[end.trueBranch]
+                    n.statements.add(end)
+                }
+
+                null -> n.unconEdge = nodeMap[blocks[index + 1]]
+            }
+        }
+        return nodes;
+    }
+
 }
