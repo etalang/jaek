@@ -1,4 +1,6 @@
 c3po: int = 5
 
-main() {
+main(args: int[][]) {
+    x:int[2][3]
+    x[1][2] = 17
 }

@@ -135,7 +135,16 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is MultiAssign -> {
                 val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
                 val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) }
-                val assignList: List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
+                val assignList: List<IRStmt> = (targetList zip translatedExprs).map{
+                    val fst = it.first
+                    if (fst is IRESeq) { // is an array access
+                        val seq = fst.statement
+                        IRSeq(mutableListOf(seq, IRMove(fst.value, it.second)))
+                    }
+                    else {
+                        IRMove(it.first, it.second)
+                    }
+                }
                 IRSeq(assignList)
             }
 
@@ -203,7 +212,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             val arrSize = freshTemp()
             val memTemp = freshTemp()
             val loop = mutableListOf(
-                IRMove(arrSize, translateExpr(lst.first())),
+                IRMove(arrSize, translateExpr(lst.last())),
                 IRMove(
                     memTemp,
                     IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, arrSize, IRConst(8)), IRConst(8))))
@@ -213,14 +222,14 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 IRMove(counter, IRConst(0)),
                 loopLabel
             )
-            val (subtemp, subarray) = arrayInitHelp(lst.drop(1))
+            val (subtemp, subarray) = arrayInitHelp(lst.dropLast(1))
             loop.add(subarray)
             loop.addAll(
                 listOf(
                     // the array assignment of subtemp into array hole
                     IRMove(IRMem(IROp(ADD, memTemp, IROp(MUL, counter, IRConst(8)))), subtemp),
                     IRMove(counter, IROp(ADD, counter, IRConst(1))),
-                    IRCJump(IROp(GT, counter, arrSize), complete, loopLabel),
+                    IRCJump(IROp(GEQ, counter, arrSize), complete, loopLabel),
                     complete
                 )
             )
