@@ -2,6 +2,7 @@ package ir
 
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import ir.lowered.LIRStmt
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
 import ir.mid.IRExpr.*
@@ -134,9 +135,31 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
             is MultiAssign -> {
                 val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
-                val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) }
-                val assignList: List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
-                IRSeq(assignList)
+                val first = n.vals.first()
+
+                if (n.vals.size == 1 && first is Expr.FunctionCall) {
+                    // go straight to IRCallStmt and do not pass go
+                    // get the right number of returns from _RV whatever
+                    val returnTemps : MutableList<IRTemp> = mutableListOf()
+                    for (i in 1 .. n.targets.size) {
+                        returnTemps.add(IRTemp("_RV$i"))
+                    }
+                    // DO THE CALL IN HERE DO NOT PASS IT DOWN
+                    // assuming that the number of returns must match the number of targets, checked in typecheck
+                    val stmts : MutableList<IRStmt> = mutableListOf(
+                        IRCallStmt(IRName(
+                            functionMap[first.fn]!!),
+                            n.targets.size.toLong(),
+                            first.args.map { translateExpr(it) }
+                        )
+                    )
+                    stmts.addAll((targetList zip returnTemps).map { IRMove(it.first, it.second) })
+                    IRSeq(stmts)
+                } else {
+                    val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) }
+                    val assignList: List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
+                    IRSeq(assignList)
+                }
             }
 
             is Statement.Procedure -> {

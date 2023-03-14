@@ -2,7 +2,6 @@ package ir
 
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
-import edu.cornell.cs.cs4120.etac.ir.IRNode
 import ir.lowered.*
 import ir.lowered.LIRExpr.*
 import ir.lowered.LIRStmt.*
@@ -123,6 +122,26 @@ class IRLowerer() {
                 n.block.forEach { stmts.addAll(lowerStatement(it)) }
                 stmts
             }
+            is IRStmt.IRCallStmt -> {
+                val stmts: MutableList<FlatStmt> = mutableListOf()
+                val (addrStmts, addrExpr) = lowerExpr(n.address)
+                val addrTmp = freshTemp()
+                stmts.addAll(addrStmts)
+                stmts.add(LIRMove(addrTmp, addrExpr))
+
+                val argTmps : MutableList<LIRExpr> = mutableListOf()
+
+                n.args.forEach {
+                    val (si, ei) = lowerExpr(it)
+                    stmts.addAll(si)
+                    val ti = freshTemp()
+                    argTmps.add(ti)
+                    stmts.add(LIRMove(ti, ei))
+
+                }
+                stmts.add(LIRCallStmt(addrExpr, n.n_returns, argTmps))
+                stmts
+            }
         }
     }
 
@@ -143,15 +162,11 @@ class IRLowerer() {
                     allTemps.add(ti)
                     allStmts.add(LIRMove(ti, ei))
                 }
-                // TODO: figure out returns and ARGs
-                // After calling a function (i.e., CALL_STMT) you can expect the
-                // _RV temps will be populated. In the function, you'll have a RETURN node
-                // which contains the expressions to return. This should automatically
-                // populate the _RV temps if you're using our interpreter.
-                allStmts.add(LIRCallStmt(t0, allTemps))
-                val newTemp = freshTemp()
-                allStmts.add(LIRMove(newTemp, LIRName("_RV1")))
-                Pair(allStmts, newTemp)
+
+                allStmts.add(LIRCallStmt(t0, 1, allTemps))
+                val returnVal = freshTemp()
+                allStmts.add(LIRMove(returnVal, LIRName("_RV1")))
+                Pair(allStmts, returnVal)
             }
 
             is IRExpr.IRConst -> Pair(listOf(), LIRConst(n.value))
