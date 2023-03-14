@@ -127,9 +127,7 @@ class IRLowerer() {
             is IRStmt.IRCallStmt -> {
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 val (addrStmts, addrExpr) = lowerExpr(n.address)
-                val addrTmp = freshTemp()
                 stmts.addAll(addrStmts)
-                stmts.add(LIRMove(addrTmp, addrExpr))
 
                 val argTmps : MutableList<LIRExpr> = mutableListOf()
 
@@ -153,9 +151,7 @@ class IRLowerer() {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
                 val allTemps : MutableList<LIRTemp> = mutableListOf()
                 val (s0, e0) = lowerExpr(n.address)
-                val t0 = freshTemp()
                 allStmts.addAll(s0)
-                allStmts.add(LIRMove(t0, e0))
 
                 n.args.forEach {
                     val (si, ei) = lowerExpr(it)
@@ -165,9 +161,9 @@ class IRLowerer() {
                     allStmts.add(LIRMove(ti, ei))
                 }
 
-                allStmts.add(LIRCallStmt(t0, 1, allTemps))
+                allStmts.add(LIRCallStmt(e0, 1, allTemps))
                 val returnVal = freshTemp()
-                allStmts.add(LIRMove(returnVal, LIRName("_RV1")))
+                allStmts.add(LIRMove(returnVal, LIRTemp("_RV1")))
                 Pair(allStmts, returnVal)
             }
 

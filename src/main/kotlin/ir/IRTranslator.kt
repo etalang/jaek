@@ -14,6 +14,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
 class IRTranslator(val AST: Program, val name: String, functions: Map<String, EtaType.ContextType.FunType>) {
     private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
+    private val globals: MutableList<IRData> = ArrayList()
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -72,7 +73,6 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
-        val globals: MutableList<IRData> = ArrayList()
         val functions: MutableList<IRFuncDecl> = ArrayList()
 
         p.definitions.forEach {
@@ -84,6 +84,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         return IRCompUnit(name, functions, globals)
     }
 
+    // TODO: Arrays in global data should also have their length? how does this affect pointers to their info?
     private fun translateData(n: GlobalDecl): IRData {
         val data: LongArray = when (val v = n.value) {
             is Literal.ArrayLit -> v.list.map { translateExpr(it).java.constant() }
@@ -91,7 +92,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.BoolLit -> longArrayOf(if (v.bool) 1 else 0)
             is Literal.CharLit -> longArrayOf(v.char.toLong())
             is Literal.IntLit -> longArrayOf(v.num)
-            is Literal.StringLit -> v.text.codePoints().asLongStream().toArray()
+            is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
             null -> "CHARLES <3".codePoints().asLongStream().toArray()
         }
         return IRData(n.id, data)
@@ -171,7 +172,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             }
 
             is Statement.Procedure -> {
-                IRExp(IRCall(IRName(functionMap[n.id]!!), n.args.map { translateExpr(it) }))
+                IRCallStmt(IRName(functionMap[n.id]!!), 0, n.args.map { translateExpr(it) })
             }
 
             is Statement.Return -> {
@@ -370,25 +371,18 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.BoolLit -> IRConst(if (n.bool) 1 else 0)
             is Literal.CharLit -> IRConst(n.char.toLong())
             is Literal.IntLit -> IRConst(n.num)
-            is Literal.StringLit -> {
-                val stringPtr = freshTemp()
+            is Literal.StringLit -> { // TODO: fix escape chars (\n)
+                val stringPtr = freshLabel()
+                val translatedString = n.text.codePoints().asLongStream().toArray()
+                val stringData = IRData(stringPtr.l, longArrayOf(n.text.length.toLong()) + translatedString )
+                globals.add(stringData)
+                val globalStartTemp = freshTemp()
+                val stringStartTemp = freshTemp()
+                return IRESeq(IRSeq(listOf(
+                    IRMove(globalStartTemp, IRName(stringPtr.l)),
+                    IRMove(stringStartTemp, IROp(ADD, globalStartTemp, IRConst(8)))
+                )), stringStartTemp)
 
-                val moves = arrayInitMoves(IRConst(n.text.length.toLong()), stringPtr)
-
-                for (i in 0 until n.text.length) {
-                    moves.add(
-                        IRMove(
-                            IRMem(IROp(ADD, stringPtr, IRConst((8 * (i + 1)).toLong()))),
-                            IRConst(n.text[i].code.toLong())
-                        )
-                    )
-                }
-
-                return IRESeq(
-                    IRSeq(
-                        moves
-                    ), IROp(ADD, stringPtr, IRConst(8))
-                )
             }
 
             is UnaryOp -> when (n.op) {
