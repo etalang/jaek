@@ -99,7 +99,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
         val funcMoves : MutableList<IRStmt> = mutableListOf()
-        for (i in 0 until n.args.size) {
+        for (i in 1 .. n.args.size) {
             funcMoves.add(IRMove(IRTemp(n.args[i].id) , IRTemp("_ARG$i")))
         }
         funcMoves.add(translateStatement(n.body!!))
