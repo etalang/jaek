@@ -226,21 +226,25 @@ class IRLowerer() {
     }
 
     private fun lowMul(n1 : Long, n2: Long) : Long {
-        val n1H = n1 ushr 32
-        val n1L = (n1 shl 32) ushr 32
-        val n2H = n2 ushr 32
-        val n2L = (n2 shl 32) ushr 32
-        return (n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)
+        val sgn1 = if (n1 >= 0) 1 else -1
+        val sgn2 = if (n2 >= 0) 1 else -1
+        val n1H = (n1 * sgn1) ushr 32
+        val n1L = ((n1 * sgn1) shl 32) ushr 32
+        val n2H = (n2 * sgn2) ushr 32
+        val n2L = ((n2 * sgn2) shl 32) ushr 32
+        return ((n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)) * sgn1 * sgn2
     }
 
     private fun highMul(n1 : Long, n2: Long) : Long {
         // https://stackoverflow.com/questions/28868367/getting-the-high-part-of-64-bit-integer-multiplication
-        val n1H = n1 ushr 32
-        val n1L = (n1 shl 32) ushr 32
-        val n2H = n2 ushr 32
-        val n2L = (n2 shl 32) ushr 32
+        val sgn1 = if (n1 >= 0) 1 else -1
+        val sgn2 = if (n2 >= 0) 1 else -1
+        val n1H = (n1 * sgn1) ushr 32
+        val n1L = ((n1 * sgn1) shl 32) ushr 32
+        val n2H = (n2 * sgn2) ushr 32
+        val n2L = ((n2 * sgn2) shl 32) ushr 32
         val carry = ((((n1H * n2L) shl 32) ushr 32) + (((n2H * n1L) shl 32) ushr 32) + ((n1L * n2L) ushr 32)) ushr 32
-        return (n1H * n2H) + ((n1H * n2L) ushr 32) + ((n2H * n1L) ushr 32) + carry
+        return ((n1H * n2H) + ((n1H * n2L) ushr 32) + ((n2H * n1L) ushr 32) + carry) * sgn1 * sgn2
     }
 
 

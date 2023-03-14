@@ -2,4 +2,5 @@ c3po: int = 5
 
 main(args:int[][]) {
     x:int = 12 + 5
+    y:int = 1 + 2 * 3 * (4 - 5) / 6 *>> 7 % 8
 }

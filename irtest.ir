@@ -1,3 +1,6 @@
-(COMPUNIT irtest (DATA c3po (5))
- (FUNC _Imain_paai (SEQ (MOVE (TEMP x) (CONST 17)) (RETURN))))
+(COMPUNIT
+ irtest
+ (DATA c3po (5))
+ (FUNC _Imain_paai
+  (SEQ (MOVE (TEMP x) (CONST 17)) (MOVE (TEMP y) (CONST 1)) (RETURN))))
 
