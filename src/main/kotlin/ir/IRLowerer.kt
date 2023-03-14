@@ -59,7 +59,10 @@ class IRLowerer() {
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 stmts.addAll(guardStmts)
                 // could translate the labels shrug but why bother
-                stmts.add(LIRCJump(guardExpr, LIRLabel(n.trueBranch.l), LIRLabel(n.falseBranch.l)))
+                if (n.falseBranch != null)
+                    stmts.add(LIRCJump(guardExpr, LIRLabel(n.trueBranch.l), LIRLabel(n.falseBranch.l)))
+                else
+                    stmts.add(LIRTrueJump(guardExpr, LIRLabel(n.trueBranch.l)))
                 stmts
             }
 
