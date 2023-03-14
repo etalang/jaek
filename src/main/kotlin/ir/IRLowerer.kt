@@ -17,28 +17,9 @@ class IRLowerer() {
         return LIRTemp("\$TL$freshLowTempCount")
     }
 
-    private fun commutes(op: IRBinOp.OpType): Boolean {
-        return when (op) {
-            ADD -> true
-            SUB -> false
-            MUL -> true
-            HMUL -> true
-            DIV -> false
-            MOD -> false
-            AND -> false
-            OR -> false
-            XOR -> true // TODO: Real sus...doesn't exist in eta
-            LSHIFT -> false
-            RSHIFT -> false
-            ARSHIFT -> false
-            EQ -> true
-            NEQ -> true
-            LT -> false
-            ULT -> false
-            GT -> false
-            LEQ -> false
-            GEQ -> false
-        }
+    private fun commutes(left : IRExpr, right :IRExpr): Boolean {
+        //TODO: add commuting
+        return false
     }
 
     fun lowirgen(midIR: IRCompUnit, optimize: Boolean = false): LIRCompUnit {
@@ -82,29 +63,44 @@ class IRLowerer() {
 
             is IRStmt.IRLabel -> listOf(LIRLabel(n.l))
             is IRStmt.IRMove -> {
+                //TODO: add commuting
                 val stmts: MutableList<FlatStmt> = mutableListOf()
-                when (n.dest) {
-                    is IRExpr.IRTemp -> {
-                        val (exprStmts, expr) = lowerExpr(n.expr)
+                val (e1Stmts, dest) = lowerExpr(n.dest)
+                val (eStmts, e2) = lowerExpr(n.expr)
 
-                        stmts.addAll(exprStmts)
-                        stmts.add(LIRMove(LIRTemp(n.dest.name), expr))
-                    }
-
-                    is IRExpr.IRMem -> {
-                        val (e1Stmts, e1) = lowerExpr(n.dest)
-                        val (e2Stmts, e2) = lowerExpr(n.expr)
-                        val temp = freshTemp()
-                        stmts.addAll(e1Stmts)
-                        stmts.add(LIRMove(temp, e1))
-                        stmts.addAll(e2Stmts)
-                        stmts.add(LIRMove(LIRMem(temp), e2))
-                    }
-
-                    else -> {
-                        throw Exception("moving into non-mem, non-temp expr")
-                    }
+                if (commutes(n.dest, n.expr)){
+                    stmts.addAll(e1Stmts)
+                    stmts.addAll(eStmts)
+                    stmts.add(LIRMove(dest, e2))
+                } else {
+                    val temp = freshTemp()
+                    stmts.addAll(e1Stmts)
+                    stmts.add(LIRMove(temp, dest))
+                    stmts.addAll(eStmts)
+                    stmts.add(LIRMove(LIRMem(temp), e2))
                 }
+//                when (n.dest) {
+//                    is IRExpr.IRTemp -> {
+//                        val (exprStmts, expr) = lowerExpr(n.expr)
+//
+//                        stmts.addAll(exprStmts)
+//                        stmts.add(LIRMove(LIRTemp(n.dest.name), expr))
+//                    }
+//
+//                    is IRExpr.IRMem -> {
+//                        val (e1Stmts, e1) = lowerExpr(n.dest)
+//                        val (e2Stmts, e2) = lowerExpr(n.expr)
+//                        val temp = freshTemp()
+//                        stmts.addAll(e1Stmts)
+//                        stmts.add(LIRMove(temp, e1))
+//                        stmts.addAll(e2Stmts)
+//                        stmts.add(LIRMove(LIRMem(temp), e2))
+//                    }
+//
+//                    else -> {
+//                        throw Exception("moving into non-mem, non-temp expr")
+//                    }
+//                }
                 stmts
             }
 
@@ -195,7 +191,7 @@ class IRLowerer() {
                     Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))
                 }
                 else {
-                    if (commutes(n.op)) {
+                    if (commutes(n.left, n.right)){
                         allStmts.addAll(leftStmt)
                         allStmts.addAll(rightStmt)
                         Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
