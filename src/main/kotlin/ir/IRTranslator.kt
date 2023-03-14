@@ -98,10 +98,18 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
-        return if (n.returnTypes.size != 0)
-            IRFuncDecl(functionMap[n.id]!!, translateStatement(n.body!!))
-        else // if the method is a proc, add empty return
-            IRFuncDecl(functionMap[n.id]!!, IRSeq(listOf(translateStatement(n.body!!), IRReturn(listOf()))))
+        val funcMoves : MutableList<IRStmt> = mutableListOf()
+        for (i in 0 until n.args.size) {
+            funcMoves.add(IRMove(IRTemp(n.args[i].id) , IRTemp("_ARG$i")))
+        }
+        funcMoves.add(translateStatement(n.body!!))
+        if (n.returnTypes.size != 0) {
+            return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
+        }
+        else { // if the method is a proc, add empty return
+            funcMoves.add(IRReturn(listOf()))
+            return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
+        }
     }
 
     private fun translateAssignTarget(n: AssignTarget): IRExpr {
