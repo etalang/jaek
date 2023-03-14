@@ -1,4 +1,5 @@
 c3po: int = 5
 
-main() {
+main(args:int[][]) {
+    x:int = 12 + 5
 }

@@ -2,6 +2,7 @@ package ir
 
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import edu.cornell.cs.cs4120.etac.ir.IRConst
 import edu.cornell.cs.cs4120.etac.ir.IRNode
 import ir.lowered.*
 import ir.lowered.LIRExpr.*
@@ -175,20 +176,72 @@ class IRLowerer() {
                 val (rightStmt, rightExpr) = lowerExpr(n.right)
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
 
-                if (commutes(n.op)) {
+                // constant folding
+                if (leftExpr is LIRConst && rightExpr is LIRConst) {
                     allStmts.addAll(leftStmt)
                     allStmts.addAll(rightStmt)
-                    Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
-                } else {
-                    val newTemp = freshTemp()
-                    allStmts.addAll(leftStmt)
-                    allStmts.add(LIRMove(newTemp, leftExpr))
-                    allStmts.addAll(rightStmt)
-                    Pair(allStmts, LIROp(n.op, newTemp, rightExpr))
+                    Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))
+                }
+                else {
+                    if (commutes(n.op)) {
+                        allStmts.addAll(leftStmt)
+                        allStmts.addAll(rightStmt)
+                        Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
+                    } else {
+                        val newTemp = freshTemp()
+                        allStmts.addAll(leftStmt)
+                        allStmts.add(LIRMove(newTemp, leftExpr))
+                        allStmts.addAll(rightStmt)
+                        Pair(allStmts, LIROp(n.op, newTemp, rightExpr))
+                    }
                 }
             }
 
             is IRExpr.IRTemp -> Pair(listOf(), LIRTemp(n.name))
         }
     }
+
+    private fun calculate(n1 : Long, n2 : Long, op : IRBinOp.OpType) : Long {
+        return when (op) {
+            ADD -> n1 + n2
+            SUB -> n1 - n2
+            MUL -> lowMul(n1, n2)
+            HMUL -> highMul(n1, n2)
+            DIV -> n1 / n2
+            MOD -> n1 % n2
+            AND -> n1 and n2
+            OR -> n1 or n2
+            XOR -> n1 xor n2
+            LSHIFT -> n1 shl n2.toInt()
+            RSHIFT -> n1 ushr n2.toInt()
+            ARSHIFT -> n1 shr n2.toInt()
+            EQ -> if (n1 == n2) 1 else 0
+            NEQ -> if (n1 != n2) 1 else 0
+            LT -> if (n1 < n2) 1 else 0
+            ULT -> if (n1.toULong() < n2.toULong()) 1 else 0
+            GT -> if (n1 > n2) 1 else 0
+            LEQ -> if (n1 <= n2) 1 else 0
+            GEQ -> if (n1 >= n2) 1 else 0
+        }
+    }
+
+    private fun lowMul(n1 : Long, n2: Long) : Long {
+        val n1H = n1 ushr 32
+        val n1L = (n1 shl 32) ushr 32
+        val n2H = n2 ushr 32
+        val n2L = (n2 shl 32) ushr 32
+        return (n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)
+    }
+
+    private fun highMul(n1 : Long, n2: Long) : Long {
+        // https://stackoverflow.com/questions/28868367/getting-the-high-part-of-64-bit-integer-multiplication
+        val n1H = n1 ushr 32
+        val n1L = (n1 shl 32) ushr 32
+        val n2H = n2 ushr 32
+        val n2L = (n2 shl 32) ushr 32
+        val carry = ((((n1H * n2L) shl 32) ushr 32) + (((n2H * n1L) shl 32) ushr 32) + ((n1L * n2L) ushr 32)) ushr 32
+        return (n1H * n2H) + ((n1H * n2L) ushr 32) + ((n2H * n1L) ushr 32) + carry
+    }
+
+
 }
