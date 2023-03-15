@@ -13,22 +13,21 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         return "\$B$freshLabelCount"
     }
 
-    fun blockReordering() {
+    fun blockReordering(): List<FlatStmt> {
         val b = maximalBasicBlocks()
         val n = buildCFG(b)
         val c = fixJumps(n)
-        block = toSequence(c)
+        return toSequence(c)
     }
 
     class BasicBlock(
         val label: String, val ordinary: List<FlatStmt>, val end: EndBlock?
     ) {
-
-        class Builder(freshLabel: () -> String) {
+        class Builder(val freshLabel: () -> String) {
             var label: String? = null
             val statements: MutableList<FlatStmt> = ArrayList()
             var end: EndBlock? = null
-            fun put(statement: LIRStmt): BasicBlock? {
+            fun put(statement: LIRStmt) {
                 when (statement) {
                     is LIRLabel -> {
                         assert(label == null)
@@ -45,13 +44,12 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                     is FlatStmt -> statements.add(statement)
                 }
 
-                if (end != null) {
-                    return build
-                }
-                return null
             }
 
-            val build: BasicBlock = BasicBlock(label ?: freshLabel.invoke(), statements, end)
+            val complete: Boolean get() = end != null
+
+            val build: BasicBlock
+                get() = BasicBlock(label ?: freshLabel.invoke(), statements, end)
 
         }
 
@@ -104,13 +102,14 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         val statements = block.iterator()
         var builder = BasicBlock.Builder(this::freshLabel)
         while (statements.hasNext()) {
-            when (val b = builder.put(statements.next())) {
-                is BasicBlock -> {
-                    blocks.add(b)
-                    builder = BasicBlock.Builder(this::freshLabel)
-                }
+            val next = statements.next()
+            if (next is LIRLabel || builder.complete) {
+                blocks.add(builder.build)
+                builder = BasicBlock.Builder(this::freshLabel)
             }
+            builder.put(next)
         }
+        blocks.add(builder.build)
         return blocks
     }
 
@@ -135,7 +134,12 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
                 is LIRReturn -> Node.None(ArrayList(it.ordinary.plus(end)), it.label)
 
-                null -> Node.Unconditional(ArrayList(it.ordinary), it.label, blocks[index + 1].label)
+                null -> {
+                    if (index < blocks.lastIndex)
+                        Node.Unconditional(ArrayList(it.ordinary), it.label, blocks[index + 1].label)
+                    else
+                        Node.None(ArrayList(it.ordinary), it.label)
+                }
             }
         }
     }
