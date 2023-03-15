@@ -436,7 +436,8 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.IntLit -> IRConst(n.num)
             is Literal.StringLit -> { // TODO: fix escape chars (\n)
                 val stringPtr = freshLabel()
-                val translatedString = n.text.codePoints().asLongStream().toArray()
+                val escapedString = escapeStringChars(n.text)
+                val translatedString = escapedString.codePoints().asLongStream().toArray()
                 val stringData = IRData(stringPtr.l, longArrayOf(n.text.length.toLong()) + translatedString )
                 globals.add(stringData)
                 val globalStartTemp = freshTemp()
@@ -453,6 +454,13 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 UnaryOp.Operation.NEG -> IROp(SUB, IRConst(0), translateExpr(n.arg))
             }
         }
+    }
+
+    fun escapeStringChars(s : String) : String {
+        return s.replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\")
     }
 
     fun arrayInitMoves(lstLength: IRExpr, ptr: IRTemp): MutableList<IRMove> {
