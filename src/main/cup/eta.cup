@@ -34,7 +34,7 @@ nonterminal Interface interface;
 nonterminal Program program;
 nonterminal ArrayList<Use> imports;
 nonterminal Use use;
-nonterminal ArrayList<Definition> allDefinitions;
+nonterminal ArrayList<Definition> globalDefinitions, allDefinitions;
 nonterminal Definition definition;
 nonterminal Method methodHeader;
 nonterminal ArrayList<Method> methodHeaders;
@@ -97,16 +97,19 @@ use             ::= USE IDENTIFIER:id semi                      {: RESULT = new 
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
-allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :} //could be sketch
-                    | definition:d                              {: RESULT = ParseUtil.singleton(d); :};
+allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :}
+                    | globalDefinitions:Dt method:m             {: Dt.add(m); RESULT = Dt; :}
+                    | method:m                                  {: RESULT = ParseUtil.singleton(m); :};
+globalDefinitions  ::= globalDefinitions:Dt globalDecl:dc semi  {: Dt.add(dc); RESULT = Dt; :} //could be sketch
+                    | globalDecl:dc semi                        {: RESULT = ParseUtil.singleton(dc); :};
 definition      ::= method:m                                    {: RESULT = m; :}
                     | globalDecl:dc semi                        {: RESULT = dc; :};
 
 /* =============> Global Variables <============= */
 // a : int[6] ILLEGAL
 // b : int[] = 5
-globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null, new Terminal(idleft,idright)); :};
-globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                   {: RESULT = new GlobalDecl(id, t, pl, new Terminal(idleft,idright)); :}
+globalDecl      ::= IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(id, t, null, new Terminal(idleft,idright)); :}
+                    | IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                 {: RESULT = new GlobalDecl(id, t, pl, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n             {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
                                                                                              RESULT = new GlobalDecl(id, t, new Literal.IntLit(Long.parseLong(n), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :};
 
