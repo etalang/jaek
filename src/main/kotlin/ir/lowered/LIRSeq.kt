@@ -3,13 +3,20 @@ package ir.lowered
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
 /** IRSeq represents the sequential composition of IR statements in [block]**/
-class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
+class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     private var freshLabelCount = 0
     override val java: IRSeq = factory.IRSeq(block.map { it.java })
 
     private fun freshLabel(): LIRLabel {
         freshLabelCount++
         return LIRLabel("\$B$freshLabelCount")
+    }
+
+    fun blockReordering() {
+        val b = maximalBasicBlocks()
+        val n = buildCFG(b)
+        val c = fixJumps(n)
+        block = toSequence(c)
     }
 
     class BasicBlock(
@@ -49,10 +56,24 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
 
     }
 
-    sealed class Node(
+    sealed class Collected(
         val statements: MutableList<FlatStmt>,
-        val label: LIRLabel,
+        val label: LIRLabel
     ) {
+        class DoubleJump(
+            statements: MutableList<FlatStmt>,
+            label: LIRLabel,
+            val condition: LIRExpr,
+            val firstJump: LIRLabel,
+            val fallThroughJump: LIRLabel
+        ) : Collected(statements, label) {
+        }
+    }
+
+    sealed class Node(
+        statements: MutableList<FlatStmt>,
+        label: LIRLabel,
+    ) : Collected(statements, label) {
         abstract val edges: List<LIRLabel>
 
         class None(statements: MutableList<FlatStmt>, label: LIRLabel) : Node(statements, label) {
@@ -73,6 +94,7 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
         ) : Node(statements, label) {
             override val edges: List<LIRLabel> = listOfNotNull(trueEdge, falseEdge)
         }
+
     }
 
 
@@ -138,80 +160,89 @@ class LIRSeq(val block: List<FlatStmt>) : LIRStmt() {
         return order;
     }
 
-    fun fixJumps(nodes: List<Node>): List<FlatStmt> {
-        val fixed: List<BasicBlock> = nodes.mapIndexed { index, node ->
-            val statements = ArrayList(node.statements)
+    fun fixJumps(nodes: List<Node>): List<Collected> {
+        return nodes.mapIndexed { index, node ->
+            val nextBlock = nodes.getOrNull(index + 1)
             when (node) {
-                is Node.Conditional -> TODO()
-                is Node.None -> TODO()
-                is Node.Unconditional -> TODO()
+                is Node.Conditional -> {
+                    //CJUMP WITH ONLY TRUE
+                    if (node.falseEdge == null) {
+                        if (nextBlock != null && node.trueEdge == nextBlock.label) {
+                            //GOES IMMEDIATELY TO NEXT BLOCK
+                            Node.None(node.statements, node.label)
+                        } else {
+                            //ONLY TRUE AND CANNOT GO TO NEXT
+                            node
+                        }
+                    } else {
+                        //CJUMP WITH TRUE AND FALSE
+                        if (nextBlock != null && node.trueEdge == nextBlock.label) {
+                            //INVERT CONDITION
+                            Node.Conditional(node.statements, node.label, node.condition, node.falseEdge, null)
+                        } else {
+                            //FALL THROUGH IS UNCONDITIONAL JUMP
+                            Collected.DoubleJump(
+                                node.statements,
+                                node.label,
+                                node.condition,
+                                node.trueEdge,
+                                node.falseEdge
+                            )
+                        }
+                    }
+                }
+
+                is Node.None -> node
+                is Node.Unconditional -> {
+                    if (nextBlock != null && node.to == nextBlock.label) {
+                        Node.None(node.statements, node.label)
+                    } else node
+                }
             }
         }
-        return listOf()
+
+    }
+
+    fun toSequence(nodes: List<Collected>): List<FlatStmt> {
+        val statements: MutableList<FlatStmt> = ArrayList()
+        val blockLabels = nodes.map { it.label }
+        nodes.forEach { node ->
+            statements.add(node.label)
+            statements.addAll(node.statements)
+            when (node) {
+                is Node.Conditional -> {
+                    assert(node.falseEdge == null)
+                    statements.add(LIRTrueJump(node.condition, node.trueEdge))
+                }
+
+                is Node.None -> {
+                }
+
+                is Node.Unconditional -> {
+                    statements.add(LIRJump(LIRExpr.LIRName(node.label.l)))
+                }
+
+                is Collected.DoubleJump -> {
+                    statements.add(LIRTrueJump(node.condition, node.firstJump))
+                    statements.add(LIRJump(LIRExpr.LIRName(node.fallThroughJump.l)))
+                }
+            }
+        }
+
+        return statements
+
+        //TODO: delete labels
+//        val labelTargets : MutableSet<LIRLabel> = mutableSetOf()
+//        statements.forEach {
+//            when(it){
+//                is LIRCJump -> throw Exception("???")
+//                is LIRJump -> if (it.address is LIRL)
+//                is LIRReturn -> TODO()
+//                is LIRTrueJump -> TODO()
+//                is LIRUJump -> TODO()
+//                is LIRCallStmt -> TODO()
+//                is LIRLabel -> TODO()
+//                is LIRMove -> TODO()
+//            }
     }
 }
-
-
-//            //TODO: dangerous LMAO
-//            if (index < nodes.size - 1 && node.trueEdge != null && node.trueEdge?.label == nodes[index + 1].label) {
-//                jump = LIRTrueJump(node.condition!!, node.trueEdge!!.label!!)
-//            }
-//            if (!(node.unconEdge?.label == nodes[index + 1].label)) {
-//                jump = LIRJump(node.condition!!)
-//            }
-
-//            BasicBlock(null, if (jump != null) node.statements.plus(jump) else node.statements, null)
-//}
-
-//        return
-
-//        sealed class Builder(
-//            val statements: MutableList<FlatStmt>,
-//            val block: BasicBlock?,
-//        ) {
-//            var built: Node? = null
-//
-//            abstract fun build()
-//            abstract fun finish(map: Map<BasicBlock?, Node?>): Node
-//
-//            class None(statements: MutableList<FlatStmt>, block: BasicBlock) : Builder(statements, block) {
-//                override fun build() {
-//                    built = Node.None(statements, block?.label?.l)
-//                }
-//
-//                override fun finish(map: Map<BasicBlock?, Node?>): Node {
-//                    return built!!;
-//                }
-//            }
-//
-//            class Unconditional(statements: MutableList<FlatStmt>, block: BasicBlock, var lazyUncon: BasicBlock) :
-//                Builder(statements, block) {
-//                override fun build() {
-//                    built = Node.Unconditional(statements, block?.label?.l, null)
-//                }
-//
-//                override fun finish(map: Map<BasicBlock?, Node?>): Node {
-//                    (built as Node.Unconditional).unconEdge = map[lazyUncon]
-//                    return built!!;
-//                }
-//
-//            }
-
-//            class Conditional(
-//                statements: MutableList<FlatStmt>,
-//                label: BasicBlock,
-//                var guard: LIRExpr,
-//                var lazyTrue: BasicBlock?,
-//                var lazyFalse: BasicBlock?
-//            ) : Builder(statements, label) {
-//                override fun build() {
-//                    built = Node.Conditional(statements, block?.label?.l, null, null)
-//                }
-//
-//                override fun finish(map: Map<BasicBlock?, Node?>): Node {
-//                    (built as Node.Conditional).trueEdge = map[lazyTrue]
-//                    (built as Node.Conditional).falseEdge = map[lazyFalse]
-//                    return built!!;
-//                }
-//            }
-//        }
