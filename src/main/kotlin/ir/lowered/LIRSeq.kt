@@ -1,5 +1,6 @@
 package ir.lowered
 
+import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
 /** IRSeq represents the sequential composition of IR statements in [block]**/
@@ -178,7 +179,13 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                         //CJUMP WITH TRUE AND FALSE
                         if (nextBlock != null && node.trueEdge == nextBlock.label) {
                             //INVERT CONDITION
-                            Node.Conditional(node.statements, node.label, node.condition, node.falseEdge, null)
+                            Node.Conditional(
+                                node.statements,
+                                node.label,
+                                LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
+                                node.falseEdge,
+                                null
+                            )
                         } else {
                             //FALL THROUGH IS UNCONDITIONAL JUMP
                             Collected.DoubleJump(
