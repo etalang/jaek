@@ -11,6 +11,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
+import ir.IRLowerer
 import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.EtaType
@@ -94,13 +95,13 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 //                    ╚════════════════════════════════╝
                             val ir = IRTranslator(ast as Program,it.nameWithoutExtension,context.getFunctions()).irgen()
                             // we are sticking with the class IR rep, and do not implement irrun
-                            if (runIR) throw ProgramResult(2)
                             irFile?.let {
                                 val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
                                 ir.printSExp(writer)
                                 writer.flush()
                                 writer.close()
                             }
+                            if (runIR) throw ProgramResult(2)
                         } catch (e : CompilerError) {
                             println(e.log)
                         }

@@ -1,2 +1,41 @@
-(COMPUNIT irtest (DATA c3po (5)) (FUNC _Imain__ (SEQ)))
+(COMPUNIT
+ irtest
+ (DATA c3po (5))
+ (FUNC
+  _If_aii
+  (SEQ
+   (MOVE (TEMP a) (TEMP _ARG0))
+   (MOVE (TEMP $TL1) (NAME _eta_alloc))
+   (MOVE (TEMP $TL2) (CONST 48))
+   (CALL_STMT 1 (TEMP $TL1) (TEMP $TL2))
+   (MOVE (TEMP $TL3) (NAME _RV1))
+   (MOVE (TEMP $T1) (TEMP $TL3))
+   (MOVE (TEMP $TL4) (MEM (TEMP $T1)))
+   (MOVE (MEM (TEMP $TL4)) (CONST 5))
+   (MOVE (TEMP $TL5) (MEM (ADD (TEMP $T1) (CONST 8))))
+   (MOVE (MEM (TEMP $TL5)) (CONST 104))
+   (MOVE (TEMP $TL6) (MEM (ADD (TEMP $T1) (CONST 16))))
+   (MOVE (MEM (TEMP $TL6)) (CONST 101))
+   (MOVE (TEMP $TL7) (MEM (ADD (TEMP $T1) (CONST 24))))
+   (MOVE (MEM (TEMP $TL7)) (CONST 108))
+   (MOVE (TEMP $TL8) (MEM (ADD (TEMP $T1) (CONST 32))))
+   (MOVE (MEM (TEMP $TL8)) (CONST 108))
+   (MOVE (TEMP $TL9) (MEM (ADD (TEMP $T1) (CONST 40))))
+   (MOVE (MEM (TEMP $TL9)) (CONST 111))
+   (RETURN (ADD (TEMP $T1) (CONST 8)))))
+ (FUNC
+  _Imain_paai
+  (SEQ
+   (MOVE (TEMP args) (TEMP _ARG0))
+   (MOVE (TEMP x) (CONST 17))
+   (MOVE (TEMP y) (CONST 1))
+   (MOVE (TEMP $TL10) (NAME _If_aii))
+   (MOVE (TEMP $TL11) (TEMP x))
+   (CALL_STMT 1 (NAME _If_aii) (TEMP $TL11))
+   (MOVE (TEMP z) (TEMP _RV1))
+   (MOVE (TEMP $TL12) (NAME _Iprint_pai))
+   (MOVE (TEMP $TL13) (TEMP z))
+   (CALL_STMT 1 (TEMP $TL12) (TEMP $TL13))
+   (MOVE (TEMP $TL14) (NAME _RV1))
+   (RETURN))))
 

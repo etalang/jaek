@@ -2,17 +2,20 @@ package ir
 
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import ir.lowered.LIRStmt
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
 import ir.mid.IRExpr.*
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
+import org.jetbrains.kotlin.daemon.common.compareDaemonJVMOptionsMemory
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
 class IRTranslator(val AST: Program, val name: String, functions: Map<String, EtaType.ContextType.FunType>) {
     private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
+    private val globals: MutableList<IRData> = ArrayList()
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -67,11 +70,10 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
 
     fun irgen(optimize: Boolean = false): JIRNode {
-        return translateCompUnit(AST).java
+        return IRLowerer().lowirgen(translateCompUnit(AST)).java
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
-        val globals: MutableList<IRData> = ArrayList()
         val functions: MutableList<IRFuncDecl> = ArrayList()
 
         p.definitions.forEach {
@@ -83,6 +85,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         return IRCompUnit(name, functions, globals)
     }
 
+    // TODO: Arrays in global data should also have their length? how does this affect pointers to their info?
     private fun translateData(n: GlobalDecl): IRData {
         val data: LongArray = when (val v = n.value) {
             is Literal.ArrayLit -> v.list.map { translateExpr(it).java.constant() }
@@ -90,17 +93,25 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.BoolLit -> longArrayOf(if (v.bool) 1 else 0)
             is Literal.CharLit -> longArrayOf(v.char.toLong())
             is Literal.IntLit -> longArrayOf(v.num)
-            is Literal.StringLit -> v.text.codePoints().asLongStream().toArray()
+            is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
             null -> "CHARLES <3".codePoints().asLongStream().toArray()
         }
         return IRData(n.id, data)
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
-        return if (n.returnTypes.size != 0)
-            IRFuncDecl(functionMap[n.id]!!, translateStatement(n.body!!))
-        else // if the method is a proc, add empty return
-            IRFuncDecl(functionMap[n.id]!!, IRSeq(listOf(translateStatement(n.body!!), IRReturn(listOf()))))
+        val funcMoves : MutableList<IRStmt> = mutableListOf()
+        for (i in 0 until n.args.size) {
+            funcMoves.add(IRMove(IRTemp(n.args[i].id) , IRTemp("_ARG${i+1}")))
+        }
+        funcMoves.add(translateStatement(n.body!!))
+        if (n.returnTypes.size != 0) {
+            return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
+        }
+        else { // if the method is a proc, add empty return
+            funcMoves.add(IRReturn(listOf()))
+            return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
+        }
     }
 
     private fun translateAssignTarget(n: AssignTarget): IRExpr {
@@ -122,25 +133,52 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Statement.If -> {
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
+                val endLabel = freshLabel()
                 val sequence = mutableListOf(
                     translateControl(n.guard, trueLabel, falseLabel),
                     trueLabel,
                     translateStatement(n.thenBlock),
+                    IRJump(IRName(endLabel.l)),
                     falseLabel
                 )
-                if (n.elseBlock != null) sequence.add(translateStatement(n.elseBlock))
+                if (n.elseBlock != null) {
+                    sequence.add(translateStatement(n.elseBlock))
+                }
+                sequence.add(endLabel)
                 IRSeq(sequence)
             }
 
             is MultiAssign -> {
                 val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
-                val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) }
-                val assignList: List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
-                IRSeq(assignList)
+                val first = n.vals.first()
+
+                if (n.vals.size == 1 && first is Expr.FunctionCall) {
+                    // go straight to IRCallStmt and do not pass go
+                    // get the right number of returns from _RV whatever
+                    val returnTemps : MutableList<IRTemp> = mutableListOf()
+                    for (i in 1 .. n.targets.size) {
+                        returnTemps.add(IRTemp("_RV$i"))
+                    }
+                    // DO THE CALL IN HERE DO NOT PASS IT DOWN
+                    // assuming that the number of returns must match the number of targets, checked in typecheck
+                    val stmts : MutableList<IRStmt> = mutableListOf(
+                        IRCallStmt(IRName(
+                            functionMap[first.fn]!!),
+                            n.targets.size.toLong(),
+                            first.args.map { translateExpr(it) }
+                        )
+                    )
+                    stmts.addAll((targetList zip returnTemps).map { IRMove(it.first, it.second) })
+                    IRSeq(stmts)
+                } else {
+                    val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) }
+                    val assignList: List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
+                    IRSeq(assignList)
+                }
             }
 
             is Statement.Procedure -> {
-                IRExp(IRCall(IRName(functionMap[n.id]!!), n.args.map { translateExpr(it) }))
+                IRCallStmt(IRName(functionMap[n.id]!!), 0, n.args.map { translateExpr(it) })
             }
 
             is Statement.Return -> {
@@ -270,7 +308,54 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     BinaryOp.Operation.AND -> AND
                     BinaryOp.Operation.OR -> OR
                 }
-                if (opType == AND) {
+                if (opType == ADD && n.etaType is EtaType.OrdinaryType.ArrayType) {
+                    // find left and right arrays
+                    val translateLeft = translateExpr(n.left)
+                    val translateRight = translateExpr(n.right)
+                    // compute left/right array lengths from memory
+                    val tempLeftLength = freshTemp()
+                    val tempRightLength = freshTemp()
+                    val moves : MutableList<IRStmt> = mutableListOf()
+                    moves.add(IRMove(tempLeftLength, IRMem(IROp(SUB, translateLeft, IRConst(8)))))
+                    moves.add(IRMove(tempRightLength, IRMem(IROp(SUB, translateRight, IRConst(8)))))
+                    // instantiate new array
+                    val newArrLength = freshTemp()
+                    val newArrPtrTemp = freshTemp()
+                    moves.add(IRMove(newArrLength, IROp(ADD, tempLeftLength, tempRightLength)))
+                    moves.addAll(arrayInitMoves(newArrLength, newArrPtrTemp))
+                    moves.add(IRMove(newArrPtrTemp, IROp(ADD, newArrPtrTemp, IRConst(8))))
+
+                    // fill the array
+                    val loopLabel = freshLabel()
+                    val loopBody = freshLabel()
+                    val complete = freshLabel()
+                    val leftFill = freshLabel()
+                    val rightFill = freshLabel()
+                    val increment = freshLabel()
+                    val counter = freshTemp()
+                   val loop = mutableListOf(
+                       IRMove(counter, IRConst(0)),
+                       loopLabel,
+                       IRCJump(IROp(GEQ, counter, newArrLength), complete, loopBody),
+                       loopBody,
+                       IRCJump(IROp(GEQ, counter, tempLeftLength), rightFill, leftFill),
+                       leftFill,
+                       IRMove(IRMem(IROp(ADD, newArrPtrTemp, IROp(MUL, counter, IRConst(8)))),
+                           IRMem(IROp(ADD, translateLeft, IROp(MUL, counter, IRConst(8))))),
+                       IRJump(IRName(increment.l)),
+                       rightFill,
+                       IRMove(IRMem(IROp(ADD, newArrPtrTemp, IROp(MUL, counter, IRConst(8)))),
+                           IRMem(IROp(ADD, translateRight, IROp(MUL, IROp(SUB, counter, tempLeftLength), IRConst(8))))),
+                       increment,
+                       IRMove(counter, IROp(ADD, counter, IRConst(1))),
+                       IRJump(IRName(loopLabel.l)),
+                       complete
+                    )
+                    moves.addAll(loop)
+                    // finish
+                    IRESeq(IRSeq(moves), newArrPtrTemp)
+                }
+                else if (opType == AND) {
                     val tempX = freshTemp()
                     val label1 = freshLabel()
                     val label2 = freshLabel()
@@ -290,7 +375,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                         tempX
                     )
                 }
-                if (opType == OR) {
+                else if (opType == OR) {
                     val tempX = freshTemp()
                     val label1 = freshLabel()
                     val label2 = freshLabel()
@@ -339,25 +424,18 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.BoolLit -> IRConst(if (n.bool) 1 else 0)
             is Literal.CharLit -> IRConst(n.char.toLong())
             is Literal.IntLit -> IRConst(n.num)
-            is Literal.StringLit -> {
-                val stringPtr = freshTemp()
+            is Literal.StringLit -> { // TODO: fix escape chars (\n)
+                val stringPtr = freshLabel()
+                val translatedString = n.text.codePoints().asLongStream().toArray()
+                val stringData = IRData(stringPtr.l, longArrayOf(n.text.length.toLong()) + translatedString )
+                globals.add(stringData)
+                val globalStartTemp = freshTemp()
+                val stringStartTemp = freshTemp()
+                return IRESeq(IRSeq(listOf(
+                    IRMove(globalStartTemp, IRName(stringPtr.l)),
+                    IRMove(stringStartTemp, IROp(ADD, globalStartTemp, IRConst(8)))
+                )), stringStartTemp)
 
-                val moves = arrayInitMoves(IRConst(n.text.length.toLong()), stringPtr)
-
-                for (i in 0 until n.text.length) {
-                    moves.add(
-                        IRMove(
-                            IRMem(IROp(ADD, stringPtr, IRConst((8 * (i + 1)).toLong()))),
-                            IRConst(n.text[i].code.toLong())
-                        )
-                    )
-                }
-
-                return IRESeq(
-                    IRSeq(
-                        moves
-                    ), IROp(ADD, stringPtr, IRConst(8))
-                )
             }
 
             is UnaryOp -> when (n.op) {
@@ -370,7 +448,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     fun arrayInitMoves(lstLength: IRExpr, ptr: IRTemp): MutableList<IRMove> {
         val moves = mutableListOf(
             IRMove(
-                ptr,
+                ptr, // 8 * the length needed
                 IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, lstLength, IRConst(8)), IRConst(8))))
             ), //IRConst((lstLength * 8 + 8).toLong())))),
             IRMove(IRMem(ptr), lstLength)
