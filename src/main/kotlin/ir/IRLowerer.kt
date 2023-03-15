@@ -65,42 +65,31 @@ class IRLowerer() {
             is IRStmt.IRMove -> {
                 //TODO: add commuting
                 val stmts: MutableList<FlatStmt> = mutableListOf()
-                val (e1Stmts, dest) = lowerExpr(n.dest)
-                val (eStmts, e2) = lowerExpr(n.expr)
+                val (e1Stmts, e1) = lowerExpr(n.dest)
+                val (e2Stmts, e2) = lowerExpr(n.expr)
 
                 if (commutes(n.dest, n.expr)){
                     stmts.addAll(e1Stmts)
-                    stmts.addAll(eStmts)
-                    stmts.add(LIRMove(dest, e2))
+                    stmts.addAll(e2Stmts)
+                    stmts.add(LIRMove(e1, e2))
                 } else {
-                    val temp = freshTemp()
-                    stmts.addAll(e1Stmts)
-                    stmts.add(LIRMove(temp, dest))
-                    stmts.addAll(eStmts)
-                    stmts.add(LIRMove(LIRMem(temp), e2))
+                    when (n.dest) {
+                        is IRExpr.IRTemp -> {
+                            stmts.addAll(e2Stmts)
+                            stmts.add(LIRMove(LIRTemp(n.dest.name), e2))
+                        }
+                        is IRExpr.IRMem -> {
+                            val temp = freshTemp()
+                            stmts.addAll(e1Stmts)
+                            stmts.add(LIRMove(temp, e1))
+                            stmts.addAll(e2Stmts)
+                            stmts.add(LIRMove(LIRMem(temp), e2))
+                        }
+                        else -> {
+                            throw Exception("moving into non-mem, non-temp expr")
+                        }
+                    }
                 }
-//                when (n.dest) {
-//                    is IRExpr.IRTemp -> {
-//                        val (exprStmts, expr) = lowerExpr(n.expr)
-//
-//                        stmts.addAll(exprStmts)
-//                        stmts.add(LIRMove(LIRTemp(n.dest.name), expr))
-//                    }
-//
-//                    is IRExpr.IRMem -> {
-//                        val (e1Stmts, e1) = lowerExpr(n.dest)
-//                        val (e2Stmts, e2) = lowerExpr(n.expr)
-//                        val temp = freshTemp()
-//                        stmts.addAll(e1Stmts)
-//                        stmts.add(LIRMove(temp, e1))
-//                        stmts.addAll(e2Stmts)
-//                        stmts.add(LIRMove(LIRMem(temp), e2))
-//                    }
-//
-//                    else -> {
-//                        throw Exception("moving into non-mem, non-temp expr")
-//                    }
-//                }
                 stmts
             }
 
