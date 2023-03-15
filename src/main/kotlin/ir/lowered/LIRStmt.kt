@@ -53,9 +53,8 @@ sealed class LIRStmt : LIRNode() {
         override val java: JIRReturn = factory.IRReturn(valList.map { it.java })
     }
 
-    //TODO
-    class LIRCallStmt(val target: LIRExpr, val args: List<LIRExpr>) : FlatStmt() {
-        override val java: JIRCallStmt = factory.IRCallStmt(target.java, args.size.toLong(), args.map { it.java })
+    class LIRCallStmt(val target: LIRExpr, val n_returns : Long, val args: List<LIRExpr>) : FlatStmt() {
+        override val java: JIRCallStmt = factory.IRCallStmt(target.java, n_returns, args.map { it.java })
     }
 
 }
