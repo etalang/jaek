@@ -65,21 +65,23 @@ class IRLowerer() {
             is IRStmt.IRMove -> {
                 //TODO: add commuting
                 val stmts: MutableList<FlatStmt> = mutableListOf()
-                val (e1Stmts, e1) = lowerExpr(n.dest)
-                val (e2Stmts, e2) = lowerExpr(n.expr)
-
                 if (commutes(n.dest, n.expr)){
+                    val (e1Stmts, e1) = lowerExpr(n.dest)
+                    val (e2Stmts, e2) = lowerExpr(n.expr)
                     stmts.addAll(e1Stmts)
                     stmts.addAll(e2Stmts)
                     stmts.add(LIRMove(e1, e2))
                 } else {
                     when (n.dest) {
                         is IRExpr.IRTemp -> {
+                            val (e2Stmts, e2) = lowerExpr(n.expr)
                             stmts.addAll(e2Stmts)
                             stmts.add(LIRMove(LIRTemp(n.dest.name), e2))
                         }
                         is IRExpr.IRMem -> {
                             val temp = freshTemp()
+                            val (e1Stmts, e1) = lowerExpr(n.dest.address)
+                            val (e2Stmts, e2) = lowerExpr(n.expr)
                             stmts.addAll(e1Stmts)
                             stmts.add(LIRMove(temp, e1))
                             stmts.addAll(e2Stmts)
