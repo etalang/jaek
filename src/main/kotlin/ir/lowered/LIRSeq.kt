@@ -16,8 +16,10 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     fun blockReordering(): List<FlatStmt> {
         val b = maximalBasicBlocks()
         val n = buildCFG(b)
-        val c = fixJumps(n)
-        return toSequence(c)
+        val g = greedyTrace(n)
+        val c = removeUselessJumps(fixJumps(g))
+        block = toSequence(c)
+        return block
     }
 
     class BasicBlock(
@@ -55,24 +57,21 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
     }
 
-    sealed class Collected(
+//
+//        class DoubleJump(
+//            statements: MutableList<FlatStmt>,
+//            label: String,
+//            val condition: LIRExpr,
+//            val firstJump: String,
+//            val fallThroughJump: String
+//        ) : Collected(statements, label) {
+//        }
+
+
+    sealed class Node(
         val statements: MutableList<FlatStmt>,
         val label: String
     ) {
-        class DoubleJump(
-            statements: MutableList<FlatStmt>,
-            label: String,
-            val condition: LIRExpr,
-            val firstJump: String,
-            val fallThroughJump: String
-        ) : Collected(statements, label) {
-        }
-    }
-
-    sealed class Node(
-        statements: MutableList<FlatStmt>,
-        label: String,
-    ) : Collected(statements, label) {
         abstract val edges: List<String>
 
         class None(statements: MutableList<FlatStmt>, label: String) : Node(statements, label) {
@@ -173,7 +172,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         return order;
     }
 
-    fun fixJumps(nodes: List<Node>): List<Collected> {
+    fun fixJumps(nodes: List<Node>): List<Node> {
         return nodes.mapIndexed { index, node ->
             val nextBlock = nodes.getOrNull(index + 1)
             when (node) {
@@ -182,49 +181,65 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                     if (node.falseEdge == null) {
                         if (nextBlock != null && node.trueEdge == nextBlock.label) {
                             //GOES IMMEDIATELY TO NEXT BLOCK
-                            Node.None(node.statements, node.label)
+                            listOf(Node.None(node.statements, node.label))
                         } else {
                             //ONLY TRUE AND CANNOT GO TO NEXT
-                            node
+                            listOf(node)
                         }
                     } else {
                         //CJUMP WITH TRUE AND FALSE
                         if (nextBlock != null && node.trueEdge == nextBlock.label) {
                             //INVERT CONDITION
-                            Node.Conditional(
-                                node.statements,
-                                node.label,
-                                LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
-                                node.falseEdge,
-                                null
+                            listOf(
+                                Node.Conditional(
+                                    node.statements,
+                                    node.label,
+                                    LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
+                                    node.falseEdge,
+                                    null
+                                )
                             )
                         } else {
                             //FALL THROUGH IS UNCONDITIONAL JUMP
-                            Collected.DoubleJump(
-                                node.statements,
-                                node.label,
-                                node.condition,
-                                node.trueEdge,
-                                node.falseEdge
+                            listOf(
+                                Node.Conditional(
+                                    node.statements,
+                                    node.label,
+                                    node.condition,
+                                    node.trueEdge,
+                                    null
+                                ),
+                                Node.Unconditional(ArrayList(), freshLabel(), node.falseEdge)
                             )
                         }
                     }
                 }
 
+                is Node.None -> listOf(node)
+                is Node.Unconditional -> {
+                    listOf(node)
+                }
+            }
+        }.flatten()
+    }
+
+    fun removeUselessJumps(nodes: List<Node>): List<Node> {
+        return nodes.mapIndexed { index, node ->
+            val nextBlock = nodes.getOrNull(index + 1)
+            when (node) {
+                is Node.Conditional -> node
                 is Node.None -> node
                 is Node.Unconditional -> {
-                    if (nextBlock != null && node.to == nextBlock.label) {
-                        Node.None(node.statements, node.label)
-                    } else node
+                    if (nextBlock != null && node.to == nextBlock.label) Node.None(node.statements, node.label)
+                    else node
                 }
             }
         }
-
     }
 
-    fun toSequence(nodes: List<Collected>): List<FlatStmt> {
+
+    fun toSequence(nodes: List<Node>): List<FlatStmt> {
         val statements: MutableList<FlatStmt> = ArrayList()
-        val blockLabels = nodes.map { it.label }
         nodes.forEach { node ->
             statements.add(LIRLabel(node.label))
             statements.addAll(node.statements)
@@ -239,11 +254,6 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
                 is Node.Unconditional -> {
                     statements.add(LIRJump(LIRExpr.LIRName(node.label)))
-                }
-
-                is Collected.DoubleJump -> {
-                    statements.add(LIRTrueJump(node.condition, LIRLabel(node.firstJump)))
-                    statements.add(LIRJump(LIRExpr.LIRName(node.fallThroughJump)))
                 }
             }
         }

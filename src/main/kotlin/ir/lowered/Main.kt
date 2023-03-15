@@ -4,7 +4,7 @@ import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import java.io.PrintWriter
 
 fun main() {
-    val seq = LIRSeq(
+    var seq = LIRSeq(
         listOf(
             LIRStmt.LIRCJump(LIRExpr.LIRConst(0), LIRStmt.LIRLabel("L1"), LIRStmt.LIRLabel("L2")),
             LIRStmt.LIRLabel("L1"),
@@ -16,6 +16,15 @@ fun main() {
         )
     )
 
+    seq = LIRSeq(
+        listOf(
+            LIRStmt.LIRCJump(LIRExpr.LIRConst(0), LIRStmt.LIRLabel("L1"), LIRStmt.LIRLabel("L2")),
+            LIRStmt.LIRLabel("L2"),
+            LIRStmt.LIRCallStmt(LIRExpr.LIRConst(99), listOf()),
+            LIRStmt.LIRLabel("L1"),
+            LIRStmt.LIRReturn(listOf())
+        )
+    )
     val writer = CodeWriterSExpPrinter(PrintWriter(System.out))
     seq.java.printSExp(writer)
     writer.flush()
