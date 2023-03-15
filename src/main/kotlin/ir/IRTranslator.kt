@@ -438,7 +438,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 val stringPtr = freshLabel()
                 val escapedString = escapeStringChars(n.text)
                 val translatedString = escapedString.codePoints().asLongStream().toArray()
-                val stringData = IRData(stringPtr.l, longArrayOf(n.text.length.toLong()) + translatedString )
+                val stringData = IRData(stringPtr.l, longArrayOf(translatedString.size.toLong()) + translatedString )
                 globals.add(stringData)
                 val globalStartTemp = freshTemp()
                 val stringStartTemp = freshTemp()
