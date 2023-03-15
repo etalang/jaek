@@ -8,9 +8,9 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     private var freshLabelCount = 0
     override val java: IRSeq = factory.IRSeq(block.map { it.java })
 
-    private fun freshLabel(): LIRLabel {
+    private fun freshLabel(): String {
         freshLabelCount++
-        return LIRLabel("\$B$freshLabelCount")
+        return "\$B$freshLabelCount"
     }
 
     fun blockReordering() {
@@ -21,11 +21,11 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     }
 
     class BasicBlock(
-        val label: LIRLabel, val ordinary: List<FlatStmt>, val end: EndBlock?
+        val label: String, val ordinary: List<FlatStmt>, val end: EndBlock?
     ) {
 
-        class Builder(freshLabel: () -> LIRLabel) {
-            var label: LIRLabel? = null
+        class Builder(freshLabel: () -> String) {
+            var label: String? = null
             val statements: MutableList<FlatStmt> = ArrayList()
             var end: EndBlock? = null
             fun put(statement: LIRStmt): BasicBlock? {
@@ -33,7 +33,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                     is LIRLabel -> {
                         assert(label == null)
                         assert(statements.isEmpty())
-                        label = statement
+                        label = statement.l
                     }
 
                     is EndBlock -> {
@@ -59,41 +59,41 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
     sealed class Collected(
         val statements: MutableList<FlatStmt>,
-        val label: LIRLabel
+        val label: String
     ) {
         class DoubleJump(
             statements: MutableList<FlatStmt>,
-            label: LIRLabel,
+            label: String,
             val condition: LIRExpr,
-            val firstJump: LIRLabel,
-            val fallThroughJump: LIRLabel
+            val firstJump: String,
+            val fallThroughJump: String
         ) : Collected(statements, label) {
         }
     }
 
     sealed class Node(
         statements: MutableList<FlatStmt>,
-        label: LIRLabel,
+        label: String,
     ) : Collected(statements, label) {
-        abstract val edges: List<LIRLabel>
+        abstract val edges: List<String>
 
-        class None(statements: MutableList<FlatStmt>, label: LIRLabel) : Node(statements, label) {
-            override val edges: List<LIRLabel> = listOf()
+        class None(statements: MutableList<FlatStmt>, label: String) : Node(statements, label) {
+            override val edges: List<String> = listOf()
         }
 
-        class Unconditional(statements: MutableList<FlatStmt>, label: LIRLabel, val to: LIRLabel) :
+        class Unconditional(statements: MutableList<FlatStmt>, label: String, val to: String) :
             Node(statements, label) {
             override val edges = listOf(to)
         }
 
         class Conditional(
             statements: MutableList<FlatStmt>,
-            label: LIRLabel,
+            label: String,
             val condition: LIRExpr,
-            val trueEdge: LIRLabel,
-            val falseEdge: LIRLabel?
+            val trueEdge: String,
+            val falseEdge: String?
         ) : Node(statements, label) {
-            override val edges: List<LIRLabel> = listOfNotNull(trueEdge, falseEdge)
+            override val edges: List<String> = listOfNotNull(trueEdge, falseEdge)
         }
 
     }
@@ -118,11 +118,11 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         return blocks.mapIndexed { index, it ->
             when (val end = it.end) {
                 is LIRCJump -> Node.Conditional(
-                    ArrayList(it.ordinary), it.label, end.guard, end.trueBranch, end.falseBranch
+                    ArrayList(it.ordinary), it.label, end.guard, end.trueBranch.l, end.falseBranch?.l
                 )
 
                 is LIRTrueJump -> Node.Conditional(
-                    ArrayList(it.ordinary), it.label, end.guard, end.trueBranch, null
+                    ArrayList(it.ordinary), it.label, end.guard, end.trueBranch.l, null
                 )
 
                 is LIRJump, is LIRReturn -> Node.None(ArrayList(it.ordinary.plus(end)), it.label)
@@ -214,24 +214,24 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         val statements: MutableList<FlatStmt> = ArrayList()
         val blockLabels = nodes.map { it.label }
         nodes.forEach { node ->
-            statements.add(node.label)
+            statements.add(LIRLabel(node.label))
             statements.addAll(node.statements)
             when (node) {
                 is Node.Conditional -> {
                     assert(node.falseEdge == null)
-                    statements.add(LIRTrueJump(node.condition, node.trueEdge))
+                    statements.add(LIRTrueJump(node.condition, LIRLabel(node.trueEdge)))
                 }
 
                 is Node.None -> {
                 }
 
                 is Node.Unconditional -> {
-                    statements.add(LIRJump(LIRExpr.LIRName(node.label.l)))
+                    statements.add(LIRJump(LIRExpr.LIRName(node.label)))
                 }
 
                 is Collected.DoubleJump -> {
-                    statements.add(LIRTrueJump(node.condition, node.firstJump))
-                    statements.add(LIRJump(LIRExpr.LIRName(node.fallThroughJump.l)))
+                    statements.add(LIRTrueJump(node.condition, LIRLabel(node.firstJump)))
+                    statements.add(LIRJump(LIRExpr.LIRName(node.fallThroughJump)))
                 }
             }
         }
