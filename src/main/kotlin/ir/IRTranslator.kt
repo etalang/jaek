@@ -290,11 +290,15 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 IRESeq(
                     IRSeq(
                         listOf(
-                            IRMove(tempA, translateExpr(n.arr)), IRMove(tempI, translateExpr(n.idx)), IRCJump(
+                            IRMove(tempA, translateExpr(n.arr)),
+                            IRMove(tempI, translateExpr(n.idx)),
+                            IRCJump(
                                 IROp(ULT, tempI, IRMem(IROp(SUB, tempA, IRConst(8)))),
                                 successLabel,
-                                IRLabel("_eta_out_of_bounds")
-                            ), // TODO: label must go to function
+                                IRLabel("out_of_bounds")
+                            ),
+                            IRLabel("out_of_bounds"),
+                            IRCallStmt(IRName("_eta_out_of_bounds"), 0, listOf()),
                             successLabel
                         )
                     ), IRMem(IROp(ADD, tempA, IROp(MUL, tempI, IRConst(8))))
