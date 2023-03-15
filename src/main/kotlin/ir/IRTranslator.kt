@@ -412,7 +412,17 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 n.args.map { translateExpr(it) })
 
             is Expr.Identifier -> IRTemp(n.name)
-            is Expr.FunctionCall.LengthFn -> IRCall(IRName("_Ilength_iai"), listOf(translateExpr(n.arg)))
+            is Expr.FunctionCall.LengthFn -> {
+                val lengthTemp = freshTemp()
+                val arrTemp = freshTemp()
+                IRESeq(
+                    IRSeq(listOf(
+                        IRMove(arrTemp,translateExpr(n.arg)),
+                        IRMove(lengthTemp, IRMem(IROp(SUB, arrTemp, IRConst(8))))
+                    )),
+                    lengthTemp
+                )
+            }
             is Literal.ArrayLit -> {
                 val tempM = freshTemp()
                 val moves = arrayInitMoves(IRConst(n.list.size.toLong()), tempM)
