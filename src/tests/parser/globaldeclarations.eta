@@ -5,3 +5,6 @@ global_bool : bool = true;
 uninit_int : int;
 uninit_bool : bool;
 global_array : int[][][];
+
+f(){
+}
