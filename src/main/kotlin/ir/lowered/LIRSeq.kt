@@ -5,21 +5,15 @@ import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
 /** IRSeq represents the sequential composition of IR statements in [block]**/
 class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
-    private var freshLabelCount = 0
-    override val java: IRSeq = factory.IRSeq(block.map { it.java })
+    override val java: IRSeq get() = factory.IRSeq(block.map { it.java })
 
-    private fun freshLabel(): String {
-        freshLabelCount++
-        return "\$B$freshLabelCount"
-    }
-
-    fun blockReordering(): List<FlatStmt> {
-        val b = maximalBasicBlocks()
+    fun blockReordering(freshLabel: () -> String): LIRSeq {
+        val b = maximalBasicBlocks(freshLabel)
         val n = buildCFG(b)
         val g = greedyTrace(n)
-        val c = removeUselessJumps(fixJumps(g))
-        block = toSequence(c)
-        return block
+        val c = removeUselessJumps(fixJumps(g,freshLabel))
+        val s = LIRSeq(toSequence(c))
+        return s
     }
 
     class BasicBlock(
@@ -51,7 +45,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             val complete: Boolean get() = end != null
 
             val build: BasicBlock
-                get() = BasicBlock(label ?: freshLabel.invoke(), statements, end)
+                get() = BasicBlock(label ?: freshLabel(), statements, end)
 
         }
 
@@ -96,15 +90,15 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     }
 
 
-    fun maximalBasicBlocks(): List<BasicBlock> {
+    fun maximalBasicBlocks(freshLabel: () -> String): List<BasicBlock> {
         val blocks: MutableList<BasicBlock> = ArrayList()
         val statements = block.iterator()
-        var builder = BasicBlock.Builder(this::freshLabel)
+        var builder = BasicBlock.Builder(freshLabel)
         while (statements.hasNext()) {
             val next = statements.next()
             if (next is LIRLabel || builder.complete) {
                 blocks.add(builder.build)
-                builder = BasicBlock.Builder(this::freshLabel)
+                builder = BasicBlock.Builder(freshLabel)
             }
             builder.put(next)
         }
@@ -172,7 +166,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         return order;
     }
 
-    fun fixJumps(nodes: List<Node>): List<Node> {
+    fun fixJumps(nodes: List<Node>, freshLabel: () -> String): List<Node> {
         return nodes.mapIndexed { index, node ->
             val nextBlock = nodes.getOrNull(index + 1)
             when (node) {

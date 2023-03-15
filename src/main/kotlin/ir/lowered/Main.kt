@@ -8,7 +8,7 @@ fun main() {
         listOf(
             LIRStmt.LIRCJump(LIRExpr.LIRConst(0), LIRStmt.LIRLabel("L1"), LIRStmt.LIRLabel("L2")),
             LIRStmt.LIRLabel("L1"),
-            LIRStmt.LIRCallStmt(LIRExpr.LIRConst(99), listOf()),
+            LIRStmt.LIRCallStmt(LIRExpr.LIRConst(99), 0,listOf()),
             LIRStmt.LIRJump(LIRExpr.LIRName("L2")),
             LIRStmt.LIRLabel("L2"),
             LIRStmt.LIRLabel("L3"),
@@ -18,9 +18,11 @@ fun main() {
 
     seq = LIRSeq(
         listOf(
+            LIRStmt.LIRJump(LIRExpr.LIRName("LBEST")),
+            LIRStmt.LIRLabel("LBEST"),
             LIRStmt.LIRCJump(LIRExpr.LIRConst(0), LIRStmt.LIRLabel("L1"), LIRStmt.LIRLabel("L2")),
             LIRStmt.LIRLabel("L2"),
-            LIRStmt.LIRCallStmt(LIRExpr.LIRConst(99), listOf()),
+            LIRStmt.LIRCallStmt(LIRExpr.LIRConst(99), 0, listOf()),
             LIRStmt.LIRLabel("L1"),
             LIRStmt.LIRReturn(listOf())
         )
@@ -29,7 +31,7 @@ fun main() {
     seq.java.printSExp(writer)
     writer.flush()
     println("AFTER")
-    LIRSeq(seq.blockReordering()).java.printSExp(writer)
+//    seq.blockReordering().java.printSExp(writer)
     writer.flush()
     writer.close()
 

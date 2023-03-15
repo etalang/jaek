@@ -2,14 +2,12 @@ package ir
 
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
-import ir.lowered.LIRStmt
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
 import ir.mid.IRExpr.*
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
-import org.jetbrains.kotlin.daemon.common.compareDaemonJVMOptionsMemory
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
@@ -70,7 +68,10 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
 
     fun irgen(optimize: Boolean = false): JIRNode {
-        return IRLowerer().lowirgen(translateCompUnit(AST)).java
+        val mir = translateCompUnit(AST)
+        val lir = IRLowerer().lowirgen(mir)
+        lir.reorderBlocks()
+        return lir.java
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
