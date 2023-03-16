@@ -76,9 +76,7 @@ class IRLowerer(val globals : List<String>, val optimize : Boolean) {
                 is LIROp -> {
                     exprCommutes(expr.left) && exprCommutes(expr.right)
                 }
-                is LIRTemp ->
-                    !unknownTempsUsed && !temps.contains(expr) &&
-                    (!isGlobal(expr.name) && (!unkownGlobalsUsed && !globals.contains(expr.name)))
+                is LIRTemp -> !unknownTempsUsed && !temps.contains(expr)
             }
         }
         return exprCommutes(expr)
