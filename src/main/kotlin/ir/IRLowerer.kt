@@ -72,25 +72,7 @@ class IRLowerer() {
                     stmts.addAll(e2Stmts)
                     stmts.add(LIRMove(e1, e2))
                 } else {
-                    when (n.dest) {
-                        is IRExpr.IRTemp -> {
-                            val (e2Stmts, e2) = lowerExpr(n.expr)
-                            stmts.addAll(e2Stmts)
-                            stmts.add(LIRMove(LIRTemp(n.dest.name), e2))
-                        }
-                        is IRExpr.IRMem -> {
-                            val temp = freshTemp()
-                            val (e1Stmts, e1) = lowerExpr(n.dest.address)
-                            val (e2Stmts, e2) = lowerExpr(n.expr)
-                            stmts.addAll(e1Stmts)
-                            stmts.add(LIRMove(temp, e1))
-                            stmts.addAll(e2Stmts)
-                            stmts.add(LIRMove(LIRMem(temp), e2))
-                        }
-                        else -> {
-                            throw Exception("moving into non-mem, non-temp expr")
-                        }
-                    }
+                    stmts.addAll(factorMoveTarget(n.dest, n.expr))
                 }
                 stmts
             }
@@ -130,6 +112,36 @@ class IRLowerer() {
                 stmts
             }
         }
+    }
+
+    private fun factorMoveTarget(target: IRExpr, arg:IRExpr) : List<FlatStmt> {
+        var returnList = mutableListOf<FlatStmt>()
+        when (target) {
+            is IRExpr.IRTemp -> {
+                val (e2Stmts, e2) = lowerExpr(arg)
+                returnList.addAll(e2Stmts)
+                returnList.add(LIRMove(LIRTemp(target.name), e2))
+                return returnList
+            }
+            is IRExpr.IRMem -> {
+                val temp = freshTemp()
+                val (e1Stmts, e1) = lowerExpr(target.address)
+                val (e2Stmts, e2) = lowerExpr(arg)
+                returnList.addAll(e1Stmts)
+                returnList.add(LIRMove(temp, e1))
+                returnList.addAll(e2Stmts)
+                returnList.add(LIRMove(LIRMem(temp), e2))
+            }
+            is IRExpr.IRESeq -> {
+                val eseqStmts = lowerStatement(target.statement)
+                returnList.addAll(eseqStmts)
+                returnList.addAll(factorMoveTarget(target.value, arg))
+            }
+            else -> {
+                throw Exception("moving into non-mem, non-temp expr")
+            }
+        }
+        return returnList
     }
 
     private fun lowerExpr(n: IRExpr): Pair<List<FlatStmt>, LIRExpr> {

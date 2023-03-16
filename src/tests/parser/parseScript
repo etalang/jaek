@@ -2,7 +2,9 @@ build
 
 etac ("Test --parse") "--parse" {
     arrayblankbetween.eta;
+    arrayfunctioncalladd.eta;
     arrayliteralaccess.eta;
+    arrayliteralaccessadd.eta;
     blocksinblocks.eta;
     booleanprecedence.eta;
     earlyreturn.eta (Syntax, "a");

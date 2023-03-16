@@ -173,9 +173,19 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     IRSeq(stmts)
                 } else {
                     val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) }
-                    val assignList: List<IRStmt> = (targetList zip translatedExprs).map { IRMove(it.first, it.second) }
-                    IRSeq(assignList)
+                    val assignList: List<IRStmt> = (targetList zip translatedExprs).map{
+                    val fst = it.first
+                    if (fst is IRESeq) { // is an array access
+                        val seq = fst.statement
+                        IRSeq(mutableListOf(seq, IRMove(fst.value, it.second)))
+                    }
+                    else {
+                        IRMove(it.first, it.second)
+                    }
                 }
+                IRSeq(assignList)
+                }
+
             }
 
             is Statement.Procedure -> {
@@ -242,7 +252,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             val arrSize = freshTemp()
             val memTemp = freshTemp()
             val loop = mutableListOf(
-                IRMove(arrSize, translateExpr(lst.first())),
+                IRMove(arrSize, translateExpr(lst.last())),
                 IRMove(
                     memTemp,
                     IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, arrSize, IRConst(8)), IRConst(8))))
@@ -252,14 +262,14 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 IRMove(counter, IRConst(0)),
                 loopLabel
             )
-            val (subtemp, subarray) = arrayInitHelp(lst.drop(1))
+            val (subtemp, subarray) = arrayInitHelp(lst.dropLast(1))
             loop.add(subarray)
             loop.addAll(
                 listOf(
                     // the array assignment of subtemp into array hole
                     IRMove(IRMem(IROp(ADD, memTemp, IROp(MUL, counter, IRConst(8)))), subtemp),
                     IRMove(counter, IROp(ADD, counter, IRConst(1))),
-                    IRCJump(IROp(GT, counter, arrSize), complete, loopLabel),
+                    IRCJump(IROp(GEQ, counter, arrSize), complete, loopLabel),
                     complete
                 )
             )
@@ -281,11 +291,15 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 IRESeq(
                     IRSeq(
                         listOf(
-                            IRMove(tempA, translateExpr(n.arr)), IRMove(tempI, translateExpr(n.idx)), IRCJump(
+                            IRMove(tempA, translateExpr(n.arr)),
+                            IRMove(tempI, translateExpr(n.idx)),
+                            IRCJump(
                                 IROp(ULT, tempI, IRMem(IROp(SUB, tempA, IRConst(8)))),
                                 successLabel,
-                                IRLabel("_eta_out_of_bounds")
-                            ), // TODO: label must go to function
+                                IRLabel("out_of_bounds")
+                            ),
+                            IRLabel("out_of_bounds"),
+                            IRCallStmt(IRName("_eta_out_of_bounds"), 0, listOf()),
                             successLabel
                         )
                     ), IRMem(IROp(ADD, tempA, IROp(MUL, tempI, IRConst(8))))
@@ -403,7 +417,17 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 n.args.map { translateExpr(it) })
 
             is Expr.Identifier -> IRTemp(n.name)
-            is Expr.FunctionCall.LengthFn -> IRCall(IRName("_Ilength_iai"), listOf(translateExpr(n.arg)))
+            is Expr.FunctionCall.LengthFn -> {
+                val lengthTemp = freshTemp()
+                val arrTemp = freshTemp()
+                IRESeq(
+                    IRSeq(listOf(
+                        IRMove(arrTemp,translateExpr(n.arg)),
+                        IRMove(lengthTemp, IRMem(IROp(SUB, arrTemp, IRConst(8))))
+                    )),
+                    lengthTemp
+                )
+            }
             is Literal.ArrayLit -> {
                 val tempM = freshTemp()
                 val moves = arrayInitMoves(IRConst(n.list.size.toLong()), tempM)
@@ -427,8 +451,9 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.IntLit -> IRConst(n.num)
             is Literal.StringLit -> { // TODO: fix escape chars (\n)
                 val stringPtr = freshLabel()
-                val translatedString = n.text.codePoints().asLongStream().toArray()
-                val stringData = IRData(stringPtr.l, longArrayOf(n.text.length.toLong()) + translatedString )
+                val escapedString = escapeStringChars(n.text)
+                val translatedString = escapedString.codePoints().asLongStream().toArray()
+                val stringData = IRData(stringPtr.l, longArrayOf(translatedString.size.toLong()) + translatedString )
                 globals.add(stringData)
                 val globalStartTemp = freshTemp()
                 val stringStartTemp = freshTemp()
@@ -444,6 +469,13 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 UnaryOp.Operation.NEG -> IROp(SUB, IRConst(0), translateExpr(n.arg))
             }
         }
+    }
+
+    fun escapeStringChars(s : String) : String {
+        return s.replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\")
     }
 
     fun arrayInitMoves(lstLength: IRExpr, ptr: IRTemp): MutableList<IRMove> {
