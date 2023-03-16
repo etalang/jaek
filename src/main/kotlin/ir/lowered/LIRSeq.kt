@@ -11,7 +11,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         val b = maximalBasicBlocks(freshLabel)
         val n = buildCFG(b)
         val g = greedyTrace(n)
-        val c = removeUselessJumps(fixJumps(g,freshLabel))
+        val c = removeUselessJumps(fixJumps(g, freshLabel))
         val s = LIRSeq(toSequence(c))
         return s
     }
@@ -21,7 +21,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     ) {
         class Builder(val freshLabel: () -> String) {
             var label: String? = null
-            val statements: MutableList<FlatStmt> = ArrayList()
+            private val statements: MutableList<FlatStmt> = ArrayList()
             var end: EndBlock? = null
             fun put(statement: LIRStmt) {
                 when (statement) {
@@ -63,22 +63,22 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
 
     sealed class Node(
-        val statements: MutableList<FlatStmt>,
+        val statements: List<FlatStmt>,
         val label: String
     ) {
         abstract val edges: List<String>
 
-        class None(statements: MutableList<FlatStmt>, label: String) : Node(statements, label) {
+        class None(statements: List<FlatStmt>, label: String) : Node(statements, label) {
             override val edges: List<String> = listOf()
         }
 
-        class Unconditional(statements: MutableList<FlatStmt>, label: String, val to: String) :
+        class Unconditional(statements: List<FlatStmt>, label: String, val to: String) :
             Node(statements, label) {
             override val edges = listOf(to)
         }
 
         class Conditional(
-            statements: MutableList<FlatStmt>,
+            statements: List<FlatStmt>,
             label: String,
             val condition: LIRExpr,
             val trueEdge: String,
@@ -90,7 +90,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     }
 
 
-    fun maximalBasicBlocks(freshLabel: () -> String): List<BasicBlock> {
+    private fun maximalBasicBlocks(freshLabel: () -> String): List<BasicBlock> {
         val blocks: MutableList<BasicBlock> = ArrayList()
         val statements = block.iterator()
         var builder = BasicBlock.Builder(freshLabel)
@@ -106,7 +106,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         return blocks
     }
 
-    fun buildCFG(blocks: List<BasicBlock>): List<Node> {
+    private fun buildCFG(blocks: List<BasicBlock>): List<Node> {
         return blocks.mapIndexed { index, it ->
             when (val end = it.end) {
                 is LIRCJump -> Node.Conditional(
@@ -137,7 +137,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         }
     }
 
-    fun greedyTrace(nodes: List<Node>): List<Node> {
+    private fun greedyTrace(nodes: List<Node>): List<Node> {
         val labelToNode = nodes.associateBy { it.label }
 
         val unmarked: MutableSet<Node> = nodes.toMutableSet()
@@ -163,10 +163,11 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             }
         }
         assert(order.containsAll(nodes))
-        return order;
+        return order
     }
 
-    fun fixJumps(nodes: List<Node>, freshLabel: () -> String): List<Node> {
+    private fun fixJumps(nodes: List<Node>, freshLabel: () -> String): List<Node> {
+        //TODO: think hard about this nested list approach... alternative approach was DoubleJump (see earlier history)
         return nodes.mapIndexed { index, node ->
             val nextBlock = nodes.getOrNull(index + 1)
             when (node) {
@@ -217,7 +218,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         }.flatten()
     }
 
-    fun removeUselessJumps(nodes: List<Node>): List<Node> {
+    private fun removeUselessJumps(nodes: List<Node>): List<Node> {
         return nodes.mapIndexed { index, node ->
             val nextBlock = nodes.getOrNull(index + 1)
             when (node) {
@@ -232,7 +233,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     }
 
 
-    fun toSequence(nodes: List<Node>): List<FlatStmt> {
+    private fun toSequence(nodes: List<Node>): List<FlatStmt> {
         val statements: MutableList<FlatStmt> = ArrayList()
         nodes.forEach { node ->
             statements.add(LIRLabel(node.label))
