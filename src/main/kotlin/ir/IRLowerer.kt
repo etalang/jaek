@@ -2,24 +2,86 @@ package ir
 
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
-import edu.cornell.cs.cs4120.etac.ir.IRConst
-import edu.cornell.cs.cs4120.etac.ir.IRNode
 import ir.lowered.*
 import ir.lowered.LIRExpr.*
 import ir.lowered.LIRStmt.*
 import ir.mid.*
 import ir.mid.IRStmt.IRSeq
 
-class IRLowerer() {
+class IRLowerer(val globals : List<String>, val optimize : Boolean) {
     private var freshLowTempCount = 0
     private fun freshTemp(): LIRTemp {
         freshLowTempCount++
         return LIRTemp("\$TL$freshLowTempCount")
     }
 
-    private fun commutes(left : IRExpr, right :IRExpr): Boolean {
-        //TODO: add commuting
-        return false
+    private fun isGlobal(name : String) : Boolean {
+        return globals.contains(name)
+    }
+
+    /** Checks if the statements in stmts changes the value of expr */
+    private fun commutes(stmts : List<FlatStmt>, expr : LIRExpr): Boolean {
+        var memUsed = false
+        var unkownGlobalsUsed = false
+        var unknownTempsUsed = false
+        val temps = mutableSetOf<LIRTemp>()
+
+        fun updateMemTempsUsed(node: FlatStmt) {
+            when (node) {
+                is LIRCJump -> {
+                    unkownGlobalsUsed = true
+                    memUsed = true
+                    unknownTempsUsed = true
+                }
+                is LIRJump -> {
+                    unkownGlobalsUsed = true
+                    memUsed = true
+                    unknownTempsUsed = true
+                }
+                is LIRReturn -> { }
+                is LIRTrueJump -> {
+                    unkownGlobalsUsed = true
+                    memUsed = true
+                    unknownTempsUsed = true
+                }
+                is LIRCallStmt -> {
+                    // Optionally track which variables are touched during a call
+                    unkownGlobalsUsed = true
+                    memUsed = true
+                    unknownTempsUsed = true
+                }
+                is LIRLabel -> { }
+                is LIRMove -> {
+                    when (node.dest) {
+                        is LIRMem -> memUsed = true
+                        is LIRTemp -> temps.add(node.dest)
+                        else -> { throw Exception("Invalid LIRMove") }
+                    }
+                }
+            }
+
+        }
+
+        stmts.forEach(){
+            updateMemTempsUsed(it)
+        }
+
+        fun exprCommutes(expr : LIRExpr)  : Boolean {
+            return when (expr) {
+                is LIRConst -> true
+                is LIRMem -> !memUsed
+                is LIRName -> false
+                //Uncomment when globals are done correctly
+//                    !isGlobal(expr.l) || (!unkownGlobalsUsed && !globals.contains(expr.l))
+                is LIROp -> {
+                    exprCommutes(expr.left) && exprCommutes(expr.right)
+                }
+                is LIRTemp ->
+                    !unknownTempsUsed && !temps.contains(expr) &&
+                    (!isGlobal(expr.name) && (!unkownGlobalsUsed && !globals.contains(expr.name)))
+            }
+        }
+        return exprCommutes(expr)
     }
 
     fun lowirgen(midIR: IRCompUnit, optimize: Boolean = false): LIRCompUnit {
@@ -65,15 +127,7 @@ class IRLowerer() {
             is IRStmt.IRMove -> {
                 //TODO: add commuting
                 val stmts: MutableList<FlatStmt> = mutableListOf()
-                if (commutes(n.dest, n.expr)){
-                    val (e1Stmts, e1) = lowerExpr(n.dest)
-                    val (e2Stmts, e2) = lowerExpr(n.expr)
-                    stmts.addAll(e1Stmts)
-                    stmts.addAll(e2Stmts)
-                    stmts.add(LIRMove(e1, e2))
-                } else {
-                    stmts.addAll(factorMoveTarget(n.dest, n.expr))
-                }
+                stmts.addAll(factorMoveTarget(n.dest, n.expr))
                 stmts
             }
 
@@ -124,13 +178,19 @@ class IRLowerer() {
                 return returnList
             }
             is IRExpr.IRMem -> {
-                val temp = freshTemp()
                 val (e1Stmts, e1) = lowerExpr(target.address)
                 val (e2Stmts, e2) = lowerExpr(arg)
-                returnList.addAll(e1Stmts)
-                returnList.add(LIRMove(temp, e1))
-                returnList.addAll(e2Stmts)
-                returnList.add(LIRMove(LIRMem(temp), e2))
+                if (commutes(e2Stmts, e1)){
+                    returnList.addAll(e1Stmts)
+                    returnList.addAll(e2Stmts)
+                    returnList.add(LIRMove(LIRMem(e1), e2))
+                } else {
+                    val temp = freshTemp()
+                    returnList.addAll(e1Stmts)
+                    returnList.add(LIRMove(temp, e1))
+                    returnList.addAll(e2Stmts)
+                    returnList.add(LIRMove(LIRMem(temp), e2))
+                }
             }
             is IRExpr.IRESeq -> {
                 val eseqStmts = lowerStatement(target.statement)
@@ -188,13 +248,13 @@ class IRLowerer() {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
 
                 // constant folding
-                if (leftExpr is LIRConst && rightExpr is LIRConst) {
+                if (optimize && leftExpr is LIRConst && rightExpr is LIRConst) {
                     allStmts.addAll(leftStmt)
                     allStmts.addAll(rightStmt)
                     Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))
                 }
                 else {
-                    if (commutes(n.left, n.right)){
+                    if (commutes(rightStmt, leftExpr)){
                         allStmts.addAll(leftStmt)
                         allStmts.addAll(rightStmt)
                         Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
