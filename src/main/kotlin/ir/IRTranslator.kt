@@ -100,15 +100,14 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
-        val funcMoves : MutableList<IRStmt> = mutableListOf()
+        val funcMoves: MutableList<IRStmt> = mutableListOf()
         for (i in 0 until n.args.size) {
-            funcMoves.add(IRMove(IRTemp(n.args[i].id) , IRTemp("_ARG${i+1}")))
+            funcMoves.add(IRMove(IRTemp(n.args[i].id), IRTemp("_ARG${i + 1}")))
         }
         funcMoves.add(translateStatement(n.body!!))
         if (n.returnTypes.size != 0) {
             return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
-        }
-        else { // if the method is a proc, add empty return
+        } else { // if the method is a proc, add empty return
             funcMoves.add(IRReturn(listOf()))
             return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
         }
@@ -123,6 +122,11 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         }
 
     }
+
+//    private fun returnPtr(n : IRExpr) : IRExpr {
+// if the return temp points to the label
+//
+// }
 
     private fun translateStatement(n: Statement): IRStmt {
         return when (n) {
@@ -287,6 +291,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 val tempA = freshTemp()
                 val tempI = freshTemp()
                 val successLabel = freshLabel()
+                val errorLabel = freshLabel()
                 IRESeq(
                     IRSeq(
                         listOf(
@@ -295,9 +300,9 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                             IRCJump(
                                 IROp(ULT, tempI, IRMem(IROp(SUB, tempA, IRConst(8)))),
                                 successLabel,
-                                IRLabel("out_of_bounds")
+                                errorLabel
                             ),
-                            IRLabel("out_of_bounds"),
+                            errorLabel,
                             IRCallStmt(IRName("_eta_out_of_bounds"), 0, listOf()),
                             successLabel
                         )
