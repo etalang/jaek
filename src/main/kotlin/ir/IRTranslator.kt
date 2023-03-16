@@ -493,7 +493,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is Literal.BoolLit -> if (n.bool) IRJump(IRName(trueLabel.l)) else IRJump(IRName(falseLabel.l))
             is UnaryOp -> {
                 if (n.op == UnaryOp.Operation.NOT) {
-                    translateControl(n, falseLabel, trueLabel)
+                    translateControl(n.arg, falseLabel, trueLabel)
                 } else { //shouldn't typecheck
                     throw Exception("used a non-not unary as a guard, unreachable")
                 }
