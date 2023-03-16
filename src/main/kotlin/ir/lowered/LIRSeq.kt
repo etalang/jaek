@@ -9,9 +9,17 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
     fun blockReordering(freshLabel: () -> String): LIRSeq {
         val b = maximalBasicBlocks(freshLabel)
+        println("BLOCKS")
+        println(b)
         val n = buildCFG(b)
+        println("NODES")
+        println(n)
         val g = greedyTrace(n)
+        println("ORDER")
+        println(g)
         val c = removeUselessJumps(fixJumps(g, freshLabel))
+        println("FINAL")
+        println(c)
         val s = LIRSeq(toSequence(c))
         return s
     }
@@ -47,6 +55,10 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             val build: BasicBlock
                 get() = BasicBlock(label ?: freshLabel(), statements, end)
 
+        }
+
+        override fun toString(): String {
+            return "BasicBlock(label='$label', ordinary=$ordinary, end=$end)"
         }
 
     }
@@ -85,6 +97,10 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             val falseEdge: String?
         ) : Node(statements, label) {
             override val edges: List<String> = listOfNotNull(trueEdge, falseEdge)
+        }
+
+        override fun toString(): String {
+            return "Node(label='$label', statements=$statements, edges=$edges)"
         }
 
     }
@@ -149,7 +165,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         //TODO: more intelligent selection
         fun head(): Node? {
             for (n in unmarked) if (predecessors[n]?.isEmpty() == true) return n
-            return unmarked.first()
+            return unmarked.firstOrNull()
         }
 
         val order: MutableList<Node> = ArrayList()
@@ -159,7 +175,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 order.add(head)
                 unmarked.remove(head)
                 //TODO: more intelligent choice of next node
-                head = head.edges.filter { unmarked.contains(labelToNode[it]) }.map { labelToNode[it] }.first()
+                head = head.edges.filter { unmarked.contains(labelToNode[it]) }.map { labelToNode[it] }.firstOrNull()
             }
         }
         assert(order.containsAll(nodes))
