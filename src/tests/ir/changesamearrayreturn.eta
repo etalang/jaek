@@ -12,7 +12,6 @@ main(args:int[][])  {
     g : int[][] = populateArray(f)
     g[0][0] = 12
 
-
     printArray(f[0])
     printArray(g[0])
 
@@ -59,22 +58,3 @@ sort(aa: int[]) {
       i = i+1
   }
 }
-
-//expected to fail because of in place swap?
-sortSwap(aa: int[]) : int[]{
-    i:int = 0
-    n:int = length(aa)
-    while (i < n) {
-        j:int = i
-        while (j > 0) {
-            if (aa[j-1] > aa[j]) {
-                aa[j], aa[j-1] = aa[j-1] , aa[j]
-            }
-            j = j-1
-        }
-        printArray(aa)
-        i = i+1
-    }
-    return aa
-}
-
