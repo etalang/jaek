@@ -6,7 +6,10 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     edarray1.eta;
     fibonacci.eta;
     globalstr1.eta;
+    idxarrconcat.eta;
+    idxfnret.eta;
     insertion.eta;
+    multiretarray.eta;
     passbyrefarrs.eta;
     ratadduse.eta;
     returnstr.eta;

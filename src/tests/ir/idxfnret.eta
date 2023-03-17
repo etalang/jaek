@@ -1,14 +1,14 @@
 use io
 use conv
 
-f(arr:int[]) {
-    arr[0] = 17
+main(args:int[][]) {
+    a : int[] = {4,5,6}
+    a[0] = f()[0]
+    printArray(a)
 }
 
-main(args:int[][])  {
-    d : int[] = {13, 6, 4, 'a', 's', 9, 5, 3, 2}
-    f(d)
-    printArray(d)
+f() : int[] {
+    return {3,4,5}
 }
 
 printArray(aa : int[]) {
