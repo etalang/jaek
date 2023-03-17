@@ -1,0 +1,96 @@
+use io
+use conv
+
+
+a : int[];
+b : int[];
+e : int[];
+
+main(args:int[][])  {
+    a = {13, 6, 4, 'a', 's', 9}
+    b = "hello"
+    c : int[] = {5, 3, 2}
+    d : int[] = a + c
+    e = d
+    f : int[4][5];
+
+    printArray(a)
+    printArray(b)
+    printArray(c)
+
+    //make sure both arrays are changed
+    printArray(d)
+    printArray(e)
+    populateArray(f)
+
+
+    printArray(f[0])
+    printArray(f[1])
+    printArray(f[2])
+    printArray(f[3])
+
+    sort(d)
+    printArray(d)
+    printArray(e)
+
+}
+
+populateArray(aa : int[][]){
+    i : int = 0
+    while (i < length(aa)) {
+        j : int = 0
+        while (j < length(aa[i])) {
+            aa[i][j] = i * j
+            j = j + 1
+        }
+        i = i + 1
+    }
+}
+
+printArray(aa : int[]) {
+    print("{")
+    i : int = 0
+    while (i < length(aa)) {
+        print(unparseInt(aa[i]))
+        if (i < length(aa) - 1) print(" ")
+        i = i + 1
+    }
+    print("}")
+    println("")
+}
+
+sort(aa: int[]) {
+  i:int = 0
+  n:int = length(aa)
+  while (i < n) {
+      j:int = i
+      while (j > 0) {
+        if (aa[j-1] > aa[j]) {
+            swap:int = aa[j]
+            aa[j] = aa[j-1]
+            aa[j-1] = swap
+        }
+        j = j-1
+      }
+      i = i+1
+  }
+}
+
+//expected to fail because of in place swap?
+sortSwap(aa: int[]) : int[]{
+    i:int = 0
+    n:int = length(aa)
+    while (i < n) {
+        j:int = i
+        while (j > 0) {
+            if (aa[j-1] > aa[j]) {
+                aa[j], aa[j-1] = aa[j-1] , aa[j]
+            }
+            j = j-1
+        }
+        printArray(aa)
+        i = i+1
+    }
+    return aa
+}
+

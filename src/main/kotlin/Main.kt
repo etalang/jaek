@@ -33,6 +33,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     ).file(canBeDir = false).multiple()
 
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
+    private val disableOpt: Boolean by option("-O", help = "Prevents optimizations (e.g. constant folding) from happening.").flag()
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
     private val initOutputIR: Boolean by option("--irgen", help = "Generate intermediate representation as SExpr").flag()
@@ -90,10 +91,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                         ast = parse(it, parsedFile)
                         try {
                             val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            // TODO: rewrite asap
 //                    ╔════════════════════════════════╗
 //                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
 //                    ╚════════════════════════════════╝
-                            val ir = IRTranslator(ast as Program,it.nameWithoutExtension,context.getFunctions()).irgen()
+                            val ir = IRTranslator(ast as Program,it.nameWithoutExtension,context.getFunctions()).irgen(!disableOpt)
                             // we are sticking with the class IR rep, and do not implement irrun
                             irFile?.let {
                                 val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
