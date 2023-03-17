@@ -12,6 +12,8 @@ import ir.mid.IRStmt.IRSeq
 
 class IRLowerer() {
     private var freshLowTempCount = 0
+    private var opt = false
+
     private fun freshTemp(): LIRTemp {
         freshLowTempCount++
         return LIRTemp("\$TL$freshLowTempCount")
@@ -23,6 +25,7 @@ class IRLowerer() {
     }
 
     fun lowirgen(midIR: IRCompUnit, optimize: Boolean = false): LIRCompUnit {
+        opt = optimize
         return lowerCompUnit(midIR)
     }
 
@@ -188,7 +191,7 @@ class IRLowerer() {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
 
                 // constant folding
-                if (leftExpr is LIRConst && rightExpr is LIRConst) {
+                if (leftExpr is LIRConst && rightExpr is LIRConst && opt) {
                     allStmts.addAll(leftStmt)
                     allStmts.addAll(rightStmt)
                     Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))
