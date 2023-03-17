@@ -1,27 +1,27 @@
 use io
 use conv
 
-
-a : int[];
-b : int[];
 e : int[];
 
 main(args:int[][])  {
-    a = {13, 6, 4, 'a', 's', 9}
-    b = "hello"
-    c : int[] = {5, 3, 2}
-    d : int[] = a + c
-    g : int[] = a + "hello" + c
+    d : int[] = {13, 6, 4, 'a', 's', 9, 5, 3, 2}
+    e = d
+    f : int[4][5];
 
-    printArray(a)
-    printArray(b)
-    printArray(c)
     printArray(d)
-    printArray(g)
+    printArray(e)
+    populateArray(f)
 
-    sort(a)
-    print("sorted a")
-    printArray(a)
+    sort(d)
+    printArray(d)
+    sort(e)
+    printArray(e)
+
+    i : int = 0
+    while ( i < 4 ) {
+        printArray(f[i])
+        i = i + 1
+    }
 
 }
 
@@ -49,7 +49,7 @@ printArray(aa : int[]) {
     println("")
 }
 
-sort(aa: int[]) {
+sort(a: int[]) {
   i:int = 0
   n:int = length(a)
   while (i < n) {

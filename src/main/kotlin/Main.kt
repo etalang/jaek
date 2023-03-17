@@ -91,6 +91,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                         ast = parse(it, parsedFile)
                         try {
                             val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            // TODO: rewrite asap
 //                    ╔════════════════════════════════╗
 //                    ║ THIS MUST BE REWRITTEN ASAP!!! ║
 //                    ╚════════════════════════════════╝

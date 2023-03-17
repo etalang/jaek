@@ -11,7 +11,7 @@ fib(i:int) : int {
 
 main(args:int[][]) {
     print("Please enter a positive number : ");
-    input: int[] = readln();
+    input: int[] = "17"
     value:int, valid:bool = parseInt(input)
 
     if !valid {

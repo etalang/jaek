@@ -1,0 +1,14 @@
+build
+
+etac ("Test --irgen") "-libpath $(testpath) --irgen" {
+    arrayalloc1.eta;
+    arrayfuntimes.eta;
+    edarray1.eta;
+    fibonacci.eta;
+    globalstr1.eta;
+    insertion.eta;
+    passbyrefarrs.eta;
+    ratadduse.eta;
+    returnstr.eta;
+    swaparr.eta;
+}
