@@ -17,9 +17,10 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         val g = greedyTrace(n)
         println("ORDER")
         println(g)
-        val c = removeUselessJumps(fixJumps(g, freshLabel))
+        val c1 = fixJumps(g, freshLabel)
+        val c = removeUselessJumps(c1)
         println("FINAL")
-        println(c)
+//        println(c)
         val s = LIRSeq(toSequence(c))
         return s
     }
@@ -153,6 +154,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         }
     }
 
+    /** returns a topological sort of the CFG */
     private fun greedyTrace(nodes: List<Node>): List<Node> {
         val labelToNode = nodes.associateBy { it.label }
 
@@ -165,7 +167,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         //TODO: more intelligent selection
         fun head(): Node? {
             for (n in unmarked) if (predecessors[n]?.isEmpty() == true) return n
-            return unmarked.firstOrNull()
+            return unmarked.randomOrNull()
         }
 
         val order: MutableList<Node> = ArrayList()
@@ -175,7 +177,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 order.add(head)
                 unmarked.remove(head)
                 //TODO: more intelligent choice of next node
-                head = head.edges.filter { unmarked.contains(labelToNode[it]) }.map { labelToNode[it] }.firstOrNull()
+                head = head.edges.filter { unmarked.contains(labelToNode[it]) }.map { labelToNode[it] }.randomOrNull()
             }
         }
         assert(order.containsAll(nodes))
@@ -189,6 +191,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             when (node) {
                 is Node.Conditional -> {
                     //CJUMP WITH ONLY TRUE
+                    // unsure this is correct at all -- there needs to be some jump no matter what
                     if (node.falseEdge == null) {
                         if (nextBlock != null && node.trueEdge == nextBlock.label) {
                             //GOES IMMEDIATELY TO NEXT BLOCK
@@ -201,6 +204,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                         //CJUMP WITH TRUE AND FALSE
                         if (nextBlock != null && node.trueEdge == nextBlock.label) {
                             //INVERT CONDITION
+                            // label needed here?
                             listOf(
                                 Node.Conditional(
                                     node.statements,
@@ -264,7 +268,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 }
 
                 is Node.Unconditional -> {
-                    statements.add(LIRJump(LIRExpr.LIRName(node.label)))
+                    statements.add(LIRJump(LIRExpr.LIRName(node.to)))
                 }
             }
         }
