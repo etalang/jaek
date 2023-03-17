@@ -20,7 +20,10 @@ sealed class LIRStmt : LIRNode() {
         override val java: JIRMove = factory.IRMove(dest.java, expr.java)
     }
 
-    /** IRJump represents a jump to address [address] **/
+    /** IRJump represents a jump to address [address]
+     *
+     * IMPORTANT INVARIANT: ANY INSTANCES OF [LIRExpr.LIRName] MUST BE IMMEDIATELY IN [address]
+     * **/
     class LIRJump(val address: LIRExpr) : EndBlock() {
         override val java: JIRJump = factory.IRJump(address.java)
     }
