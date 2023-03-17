@@ -2,14 +2,12 @@ package ir
 
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
-import ir.lowered.LIRStmt
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
 import ir.mid.IRExpr.*
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
-import org.jetbrains.kotlin.daemon.common.compareDaemonJVMOptionsMemory
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
@@ -342,7 +340,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     // compute left/right array lengths from memory
                     val tempLeftLength = freshTemp()
                     val tempRightLength = freshTemp()
-                    val moves : MutableList<IRStmt> = mutableListOf()
+                    val moves: MutableList<IRStmt> = mutableListOf()
                     moves.add(IRMove(tempLeftLength, IRMem(IROp(SUB, translateLeft, IRConst(8)))))
                     moves.add(IRMove(tempRightLength, IRMem(IROp(SUB, translateRight, IRConst(8)))))
                     // instantiate new array
