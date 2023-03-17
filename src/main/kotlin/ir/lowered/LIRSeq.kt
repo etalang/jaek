@@ -9,18 +9,10 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
     fun blockReordering(freshLabel: () -> String): LIRSeq {
         val b = maximalBasicBlocks(freshLabel)
-        println("BLOCKS")
-        println(b)
         val n = buildCFG(b)
-        println("NODES")
-        println(n)
         val g = greedyTrace(n)
-        println("ORDER")
-        println(g)
-        val c1 = fixJumps(g, freshLabel)
-        val c = removeUselessJumps(c1)
-        println("FINAL")
-//        println(c)
+        val j = fixJumps(g, freshLabel)
+        val c = removeUselessJumps(j)
         val s = LIRSeq(toSequence(c))
         return s
     }
