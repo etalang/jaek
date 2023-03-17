@@ -15,9 +15,13 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     insertion.eta;
     multiretarray.eta;
     mutualrecursion.eta;
+    operatorprecedence.eta;
     passbyrefarrs.eta;
+    raggedarrays.eta;
     ratadduse.eta;
+    returnfncall.eta
     returnstr.eta;
+    shortcircuit.eta;
     swap.eta;
     swaparr.eta;
 }
