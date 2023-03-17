@@ -68,7 +68,11 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
 
     fun irgen(optimize: Boolean = false): JIRNode {
-        return IRLowerer().lowirgen(translateCompUnit(AST)).java
+        val mir = translateCompUnit(AST)
+        val lir = IRLowerer().lowirgen(mir)
+//        lir.reorderBlocks()
+        //TODO: ENABLE ^^^^^^^^^
+        return lir.java
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
@@ -157,15 +161,16 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 if (n.vals.size == 1 && first is Expr.FunctionCall) {
                     // go straight to IRCallStmt and do not pass go
                     // get the right number of returns from _RV whatever
-                    val returnTemps : MutableList<IRTemp> = mutableListOf()
-                    for (i in 1 .. n.targets.size) {
+                    val returnTemps: MutableList<IRTemp> = mutableListOf()
+                    for (i in 1..n.targets.size) {
                         returnTemps.add(IRTemp("_RV$i"))
                     }
                     // DO THE CALL IN HERE DO NOT PASS IT DOWN
                     // assuming that the number of returns must match the number of targets, checked in typecheck
-                    val stmts : MutableList<IRStmt> = mutableListOf(
+                    val stmts: MutableList<IRStmt> = mutableListOf(
                         IRCallStmt(IRName(
-                            functionMap[first.fn]!!),
+                            functionMap[first.fn]!!
+                        ),
                             n.targets.size.toLong(),
                             first.args.map { translateExpr(it) }
                         )
@@ -344,7 +349,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     // compute left/right array lengths from memory
                     val tempLeftLength = freshTemp()
                     val tempRightLength = freshTemp()
-                    val moves : MutableList<IRStmt> = mutableListOf()
+                    val moves: MutableList<IRStmt> = mutableListOf()
                     moves.add(IRMove(tempLeftLength, IRMem(IROp(SUB, translateLeft, IRConst(8)))))
                     moves.add(IRMove(tempRightLength, IRMem(IROp(SUB, translateRight, IRConst(8)))))
                     // instantiate new array
@@ -445,13 +450,16 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 val lengthTemp = freshTemp()
                 val arrTemp = freshTemp()
                 IRESeq(
-                    IRSeq(listOf(
-                        IRMove(arrTemp,translateExpr(n.arg)),
-                        IRMove(lengthTemp, IRMem(IROp(SUB, arrTemp, IRConst(8))))
-                    )),
+                    IRSeq(
+                        listOf(
+                            IRMove(arrTemp, translateExpr(n.arg)),
+                            IRMove(lengthTemp, IRMem(IROp(SUB, arrTemp, IRConst(8))))
+                        )
+                    ),
                     lengthTemp
                 )
             }
+
             is Literal.ArrayLit -> {
                 val tempM = freshTemp()
                 val moves = arrayInitMoves(IRConst(n.list.size.toLong()), tempM)
@@ -501,7 +509,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         }
     }
 
-    fun escapeStringChars(s : String) : String {
+    fun escapeStringChars(s: String): String {
         return s.replace("\\n", "\n")
             .replace("\\t", "\t")
             .replace("\\\"", "\"")
