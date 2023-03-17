@@ -7,8 +7,8 @@ a: int;
 main(args:int[][]) {
     str = "Hello World";
     a = 5;
-    f(a)
-    f(a)
+    f(1)
+    f(1)
     print(unparseInt(a))
 }
 
