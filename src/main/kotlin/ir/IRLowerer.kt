@@ -8,7 +8,7 @@ import ir.lowered.LIRStmt.*
 import ir.mid.*
 import ir.mid.IRStmt.IRSeq
 
-class IRLowerer(val globals : List<String>, val optimize : Boolean) {
+class IRLowerer(val globals : List<String>, val globalsByFunction : MutableMap<String, MutableList<String>>) {
     private var freshLowTempCount = 0
     private fun freshTemp(): LIRTemp {
         freshLowTempCount++
@@ -45,7 +45,7 @@ class IRLowerer(val globals : List<String>, val optimize : Boolean) {
                     unknownTempsUsed = true
                 }
                 is LIRCallStmt -> {
-                    // Optionally track which variables are touched during a call
+                    //TODO Optionally track which variables are touched during a call
                     unkownGlobalsUsed = true
                     memUsed = true
                     unknownTempsUsed = true
@@ -246,7 +246,7 @@ class IRLowerer(val globals : List<String>, val optimize : Boolean) {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
 
                 // constant folding
-                if (optimize && leftExpr is LIRConst && rightExpr is LIRConst) {
+                if (leftExpr is LIRConst && rightExpr is LIRConst) {
                     allStmts.addAll(leftStmt)
                     allStmts.addAll(rightStmt)
                     Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))

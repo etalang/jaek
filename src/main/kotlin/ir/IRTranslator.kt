@@ -16,7 +16,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 class IRTranslator(val AST: Program, val name: String, functions: Map<String, EtaType.ContextType.FunType>) {
     private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
-    private val globalsByFunction : MutableMap<String, MutableList<IRData>> = HashMap()
+    private val globalsByFunction : MutableMap<String, MutableList<String>> = HashMap()
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -62,7 +62,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
     fun irgen(optimize: Boolean = false): JIRNode {
         //TODO() need to only pass in globals that aren't strings if strings in global are not mutable
-        return IRLowerer(globals.map { it.name }, optimize).lowirgen(translateCompUnit(AST)).java
+        return IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(translateCompUnit(AST)).java
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
