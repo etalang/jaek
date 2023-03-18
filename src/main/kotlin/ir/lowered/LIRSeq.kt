@@ -2,6 +2,7 @@ package ir.lowered
 
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
+import ir.IRLowerer
 
 /** IRSeq represents the sequential composition of IR statements in [block]**/
 class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
@@ -201,7 +202,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                                 Node.Conditional(
                                     node.statements,
                                     node.label,
-                                    LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
+                                    quickFixNegate(node),
                                     node.falseEdge,
                                     null
                                 )
@@ -228,6 +229,21 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 }
             }
         }.flatten()
+    }
+
+    /**
+     * TODO: this function should NOT BE RESPONSIBLE FOR CONSTANT FOLDING!
+     */
+    private fun quickFixNegate(node: Node.Conditional): LIRExpr {
+        return when (val condition = node.condition) {
+            is LIRExpr.LIRConst -> {
+                LIRExpr.LIRConst(IRLowerer.calculate(condition.value, 1, IRBinOp.OpType.XOR))
+            }
+
+            else -> {
+                LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1))
+            }
+        }
     }
 
     private fun removeUselessJumps(nodes: List<Node>): List<Node> {
