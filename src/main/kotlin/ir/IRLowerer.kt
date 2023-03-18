@@ -294,50 +294,52 @@ class IRLowerer(val globals : List<String>) {
         }
     }
 
-    private fun calculate(n1: Long, n2: Long, op: IRBinOp.OpType): Long {
-        return when (op) {
-            ADD -> n1 + n2
-            SUB -> n1 - n2
-            MUL -> lowMul(n1, n2)
-            HMUL -> highMul(n1, n2)
-            DIV -> n1 / n2
-            MOD -> n1 % n2
-            AND -> n1 and n2
-            OR -> n1 or n2
-            XOR -> n1 xor n2
-            LSHIFT -> n1 shl n2.toInt()
-            RSHIFT -> n1 ushr n2.toInt()
-            ARSHIFT -> n1 shr n2.toInt()
-            EQ -> if (n1 == n2) 1 else 0
-            NEQ -> if (n1 != n2) 1 else 0
-            LT -> if (n1 < n2) 1 else 0
-            ULT -> if (n1.toULong() < n2.toULong()) 1 else 0
-            GT -> if (n1 > n2) 1 else 0
-            LEQ -> if (n1 <= n2) 1 else 0
-            GEQ -> if (n1 >= n2) 1 else 0
+    companion object {
+        private fun lowMul(n1: Long, n2: Long): Long {
+            val sgn1 = if (n1 >= 0) 1 else -1
+            val sgn2 = if (n2 >= 0) 1 else -1
+            val n1H = (n1 * sgn1) ushr 32
+            val n1L = ((n1 * sgn1) shl 32) ushr 32
+            val n2H = (n2 * sgn2) ushr 32
+            val n2L = ((n2 * sgn2) shl 32) ushr 32
+            return ((n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)) * sgn1 * sgn2
         }
-    }
 
-    private fun lowMul(n1: Long, n2: Long): Long {
-        val sgn1 = if (n1 >= 0) 1 else -1
-        val sgn2 = if (n2 >= 0) 1 else -1
-        val n1H = (n1 * sgn1) ushr 32
-        val n1L = ((n1 * sgn1) shl 32) ushr 32
-        val n2H = (n2 * sgn2) ushr 32
-        val n2L = ((n2 * sgn2) shl 32) ushr 32
-        return ((n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)) * sgn1 * sgn2
-    }
+        private fun highMul(n1: Long, n2: Long): Long {
+            // https://stackoverflow.com/questions/28868367/getting-the-high-part-of-64-bit-integer-multiplication
+            val sgn1 = if (n1 >= 0) 1 else -1
+            val sgn2 = if (n2 >= 0) 1 else -1
+            val n1H = (n1 * sgn1) ushr 32
+            val n1L = ((n1 * sgn1) shl 32) ushr 32
+            val n2H = (n2 * sgn2) ushr 32
+            val n2L = ((n2 * sgn2) shl 32) ushr 32
+            val carry = ((((n1H * n2L) shl 32) ushr 32) + (((n2H * n1L) shl 32) ushr 32) + ((n1L * n2L) ushr 32)) ushr 32
+            return ((n1H * n2H) + ((n1H * n2L) ushr 32) + ((n2H * n1L) ushr 32) + carry) * sgn1 * sgn2
+        }
 
-    private fun highMul(n1: Long, n2: Long): Long {
-        // https://stackoverflow.com/questions/28868367/getting-the-high-part-of-64-bit-integer-multiplication
-        val sgn1 = if (n1 >= 0) 1 else -1
-        val sgn2 = if (n2 >= 0) 1 else -1
-        val n1H = (n1 * sgn1) ushr 32
-        val n1L = ((n1 * sgn1) shl 32) ushr 32
-        val n2H = (n2 * sgn2) ushr 32
-        val n2L = ((n2 * sgn2) shl 32) ushr 32
-        val carry = ((((n1H * n2L) shl 32) ushr 32) + (((n2H * n1L) shl 32) ushr 32) + ((n1L * n2L) ushr 32)) ushr 32
-        return ((n1H * n2H) + ((n1H * n2L) ushr 32) + ((n2H * n1L) ushr 32) + carry) * sgn1 * sgn2
+        fun calculate(n1: Long, n2: Long, op: IRBinOp.OpType): Long {
+            return when (op) {
+                ADD -> n1 + n2
+                SUB -> n1 - n2
+                MUL -> lowMul(n1, n2)
+                HMUL -> highMul(n1, n2)
+                DIV -> n1 / n2
+                MOD -> n1 % n2
+                AND -> n1 and n2
+                OR -> n1 or n2
+                XOR -> n1 xor n2
+                LSHIFT -> n1 shl n2.toInt()
+                RSHIFT -> n1 ushr n2.toInt()
+                ARSHIFT -> n1 shr n2.toInt()
+                EQ -> if (n1 == n2) 1 else 0
+                NEQ -> if (n1 != n2) 1 else 0
+                LT -> if (n1 < n2) 1 else 0
+                ULT -> if (n1.toULong() < n2.toULong()) 1 else 0
+                GT -> if (n1 > n2) 1 else 0
+                LEQ -> if (n1 <= n2) 1 else 0
+                GEQ -> if (n1 >= n2) 1 else 0
+            }
+        }
     }
 
 
