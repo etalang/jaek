@@ -30,7 +30,7 @@ Both environments have an `etac` script that lets you use the jar CLI with forma
 We have made the repository compatible with the `eth` testing harness. The `make zip` command above includes the relevant files. On the VM, we have two existing test suites.
 If the zip is unzipped in the `production` folder, the example tests pre-provided can be run from that directory with 
 ```bash
-eth ~/eth/tests/pa3/ethScript -compilerpath ~/shared/production/
+eth ~/eth/tests/pa4/ethScript -compilerpath ~/shared/production/
 ```
 Include the `-p` flag to preserve the output of the compiler.
 More `eth` flags can be found by accessing the native help page.
@@ -47,4 +47,8 @@ eth src/tests/parser/parseScript -compilerpath ~/shared/production/
 - **typing** test cases:
 ```bash
 eth src/tests/typing/ethScript -compilerpath ~/shared/production/
+```
+- **ir** test cases:
+```bash
+eth src/tests/ir/ethScript -compilerpath ~/shared/production/
 ```
