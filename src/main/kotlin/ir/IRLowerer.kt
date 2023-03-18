@@ -26,7 +26,8 @@ class IRLowerer(val globals : List<String>, val globalsByFunction : MutableMap<S
         var memUsed = false
         var unkownGlobalsUsed = false
         var unknownTempsUsed = false
-        val temps = mutableSetOf<LIRTemp>()
+        val tempsUsed = mutableSetOf<String>()
+        val globalsUsed = mutableSetOf<String>()
 
         fun updateMemTempsUsed(node: FlatStmt) {
             when (node) {
@@ -50,13 +51,12 @@ class IRLowerer(val globals : List<String>, val globalsByFunction : MutableMap<S
                     //TODO Optionally track which variables are touched during a call
                     unkownGlobalsUsed = true
                     memUsed = true
-                    unknownTempsUsed = true
                 }
                 is LIRLabel -> { }
                 is LIRMove -> {
                     when (node.dest) {
                         is LIRMem -> memUsed = true
-                        is LIRTemp -> temps.add(node.dest)
+                        is LIRTemp -> tempsUsed.add(node.dest.name)
                         else -> { throw Exception("Invalid LIRMove") }
                     }
                 }
@@ -72,13 +72,11 @@ class IRLowerer(val globals : List<String>, val globalsByFunction : MutableMap<S
             return when (expr) {
                 is LIRConst -> true
                 is LIRMem -> !memUsed
-                is LIRName -> false
-                //Uncomment when globals are done correctly
-//                    !isGlobal(expr.l) || (!unkownGlobalsUsed && !globals.contains(expr.l))
+                is LIRName -> !isGlobal(expr.l) || (!unkownGlobalsUsed && !globalsUsed.contains(expr.l))
                 is LIROp -> {
                     exprCommutes(expr.left) && exprCommutes(expr.right)
                 }
-                is LIRTemp -> !unknownTempsUsed && !temps.contains(expr)
+                is LIRTemp -> !unknownTempsUsed && !tempsUsed.contains(expr.name)
             }
         }
         return exprCommutes(expr)

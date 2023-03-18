@@ -1,0 +1,19 @@
+use io
+use conv
+
+x : int = 0
+
+foo(): int,int {
+    return f1(),f1()
+}
+
+f1():int{
+    x = x + 1
+    return x
+}
+
+main(args : int[][]){
+    a : int, b : int = foo()
+    println(unparseInt(a))
+    println(unparseInt(b))
+}

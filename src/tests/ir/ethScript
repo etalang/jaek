@@ -3,12 +3,25 @@ build
 etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     arrayalloc1.eta;
     arrayfuntimes.eta;
+    arraysorting.eta;
+    binsearchmain.eta;
+    changeglobalstwice.eta;
+    changesamearrayreturn.eta;
     edarray1.eta;
     fibonacci.eta;
     globalstr1.eta;
+    idxarrconcat.eta;
+    idxfnret.eta;
     insertion.eta;
+    multiretarray.eta;
+    mutualrecursion.eta;
+    operatorprecedence.eta;
     passbyrefarrs.eta;
+    raggedarrays.eta;
     ratadduse.eta;
+    returnfncall.eta
     returnstr.eta;
+    shortcircuit.eta;
+    swap.eta;
     swaparr.eta;
 }
