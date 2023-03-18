@@ -7,6 +7,7 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     binsearchmain.eta;
     changeglobalstwice.eta;
     changesamearrayreturn.eta;
+    commutey.eta;
     edarray1.eta;
     fibonacci.eta;
     globalstr1.eta;
@@ -15,9 +16,11 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     insertion.eta;
     multiretarray.eta;
     mutualrecursion.eta;
+    operationsmod.eta;
     operatorprecedence.eta;
     passbyrefarrs.eta;
     raggedarrays.eta;
+    returnfncall.eta;
     ratadduse.eta;
     returnfncall.eta
     returnstr.eta;
