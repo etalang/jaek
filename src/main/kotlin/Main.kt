@@ -99,19 +99,31 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                         ast = parse(it, parsedFile)
                         try {
                             val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
-                            val translator = IRTranslator(
-                                ast as Program,
-                                it.nameWithoutExtension,
-                                context.getFunctions()
-                            )
-                            val ir = translator.irgen(!disableOpt)
-                            // we are sticking with the class IR rep, and do not implement irrun
-                            irFile?.let {
-                                val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
-                                ir.printSExp(writer)
-                                writer.flush()
-                                writer.close()
+
+                            when (ast) {
+                                is Program -> {
+                                    val translator = IRTranslator(
+                                        ast,
+                                        it.nameWithoutExtension,
+                                        context.getFunctions()
+                                    )
+                                    val ir = translator.irgen(!disableOpt)
+                                    // we are sticking with the class IR rep, and do not implement irrun
+                                    irFile?.let {
+                                        val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
+                                        ir.printSExp(writer)
+                                        writer.flush()
+                                        writer.close()
+                                    }
+                                }
+
+                                is Interface -> {
+                                    irFile?.appendText("Cannot generate IR for an eti file.")
+                                }
+
+                                else -> {}
                             }
+
                             if (runIR) throw ProgramResult(2)
                         } catch (e: CompilerError) {
                             println(e.log)
