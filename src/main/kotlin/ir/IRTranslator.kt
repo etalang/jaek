@@ -14,12 +14,13 @@ import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 class IRTranslator(val AST: Program, val name: String, functions: Map<String, EtaType.ContextType.FunType>) {
     private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
+    private val globalsByFunction : MutableMap<String, MutableList<String>> = HashMap()
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
     fun irgen(optimize: Boolean = false): JIRNode {
         val mir = translateCompUnit(AST)
-        val lir = IRLowerer().lowirgen(mir, optimize)
+        val lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
         return lir.java
     }

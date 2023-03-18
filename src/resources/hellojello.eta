@@ -1,0 +1,11 @@
+main(args:int[][]) {
+    f()
+    f()
+
+}
+
+f(){
+    x:int[] = "hello"
+    x[0] = x[0] + 1
+    print(x)
+}

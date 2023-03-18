@@ -37,12 +37,6 @@ sealed class LIRExpr : LIRNode() {
         override val java: JIRMem = factory.IRMem(address.java)
 
     }
-// expressions may not contain call nodes
-//    /** IRCall(address,args) represents a function call on a function code with address [address]
-//     * and arguments [args]**/
-//    class LIRCall(val address: LIRExpr, val args: List<LIRExpr>) : LIRExpr() {
-//        override val java: JIRCall = factory.IRCall(address.java, args.map { it.java })
-//    }
 
     /** IRName(l) represents the address of a labeled memory address labeled [l]*/
     class LIRName(val l: String) : LIRExpr() {
