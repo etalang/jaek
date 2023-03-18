@@ -24,4 +24,5 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     shortcircuit.eta;
     swap.eta;
     swaparr.eta;
+    euclid.eta;
 }
