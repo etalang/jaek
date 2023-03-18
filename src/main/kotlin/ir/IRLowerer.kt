@@ -38,22 +38,6 @@ class IRLowerer(val globals : List<String>) {
 
         fun updateMemTempsUsed(node: FlatStmt) {
             when (node) {
-                is LIRCJump -> {
-                    unknownGlobalsUsed = true
-                    memUsed = true
-                    unknownTempsUsed = true
-                }
-                is LIRJump -> {
-                    unknownGlobalsUsed = true
-                    memUsed = true
-                    unknownTempsUsed = true
-                }
-                is LIRReturn -> { }
-                is LIRTrueJump -> {
-                    unknownGlobalsUsed = true
-                    memUsed = true
-                    unknownTempsUsed = true
-                }
                 is LIRCallStmt -> {
                     //TODO Optionally track which variables are touched during a call
                     unknownGlobalsUsed = true
@@ -76,6 +60,11 @@ class IRLowerer(val globals : List<String>) {
                         is LIRTemp -> tempsUsed.add(node.dest.name)
                         else -> { throw Exception("Invalid LIRMove") }
                     }
+                }
+                else -> {
+                    unknownGlobalsUsed = true
+                    memUsed = true
+                    unknownTempsUsed = true
                 }
             }
 
