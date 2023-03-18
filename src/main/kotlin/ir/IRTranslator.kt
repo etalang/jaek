@@ -18,6 +18,13 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
+    fun irgen(optimize: Boolean = false): JIRNode {
+        val mir = translateCompUnit(AST)
+        val lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
+        lir.reorderBlocks()
+        return lir.java
+    }
+
     private fun freshLabel(): IRLabel {
         freshLabelCount++
         return IRLabel("\$L$freshLabelCount")
@@ -55,13 +62,6 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 "i love cs 4120 ta charles sherk"
             }
         }
-    }
-
-    fun irgen(optimize: Boolean = false): JIRNode {
-        val mir = translateCompUnit(AST)
-        val lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
-        lir.reorderBlocks()
-        return lir.java
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {

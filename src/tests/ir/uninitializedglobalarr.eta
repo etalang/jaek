@@ -1,0 +1,5 @@
+visited: bool[][]
+
+main(args:int[][]) {
+    visited[1][1] = true
+}

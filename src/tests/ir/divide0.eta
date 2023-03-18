@@ -1,0 +1,5 @@
+//NOTE: DO NOT PUT IN ethScript
+
+main(args:int[][]) {
+    a : int = 5 / 0
+}
