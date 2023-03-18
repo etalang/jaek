@@ -2,12 +2,16 @@ package ir
 
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
-import edu.cornell.cs.cs4120.etac.ir.IRConst
-import edu.cornell.cs.cs4120.etac.ir.IRNode
-import ir.lowered.*
+import ir.lowered.LIRCompUnit
+import ir.lowered.LIRExpr
 import ir.lowered.LIRExpr.*
+import ir.lowered.LIRFuncDecl
+import ir.lowered.LIRSeq
 import ir.lowered.LIRStmt.*
-import ir.mid.*
+import ir.mid.IRCompUnit
+import ir.mid.IRExpr
+import ir.mid.IRFuncDecl
+import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
 
 class IRLowerer() {
@@ -19,7 +23,7 @@ class IRLowerer() {
         return LIRTemp("\$TL$freshLowTempCount")
     }
 
-    private fun commutes(left : IRExpr, right :IRExpr): Boolean {
+    private fun commutes(left: IRExpr, right: IRExpr): Boolean {
         //TODO: add commuting
         return false
     }
@@ -68,7 +72,7 @@ class IRLowerer() {
             is IRStmt.IRMove -> {
                 //TODO: add commuting
                 val stmts: MutableList<FlatStmt> = mutableListOf()
-                if (commutes(n.dest, n.expr)){
+                if (commutes(n.dest, n.expr)) {
                     val (e1Stmts, e1) = lowerExpr(n.dest)
                     val (e2Stmts, e2) = lowerExpr(n.expr)
                     stmts.addAll(e1Stmts)
@@ -96,12 +100,13 @@ class IRLowerer() {
                 n.block.forEach { stmts.addAll(lowerStatement(it)) }
                 stmts
             }
+
             is IRStmt.IRCallStmt -> {
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 val (addrStmts, addrExpr) = lowerExpr(n.address)
                 stmts.addAll(addrStmts)
 
-                val argTmps : MutableList<LIRExpr> = mutableListOf()
+                val argTmps: MutableList<LIRExpr> = mutableListOf()
 
                 n.args.forEach {
                     val (si, ei) = lowerExpr(it)
@@ -117,7 +122,7 @@ class IRLowerer() {
         }
     }
 
-    private fun factorMoveTarget(target: IRExpr, arg:IRExpr) : List<FlatStmt> {
+    private fun factorMoveTarget(target: IRExpr, arg: IRExpr): List<FlatStmt> {
         var returnList = mutableListOf<FlatStmt>()
         when (target) {
             is IRExpr.IRTemp -> {
@@ -126,6 +131,7 @@ class IRLowerer() {
                 returnList.add(LIRMove(LIRTemp(target.name), e2))
                 return returnList
             }
+
             is IRExpr.IRMem -> {
                 val temp = freshTemp()
                 val (e1Stmts, e1) = lowerExpr(target.address)
@@ -135,11 +141,13 @@ class IRLowerer() {
                 returnList.addAll(e2Stmts)
                 returnList.add(LIRMove(LIRMem(temp), e2))
             }
+
             is IRExpr.IRESeq -> {
                 val eseqStmts = lowerStatement(target.statement)
                 returnList.addAll(eseqStmts)
                 returnList.addAll(factorMoveTarget(target.value, arg))
             }
+
             else -> {
                 throw Exception("moving into non-mem, non-temp expr")
             }
@@ -151,7 +159,7 @@ class IRLowerer() {
         return when (n) {
             is IRExpr.IRCall -> {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
-                val allTemps : MutableList<LIRTemp> = mutableListOf()
+                val allTemps: MutableList<LIRTemp> = mutableListOf()
                 val (s0, e0) = lowerExpr(n.address)
                 allStmts.addAll(s0)
 
@@ -191,13 +199,14 @@ class IRLowerer() {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
 
                 // constant folding
-                if (leftExpr is LIRConst && rightExpr is LIRConst && opt) {
+                if (leftExpr is LIRConst && rightExpr is LIRConst && opt
+                    && !(n.op == DIV && rightExpr.value == 0L)
+                ) {
                     allStmts.addAll(leftStmt)
                     allStmts.addAll(rightStmt)
                     Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))
-                }
-                else {
-                    if (commutes(n.left, n.right)){
+                } else {
+                    if (commutes(n.left, n.right)) {
                         allStmts.addAll(leftStmt)
                         allStmts.addAll(rightStmt)
                         Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
@@ -215,7 +224,7 @@ class IRLowerer() {
         }
     }
 
-    private fun calculate(n1 : Long, n2 : Long, op : IRBinOp.OpType) : Long {
+    private fun calculate(n1: Long, n2: Long, op: IRBinOp.OpType): Long {
         return when (op) {
             ADD -> n1 + n2
             SUB -> n1 - n2
@@ -239,7 +248,7 @@ class IRLowerer() {
         }
     }
 
-    private fun lowMul(n1 : Long, n2: Long) : Long {
+    private fun lowMul(n1: Long, n2: Long): Long {
         val sgn1 = if (n1 >= 0) 1 else -1
         val sgn2 = if (n2 >= 0) 1 else -1
         val n1H = (n1 * sgn1) ushr 32
@@ -249,7 +258,7 @@ class IRLowerer() {
         return ((n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)) * sgn1 * sgn2
     }
 
-    private fun highMul(n1 : Long, n2: Long) : Long {
+    private fun highMul(n1: Long, n2: Long): Long {
         // https://stackoverflow.com/questions/28868367/getting-the-high-part-of-64-bit-integer-multiplication
         val sgn1 = if (n1 >= 0) 1 else -1
         val sgn2 = if (n2 >= 0) 1 else -1
