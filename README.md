@@ -38,17 +38,17 @@ More `eth` flags can be found by accessing the native help page.
 We have constructed our own test cases that are compatible with `eth`.
 - **lexer** test cases:
 ```bash
-eth src/tests/lexer/errorScript -compilerpath ~/shared/production/
+eth ~/shared/production/src/tests/lexer/errorScript -compilerpath ~/shared/production/
 ```
 - **parser** test cases:
 ```bash
-eth src/tests/parser/parseScript -compilerpath ~/shared/production/
+eth ~/shared/production/src/tests/parser/parseScript -compilerpath ~/shared/production/
 ```
 - **typing** test cases:
 ```bash
-eth src/tests/typing/ethScript -compilerpath ~/shared/production/
+eth ~/shared/production/src/tests/typing/ethScript -compilerpath ~/shared/production/
 ```
 - **ir** test cases:
 ```bash
-eth src/tests/ir/ethScript -compilerpath ~/shared/production/
+eth s~/shared/production/rc/tests/ir/ethScript -compilerpath ~/shared/production/
 ```

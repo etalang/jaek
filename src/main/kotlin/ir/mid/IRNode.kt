@@ -7,7 +7,4 @@ import ir.lowered.LIRNode
 
 /** IRNode represents a node in the intermediate representation abstract syntax tree**/
 sealed class IRNode : InterRep() {
-    abstract val java: IRNode //TODO: REMOVE THIS ONCE WE LOWER!
-//    abstract val lower : LIRNode
-    //TODO: UNCOMMENT ABOVE ^
 }
