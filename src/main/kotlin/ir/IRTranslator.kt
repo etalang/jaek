@@ -59,7 +59,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
     fun irgen(optimize: Boolean = false): JIRNode {
         val mir = translateCompUnit(AST)
-        val lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
+        val lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
         return lir.java
     }
