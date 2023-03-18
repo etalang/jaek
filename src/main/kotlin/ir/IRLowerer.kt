@@ -191,7 +191,6 @@ class IRLowerer(val globals : List<String>) {
                 val (e1Stmts, e1) = lowerExpr(target.address)
                 val (e2Stmts, e2) = lowerExpr(arg)
                 if (commutes(e2Stmts, e1)){
-                    println("commuted")
                     returnList.addAll(e1Stmts)
                     returnList.addAll(e2Stmts)
                     returnList.add(LIRMove(LIRMem(e1), e2))
@@ -266,7 +265,6 @@ class IRLowerer(val globals : List<String>) {
                 }
                 else {
                     if (commutes(rightStmt, leftExpr)){
-                        println("commuted")
                         allStmts.addAll(leftStmt)
                         allStmts.addAll(rightStmt)
                         Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
