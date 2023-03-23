@@ -1,0 +1,17 @@
+#!/bin/sh
+
+WEBSEMESTER=2023sp
+XIRT=runtime.zip
+
+cd $(dirname $0)/..
+wget -nv -N http://www.cs.cornell.edu/courses/cs4120/$WEBSEMESTER/project/$XIRT
+if [ -f "$XIRT" ]; then
+    unzip -q $XIRT -d runtime
+    rm $XIRT
+    cd runtime
+    cp -frp release/* .
+    rm -rf release
+    make
+else
+    echo "Warning: runtime not updated"
+fi

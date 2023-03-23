@@ -1,0 +1,20 @@
+use curses
+use conv
+
+main(args: int[][]) {
+    initCurses()
+    clearWindow()
+    echoKeys(false)
+    moveCurser(20, 10)
+    x: int, y: int = getWindowSize()
+    putString("Hello, world at x: ")
+    putString(unparseInt(x))
+    putString(", and y: ")
+    putString(unparseInt(y))
+    putChar('.')
+    putStringAt("Press any key to exit (waiting for 3 seconds).", 20, 11)
+    refreshWindow()
+    inputTimeout(3000)
+    _ = getInputChar()
+    destroyCurses()
+}
