@@ -50,5 +50,5 @@ eth ~/shared/production/src/tests/typing/ethScript -compilerpath ~/shared/produc
 ```
 - **all** test cases:
 ```bash
-eth s~/shared/production/rc/tests/ir/ethScript -compilerpath ~/shared/production/
+eth ~/shared/production/src/tests/ir/ethScript -compilerpath ~/shared/production/
 ```
