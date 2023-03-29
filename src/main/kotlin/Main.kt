@@ -14,6 +14,7 @@ import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.TypeChecker
+import x86.Tiler
 import java.io.File
 import java.io.PrintWriter
 import java.nio.file.Path
@@ -91,6 +92,8 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
                 val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
+                // adding assembly file -- might be unsafe LOL
+                val assemblyFile : File = getOutFileName(it, absDiagnosticPath, ".s")
 
                 val ast: Node?
                 try {
@@ -108,13 +111,23 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                         context.getFunctions()
                                     )
                                     val ir = translator.irgen(!disableOpt)
+                                    // TODO: CHECK -- ADDED INTERMEDIATE STEP
+                                    val irFileGen = ir.java
                                     // we are sticking with the class IR rep, and do not implement irrun
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
-                                        ir.printSExp(writer)
+                                        irFileGen.printSExp(writer) // CHANGED HERE ALSO
                                         writer.flush()
                                         writer.close()
                                     }
+
+                                    // TODO: CHECK IF THE PIPELINING IS FINE HERE
+                                    val tiler = Tiler(ir)
+                                    val assembly = tiler.tile()
+
+                                    // print to file.s
+                                    assemblyFile.writeText(assembly.toString())
+
                                 }
 
                                 is Interface -> {

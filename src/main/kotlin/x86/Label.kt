@@ -1,5 +1,6 @@
 package x86
 
-class Label {
+/** Labels as instructions refer only to labels that are referenced within function blocks. */
+class Label(val name : String) : Instruction() {
 
 }
