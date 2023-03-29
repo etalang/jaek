@@ -6,6 +6,7 @@ src/main/java/parser.java
 *.lexed
 *.typed
 *.ir
+*.s
 
 # Compiled class file
 *.class
