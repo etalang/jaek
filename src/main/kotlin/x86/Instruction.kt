@@ -1,26 +1,35 @@
 package x86
 
 sealed class Instruction {
-    class MOV(val d : Destination, val s : Source) : Instruction() {
+    class MOV(val dest : Destination, val src : Source) : Instruction() {
         override fun toString(): String {
-            return "mov $d, $s" // this might require like a "QWORD PTR" somewhere
+            return "mov $dest, $src" // this might require like a "QWORD PTR" somewhere
         }
     }
 
-    // TODO: think about organization of arithmetic/logical operations -- should it follow how jumps are organized below?
-    // don't really know how to organize arithmetic/logic insns
-    enum class ArithType {
-        ADD, SUB, MUL, DIV, INC, DEC, LEA
-    }
-    sealed class Arith(val type : ArithType, val dest : Destination, val operand : Source ) : Instruction() {
+    sealed class Arith(val dest : Destination, val src : Source) : Instruction() {
+        class ADD(dest : Destination, src : Source) : Arith(dest, src)
+
+        class SUB(dest : Destination, src : Source) : Arith(dest, src)
+
+        class MUL(dest : Destination, src : Source) : Arith(dest, src)
+
+        class DIV(dest : Destination, src : Source) : Arith(dest, src)
+
+        class LEA(dest : Destination, src : Source) : Arith(dest, src)
 
     }
 
-    enum class LogicType {
-        AND, OR, NOT, XOR, SHL, SHR
-    }
+    sealed class Logic(val dest : Destination, val src : Source) : Instruction() {
+        class AND(dest : Destination, src : Source) : Logic(dest, src)
 
-    sealed class Logic(val type : LogicType, val dest : Destination, val operand : Source) : Instruction() {
+        class OR(dest : Destination, src : Source) : Logic(dest, src)
+
+        class XOR(dest : Destination, src : Source) : Logic(dest, src)
+
+        class SHL(dest : Destination, src : Source) : Logic(dest, src)
+
+        class SHR(dest : Destination, src : Source) : Logic(dest, src)
 
     }
 
@@ -57,9 +66,9 @@ sealed class Instruction {
     class CALL(val label : Label) : Instruction() // ?
 
     // TODO: are these objects OK??
-    object RET : Instruction()
+    class RET : Instruction()
 
-    object NOP : Instruction() {
+    class NOP : Instruction() {
         override fun toString(): String {
             return "nop"
         }
