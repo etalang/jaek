@@ -8,6 +8,7 @@ import ir.mid.IRExpr.*
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
+import ir.optimize.ConstantFolder
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
@@ -20,8 +21,9 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
     fun irgen(optimize: Boolean = false): JIRNode {
         val mir = translateCompUnit(AST)
-        val lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
+        var lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
+        lir = ConstantFolder().apply(lir);
         return lir.java
     }
 

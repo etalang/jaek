@@ -18,6 +18,10 @@ class LIRCompUnit(
         return "\$B$freshLabelCount"
     }
 
+    fun constantFold() {
+        TODO("Not yet implemented")
+    }
+
     override val java: JIRCompUnit
         get() {
             val _java = factory.IRCompUnit(
