@@ -17,17 +17,23 @@ sealed class IROptimizer {
 
     protected open fun applyFlatStmt(node: LIRStmt.FlatStmt): LIRStmt.FlatStmt {
         return when (node) {
-            is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(applyExpr(node.guard), node.trueBranch, node.falseBranch)
+            is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(applyExpr(node.guard), applyLabel(node.trueBranch),
+                node.falseBranch?.let { applyLabel(it) })
+
             is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyExpr(node.address))
             is LIRStmt.LIRReturn -> LIRStmt.LIRReturn(node.valList.map { applyExpr(it) })
-            is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), node.trueBranch)
+            is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), applyLabel(node.trueBranch))
             is LIRStmt.LIRCallStmt -> LIRStmt.LIRCallStmt(applyExpr(node.target),
                 node.n_returns,
                 node.args.map { applyExpr(it) })
 
-            is LIRStmt.LIRLabel -> node
+            is LIRStmt.LIRLabel -> applyLabel(node)
             is LIRStmt.LIRMove -> LIRStmt.LIRMove(applyExpr(node.dest), applyExpr(node.expr))
         }
+    }
+
+    protected open fun applyLabel(node: LIRStmt.LIRLabel): LIRStmt.LIRLabel {
+        return node;
     }
 
     protected open fun applyExpr(node: LIRExpr): LIRExpr {
