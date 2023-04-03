@@ -25,7 +25,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         var lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
         lir = ConstantFolder().apply(lir);
-        return lir.java
+        return lir
     }
 
     private fun freshLabel(): IRLabel {

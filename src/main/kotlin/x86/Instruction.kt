@@ -8,7 +8,9 @@ sealed class Instruction {
     }
 
     sealed class Arith(val dest : Destination, val src : Source) : Instruction() {
-        class ADD(dest : Destination, src : Source) : Arith(dest, src)
+        class ADD(dest : Destination, src : Source) : Arith(dest, src) {
+
+        }
 
         class SUB(dest : Destination, src : Source) : Arith(dest, src)
 
