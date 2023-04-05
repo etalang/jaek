@@ -6,10 +6,19 @@ import ir.mid.IRExpr
 
 class Tiler(val IR: LIRCompUnit) {
     private var freshRegisterCount = 0
+    private val jumpTiles = listOf<Tile.RootTile>()
+    private val returnTiles = listOf<Tile.RootTile>()
+    private val cjumpTiles = listOf<Tile.RootTile>()
+    private val moveTiles = listOf<Tile.RootTile>()
+    private val callTiles = listOf<Tile.RootTile>()
+    private val exprTiles = listOf<Tile.ExprTile>(
+
+    )
+
 
     private fun freshRegister(): Register {
         freshRegisterCount++
-        return Register.Abstract("\$A${freshRegisterCount}")
+        return Register.Abstract("\$A$freshRegisterCount")
     }
 
     fun tile() : x86CompUnit {
@@ -41,63 +50,113 @@ class Tiler(val IR: LIRCompUnit) {
         return insns
     }
 
+    private var memoizedExprs : MutableMap<LIRExpr, Pair<Int, List<Instruction>>> = mutableMapOf()
+
     // TODO: IMPLEMENT TILING (HARD)
     private fun tileTree(n : LIRStmt.FlatStmt) : List<Instruction> {
-        // pattern matching here directly ugly as hell
-        return when (n) {
+        // clear the memoization table before each new tiling of a statement
+        memoizedExprs = mutableMapOf()
+        val rootTiles = when (n) {
             is LIRStmt.LIRCJump -> throw Exception("Un-block-reordered IR")
-            is LIRStmt.LIRJump -> tileJump(n)
-            is LIRStmt.LIRReturn -> tileReturn(n)
-            is LIRStmt.LIRTrueJump -> tileTrueJump(n)
-            is LIRStmt.LIRCallStmt -> tileCallStmt(n)
-            is LIRStmt.LIRLabel -> mutableListOf(Label(n.l))
-            is LIRStmt.LIRMove -> tileMove(n)
+            is LIRStmt.LIRLabel -> return listOf(Label(n.l))
+            is LIRStmt.LIRJump -> jumpTiles
+            is LIRStmt.LIRReturn -> returnTiles
+            is LIRStmt.LIRTrueJump -> cjumpTiles
+            is LIRStmt.LIRCallStmt -> callTiles
+            is LIRStmt.LIRMove -> moveTiles
         }
-    }
 
-    // TODO: ADD ALL THE TILES YOU LIKE IN THESE HELPER FUNCTIONS
-    private fun tileJump(n : LIRStmt.LIRJump) : List<Instruction> {
-        return mutableListOf(Instruction.NOP())
-    }
+        var minCost = Int.MAX_VALUE
+        var minInsns = listOf<Instruction>()
+        for (t in rootTiles) {
+            val (b, trees) = t.pattern(n)
+            if (b) {
+                var currCost = t.cost
+                val currInsns = mutableListOf<Instruction>()
+                val edges = mutableListOf<Register>()
+                for (subtree in trees) {
+                    val cost : Int
+                    val insns : List<Instruction>
+                    val regEdge = freshRegister()
+                    edges.add(regEdge)
+                    if (subtree in memoizedExprs.keys) {
+                        // this should never throw an exception, for I have literally just checked it
+                        memoizedExprs[subtree]!!.let{ (c, il) -> cost = c; insns = il}
+                    }
+                    else {
+                        tileExprSubtree(subtree, regEdge).let{ (c, il) -> cost = c; insns = il  }
+                        memoizedExprs[subtree] = Pair(cost, insns)
+                    }
+                    currCost += cost
+                    currInsns.addAll(insns)
+                }
+                // convert the current tile into instructions using the register
+                val tileInsns = t.instructions(edges)
+                currInsns.addAll(tileInsns)
+                if (currCost < minCost) {
+                    minCost = currCost
+                    minInsns = currInsns
+                }
+            }
+        }
+        return minInsns
 
-    private fun tileReturn(n : LIRStmt.LIRReturn) : List<Instruction> {
-        return mutableListOf(Instruction.NOP())
-    }
-
-    private fun tileTrueJump(n : LIRStmt.LIRTrueJump) : List<Instruction> {
-        return mutableListOf(Instruction.NOP())
-    }
-
-    private fun tileCallStmt(n : LIRStmt.LIRCallStmt) : List<Instruction> {
-        return mutableListOf(Instruction.NOP())
-    }
-
-    private fun tileMove(n : LIRStmt.LIRMove) : List<Instruction> {
-        return mutableListOf(Instruction.NOP())
     }
 
     /** tileExprSubtree(n) does the heavy lifting to tile expression subtrees */
-    private fun tileExprSubtree(n : LIRExpr) : Pair<Register, List<Instruction>> {
-        val reg = freshRegister()
-        when (n) {
-            is LIRExpr.LIRConst -> {
-                return Pair(reg,
-                    mutableListOf(Instruction.MOV(
-                        Destination.RegisterDest(reg), Source.ConstSrc(n.value))))
-            }
-            is LIRExpr.LIRMem -> { // TODO: recursive call here
-                return Pair(reg,
-                    mutableListOf(Instruction.MOV(
-                        Destination.RegisterDest(reg), Source.ConstSrc(0))))
-            }
-            is LIRExpr.LIRName -> TODO()
-            is LIRExpr.LIROp -> TODO()
-            is LIRExpr.LIRTemp -> {
-                return Pair(reg,
-                    mutableListOf(Instruction.MOV(
-                        Destination.RegisterDest(reg), Source.RegisterSrc(Register.Abstract(n.name)))))
+    private fun tileExprSubtree(n : LIRExpr, reg : Register) : Pair<Int, List<Instruction>>  {
+        if (memoizedExprs.contains(n)) {
+            return memoizedExprs[n]!!
+        }
+        else {
+            when (n) {
+                is LIRExpr.LIRName -> throw Exception("should never be trying to tile a name on its own")
+                // explicit base cases where there's nothing to do
+                is LIRExpr.LIRConst -> {
+                    val movInsn = Instruction.MOV(Destination.RegisterDest(reg), Source.ConstSrc(n.value))
+                    val costPair = Pair(1, listOf(movInsn))
+                    memoizedExprs[n] = costPair
+                    return costPair
+                }
+                is LIRExpr.LIRTemp -> {
+                    val movInsn = Instruction.MOV(Destination.RegisterDest(reg),
+                        Source.RegisterSrc(Register.Abstract(n.name)))
+                    val costPair = Pair(1, listOf(movInsn))
+                    memoizedExprs[n] = costPair
+                    return costPair
+                }
+                else -> {
+                    var minCost = Int.MAX_VALUE
+                    var minInsns = listOf<Instruction>()
+                    for (tile in exprTiles) {
+                        val (b, trees) = tile.pattern(n)
+                        if (b) {
+                            var currCost = tile.cost
+                            val currInsns = mutableListOf<Instruction>()
+                            val edges = mutableListOf<Register>()
+                            for (subtree in trees) {
+                                val regEdge = freshRegister()
+                                edges.add(regEdge)
+                                val (cost, insns) = tileExprSubtree(subtree, regEdge)
+                                currCost += cost
+                                currInsns.addAll(insns)
+                            }
+                            // convert the current tile into instructions using the register
+                            val tileInsns = tile.instructions(reg, edges)
+                            currInsns.addAll(tileInsns)
+                            if (currCost < minCost) {
+                                minCost = currCost
+                                minInsns = currInsns
+                            }
+                        }
+                    }
+                    val costData = Pair(minCost, minInsns)
+                    memoizedExprs[n] = costData
+                    return costData
+                }
             }
         }
     }
+
 
 }
