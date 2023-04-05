@@ -201,3 +201,11 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     swaparr.eta;
     euclid.eta;
 }
+
+etac ("Test --irgen") ["../ir-fix-tests"] "-libpath $(testpath) --irgen" {
+    assign06ir.eta;
+    binary10.eta;
+    localdecl13.eta;
+    localdecl14.eta;
+    medley.eta;
+}
