@@ -27,5 +27,5 @@ jobs:
           unzip /home/student/shared/submission.zip -d /home/student/shared/production
 
       - name: Simulate vm tests
-        working-directory: /home/student/shared/
-        run: ls -l
+        working-directory: /home/student/shared/production/
+        run: eth ~/shared/production/src/tests/ir/ethScript -compilerpath ~/shared/production/
