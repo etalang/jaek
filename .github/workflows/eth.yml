@@ -1,0 +1,31 @@
+name: eth
+
+on:
+#   push:
+#   pull_request:
+#     branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  eth:
+    runs-on: ubuntu-latest
+    container:
+      image: charlessherk/cs4120-vm:latest
+      volumes:
+        - /docker-data:/home/student/shared
+      options: --user root
+      
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Package source code
+        run: |
+          make
+          ls -l
+          mv submission.zip /home/student/shared
+          unzip /home/student/shared/submission.zip -d /home/student/shared/production
+
+      - name: Simulate vm tests
+        working-directory: /home/student/shared/
+        run: ls -l
