@@ -18,7 +18,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-
+      
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.6
+          
       - name: Package source code
         run: |
           make
@@ -26,6 +30,10 @@ jobs:
           mv submission.zip /home/student/shared
           unzip /home/student/shared/submission.zip -d /home/student/shared/production
 
-      - name: Simulate vm tests
-        working-directory: /home/student/shared/production/
-        run: eth ~/shared/production/src/tests/ir/ethScript -compilerpath ~/shared/production/
+      - name: Run vm tests
+        working-directory: /home/student/
+        run: eth /home/student/eth/tests/pa4/ethScript -ec -noout -compilerpath /home/student/shared/production/
+        
+      - name: Run custom tests
+        working-directory: /home/student/
+        run: eth /home/student/shared/production/src/tests/ir/ethScript -ec -noout -compilerpath /home/student/shared/production/
