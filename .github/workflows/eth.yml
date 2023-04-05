@@ -1,9 +1,10 @@
 name: eth
 
 on:
-#   push:
-#   pull_request:
-#     branches: [ "main" ]
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
@@ -26,7 +27,6 @@ jobs:
       - name: Package source code
         run: |
           make
-          ls -l
           mv submission.zip /home/student/shared
           unzip /home/student/shared/submission.zip -d /home/student/shared/production
 
