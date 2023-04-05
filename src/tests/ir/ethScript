@@ -55,6 +55,8 @@ etac ("Test --parse") ["../parser"] "--parse" {
     arrayliteralaccess.eta;
     arrayliteralaccessadd.eta;
     blocksinblocks.eta;
+    blocksthenblocks.eta;
+    blockscomplex.eta;
     booleanprecedence.eta;
     earlyreturn.eta (Syntax, "a");
     exampleprogram.eta;

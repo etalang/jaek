@@ -1,0 +1,4 @@
+(()
+ ((foo () ()
+   (((a int) (= (b int) 5) ((c int) () (d int)) ((f int)) () (e int) ())))))
+
