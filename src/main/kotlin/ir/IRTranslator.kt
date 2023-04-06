@@ -24,7 +24,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         val mir = translateCompUnit(AST)
         var lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
-        lir = ConstantFolder().apply(lir);
+        lir = ConstantFolder().apply(lir)
         return lir
     }
 

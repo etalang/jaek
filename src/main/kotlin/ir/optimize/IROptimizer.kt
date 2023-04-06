@@ -20,7 +20,7 @@ sealed class IROptimizer {
             is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(applyExpr(node.guard), applyLabel(node.trueBranch),
                 node.falseBranch?.let { applyLabel(it) })
 
-            is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyExpr(node.address))
+            is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyExpr(node.address) as LIRExpr.LIRName) // you didn't see anything
             is LIRStmt.LIRReturn -> LIRStmt.LIRReturn(node.valList.map { applyExpr(it) })
             is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), applyLabel(node.trueBranch))
             is LIRStmt.LIRCallStmt -> LIRStmt.LIRCallStmt(applyExpr(node.target),

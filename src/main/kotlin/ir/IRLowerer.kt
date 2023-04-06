@@ -127,7 +127,10 @@ class IRLowerer(val globals: List<String>) {
                 val (addrStmts, guardExpr) = lowerExpr(n.address)
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 stmts.addAll(addrStmts)
-                stmts.add(LIRJump(guardExpr))
+                if (guardExpr is LIRName)
+                    stmts.add(LIRJump(guardExpr))
+                else
+                    throw Exception("name metamorphosed into a caterpillar")
                 stmts
             }
 

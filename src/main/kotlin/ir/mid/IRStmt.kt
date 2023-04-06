@@ -1,6 +1,7 @@
 package ir.mid
 
 import edu.cornell.cs.cs4120.etac.ir.IRCall
+import ir.mid.IRExpr.IRName
 import edu.cornell.cs.cs4120.etac.ir.IRCJump as JIRCJump
 import edu.cornell.cs.cs4120.etac.ir.IRExp as JIRExp
 import edu.cornell.cs.cs4120.etac.ir.IRJump as JIRJump
@@ -26,7 +27,7 @@ sealed class IRStmt : IRNode() {
     }
 
     /** IRJump represents a jump to address [address] **/
-    class IRJump(val address: IRExpr) : IRStmt() {
+    class IRJump(val address: IRName) : IRStmt() {
         override val java: JIRJump = factory.IRJump(address.java)
 
     }

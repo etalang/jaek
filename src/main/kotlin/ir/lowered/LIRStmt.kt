@@ -24,7 +24,7 @@ sealed class LIRStmt : LIRNode() {
      *
      * IMPORTANT INVARIANT: ANY INSTANCES OF [LIRExpr.LIRName] MUST BE IMMEDIATELY IN [address]
      * **/
-    class LIRJump(val address: LIRExpr) : EndBlock() {
+    class LIRJump(val address: LIRExpr.LIRName) : EndBlock() {
         override val java: JIRJump = factory.IRJump(address.java)
     }
 
