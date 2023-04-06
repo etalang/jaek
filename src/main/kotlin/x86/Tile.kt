@@ -5,12 +5,10 @@ import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 import ir.lowered.LIRExpr
 import ir.lowered.LIRNode
 import ir.lowered.LIRStmt
+import ir.lowered.LIRStmt.*
 import ir.lowered.LIRStmt.FlatStmt
 
 sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<LIRExpr>>) {
-
-
-//    abstract fun patternMatch
     /*
     * // suppose tree = LIRNode we care about
     * // suppose tilemap = map of tiles organized by roots
@@ -31,7 +29,8 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
     * RootTile(17, (lambda x -> ))
     * */
 
-    sealed class RootTile(cost : Int, pattern : (FlatStmt) -> Pair<Boolean, List<LIRExpr>>) : Tile(cost,
+    sealed class RootTile(cost : Int, pattern : (FlatStmt) -> Pair<Boolean, List<LIRExpr>>,
+        val instructions : (FlatStmt, List<Register>) -> List<Instruction>) : Tile(cost,
         {
             when(it) {
                 is FlatStmt -> pattern(it)
@@ -39,26 +38,68 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
             }
         }
     ) {
-        abstract fun instructions(children: List<Register>) : List<Instruction>
 
-        class MoveTile(cost : Int, pattern : (LIRStmt.LIRMove) -> Pair<Boolean, List<LIRExpr>>) : RootTile(cost,
+        class MoveTile(cost : Int, pattern : (LIRMove) -> Pair<Boolean, List<LIRExpr>>,
+            instructions: (LIRMove, List<Register>) -> List<Instruction>) : RootTile(cost,
             {
                 when(it) {
-                    is LIRStmt.LIRMove -> pattern(it)
+                    is LIRMove -> pattern(it)
                     else -> false to listOf()
                 }
-            }
-        ) {
-            override fun instructions(children: List<Register>) : List<Instruction> {
-                return emptyList()
-            }
-        }
+            },
+            { lirmove, reglst ->
+                when (lirmove) {
+                    is LIRMove -> instructions(lirmove, reglst)
+                    else -> listOf()
+                }
+            })
 
+        class JumpTile(cost : Int, pattern : (LIRJump) -> Pair<Boolean, List<LIRExpr>>,
+                       instructions: (LIRJump, List<Register>) -> List<Instruction>) : RootTile(cost,
+            {
+                when(it) {
+                    is LIRJump -> pattern(it)
+                    else -> false to listOf()
+                }
+            }, { lirjump, reglst ->
+                when (lirjump) {
+                    is LIRJump -> instructions(lirjump, reglst)
+                    else -> listOf()
+                }
+            })
 
+        class CJumpTile(cost : Int, pattern : (LIRTrueJump) -> Pair<Boolean, List<LIRExpr>>,
+                       instructions: (LIRTrueJump, List<Register>) -> List<Instruction>) : RootTile(cost,
+            {
+                when(it) {
+                    is LIRTrueJump -> pattern(it)
+                    else -> false to listOf()
+                }
+            }, { lircjump, reglst ->
+                when (lircjump) {
+                    is LIRTrueJump -> instructions(lircjump, reglst)
+                    else -> listOf()
+                }
+            })
+
+        class ReturnTile(cost : Int, pattern : (LIRReturn) -> Pair<Boolean, List<LIRExpr>>,
+                        instructions: (LIRReturn, List<Register>) -> List<Instruction>) : RootTile(cost,
+            {
+                when(it) {
+                    is LIRReturn -> pattern(it)
+                    else -> false to listOf()
+                }
+            }, { lirret, reglst ->
+                when (lirret) {
+                    is LIRReturn -> instructions(lirret, reglst)
+                    else -> listOf()
+                }
+            })
     }
 
 
-    sealed class ExprTile(cost : Int, pattern : (LIRExpr) -> Pair<Boolean, List<LIRExpr>>) : Tile(cost,
+    sealed class ExprTile(cost : Int, pattern : (LIRExpr) -> Pair<Boolean, List<LIRExpr>>,
+        val instructions : (Register, List<Register>) -> List<Instruction>) : Tile(cost,
         {
             when(it) {
                 is LIRExpr -> pattern(it)
@@ -66,98 +107,58 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
             }
         }
         ) {
-        abstract fun instructions (parent : Register, children : List<Register>) : List<Instruction>
 
-
-        class OpTile(val op : OpType, cost : Int, pattern : (LIRExpr.LIROp) -> Pair<Boolean, List<LIRExpr>>) : ExprTile(cost,
+        class OpTile(cost : Int, pattern : (LIRExpr.LIROp) -> Pair<Boolean, List<LIRExpr>>,
+            instructions : (Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
         {
             when(it) {
                 is LIRExpr.LIROp -> pattern(it)
                 else -> false to listOf()
             }
-        }
-        ) {
-            override fun instructions(parent : Register, children: List<Register>) : List<Instruction> {
-                return when(op) {
-                    ADD -> TODO()
-                    SUB -> TODO()
-                    MUL -> TODO()
-                    HMUL -> TODO()
-                    DIV -> TODO()
-                    MOD -> TODO()
-                    AND -> TODO()
-                    OR -> TODO()
-                    XOR -> TODO()
-                    LSHIFT -> TODO()
-                    RSHIFT -> TODO()
-                    ARSHIFT -> TODO()
-                    EQ -> TODO()
-                    NEQ -> TODO()
-                    LT -> TODO()
-                    ULT -> TODO()
-                    GT -> TODO()
-                    LEQ -> TODO()
-                    GEQ -> TODO()
-                }
-//                listOf<Instruction>(
-//
-//                )
-            }
+        },
+            instructions)
+//        {
+//            override fun instructions(parent : Register, children: List<Register>) : List<Instruction> {
+//                return when(op) {
+//                    ADD -> TODO()
+//                    SUB -> TODO()
+//                    MUL -> TODO()
+//                    HMUL -> TODO()
+//                    DIV -> TODO()
+//                    MOD -> TODO()
+//                    AND -> TODO()
+//                    OR -> TODO()
+//                    XOR -> TODO()
+//                    LSHIFT -> TODO()
+//                    RSHIFT -> TODO()
+//                    ARSHIFT -> TODO()
+//                    EQ -> TODO()
+//                    NEQ -> TODO()
+//                    LT -> TODO()
+//                    ULT -> TODO()
+//                    GT -> TODO()
+//                    LEQ -> TODO()
+//                    GEQ -> TODO()
+//                }
+//            }
 
         }
 
-        class MemTile(cost : Int, pattern : (LIRExpr.LIRMem) -> Pair<Boolean, List<LIRExpr>>) : ExprTile(cost,
+        class MemTile(cost : Int, pattern : (LIRExpr.LIRMem) -> Pair<Boolean, List<LIRExpr>>,
+            instructions: (Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
             {
                 when(it) {
                     is LIRExpr.LIRMem -> pattern(it)
                     else -> false to listOf()
                 }
-            }
-        ) {
-            override fun instructions(parent: Register, children: List<Register>): List<Instruction> {
-                return listOf(
-                    Instruction.MOV(Destination.RegisterDest(parent), Source.MemorySrc(Memory(children[0], null)))
-                )
-            }
-        }
+            }, instructions) {
+//            override fun instructions(parent: Register, children: List<Register>): List<Instruction> {
+//                return listOf(
+//                    Instruction.MOV(Destination.RegisterDest(parent), Source.MemorySrc(Memory(children[0], null)))
+//                )
+//            }
+//        }
 
     }
-
-
-//    fun matchStmt(n1 : FlatStmt, n2 : FlatStmt) : Boolean {
-//        when (n1) {
-//            is LIRStmt.LIRCJump -> throw Exception("unreachable, blocks not reordered")
-//            is LIRStmt.LIRJump -> {
-//                return if (n2 !is LIRStmt.LIRJump) false
-//                else {
-//                    matchExpr(n1.address, n2.address)
-//                }
-//            }
-//            is LIRStmt.LIRReturn -> {
-//                if (n2 !is LIRStmt.LIRReturn) return false
-//                else {
-//                    if (n1.valList.size != n2.valList.size) {
-//                        return false
-//                    }
-//                    else {
-//                        for (idx in 0 until n1.valList.size) {
-//                            if (!matchExpr(n1.valList[idx], n2.valList[idx])) return false
-//                        }
-//                        return true
-//                    }
-//                }
-//            }
-//            is LIRStmt.LIRTrueJump -> TODO()
-//            is LIRStmt.LIRCallStmt -> {
-//                return true // this is fake
-//            }
-//            is LIRStmt.LIRLabel -> TODO()
-//            is LIRStmt.LIRMove -> TODO()
-//        }
-//    }
-
-//    fun matchExpr(n1 : LIRExpr, n2 : LIRExpr) : Boolean {
-//
-//    }
 
 }

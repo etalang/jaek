@@ -1,25 +1,102 @@
 package x86
 
+import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import ir.IRData
 import ir.lowered.*
 import ir.mid.IRExpr
+import ir.lowered.LIRStmt.*
+import x86.Tile.*
+import x86.Tile.RootTile.*
+import x86.Instruction.*
+import x86.Instruction.Jump.*
+import x86.Destination.*
+import x86.Register.*
+import x86.Source.*
+import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 
 class Tiler(val IR: LIRCompUnit) {
     private var freshRegisterCount = 0
-    private val jumpTiles = listOf<Tile.RootTile>()
-    private val returnTiles = listOf<Tile.RootTile>()
-    private val cjumpTiles = listOf<Tile.RootTile>()
-    private val moveTiles = listOf<Tile.RootTile>()
-    private val callTiles = listOf<Tile.RootTile>()
-    private val exprTiles = listOf<Tile.ExprTile>(
-
-    )
-
-
     private fun freshRegister(): Register {
         freshRegisterCount++
         return Register.Abstract("\$A$freshRegisterCount")
     }
+
+    // TILE DEFINITIONS
+    private val jumpTiles = listOf<JumpTile>(
+        JumpTile(1, { Pair(true, listOf()) }, {
+            lirjump, _ ->
+            listOf(JMP(Location(Label(lirjump.address.l, false))))
+        })
+    )
+    private val returnTiles = listOf<ReturnTile>(
+        ReturnTile(1,
+            { Pair(true, it.valList) },
+            { lirret, reglst ->
+                // PRECONDITION: lirret and reglst have the same length
+                val insns = mutableListOf<Instruction>()
+                if (lirret.valList.isNotEmpty()) { // single return
+                    insns.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(reglst[0])))
+                }
+                if (lirret.valList.size > 1) { // multireturn
+                    insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[1])))
+                }
+                if (lirret.valList.size > 2) { // begin da push
+                    for (i in lirret.valList.size - 1 downTo 3 )
+                        insns.add(MOV(
+                            MemoryDest(Memory(x86(x86Name.RDI), null,
+                                offset= (8*(lirret.valList.size - 1 - i)).toLong())),
+                            RegisterSrc(reglst[i])))
+                }
+                // TODO: test whether this works/ensure that the invariants are preserved so that this works
+                insns.add(LEAVE())
+                insns.add(RET())
+                insns
+            }
+        )
+    )
+    private val cjumpTiles = listOf<CJumpTile>(
+        CJumpTile(2,
+            { Pair(true, listOf(it.guard)) },
+            { lircjump, reglst ->
+                listOf(
+                    TEST(reglst[0], reglst[0]),
+                    JNZ(Location(Label(lircjump.trueBranch.l, false)))) })
+    )
+    private val moveTiles = listOf<MoveTile>(
+        // base tile
+        MoveTile(1,
+            { lirMove: LIRMove ->
+                Pair(true, listOf(lirMove.dest, lirMove.expr))
+            },
+            { _, it ->
+                listOf(MOV(RegisterDest(it[0]), RegisterSrc(it[1])))
+            }
+        )
+    )
+    private val callTiles = listOf<RootTile>(
+
+    )
+    private val exprTiles = listOf<ExprTile>(
+        ExprTile.OpTile(
+            2,
+            {
+                if (it.op == ADD) {
+                    Pair(true, listOf(it.left, it.right))
+                } else Pair(false, listOf())
+            },
+            {
+                parent, children ->
+                listOf(
+                    MOV(RegisterDest(parent), RegisterSrc(children[0])),
+                    Arith.ADD(RegisterDest(parent), RegisterSrc(children[1]))
+                )
+            }
+        )
+
+    )
+
+
+
 
     fun tile() : x86CompUnit {
         return tileCompUnit(IR)
@@ -53,17 +130,17 @@ class Tiler(val IR: LIRCompUnit) {
     private var memoizedExprs : MutableMap<LIRExpr, Pair<Int, List<Instruction>>> = mutableMapOf()
 
     // TODO: IMPLEMENT TILING (HARD)
-    private fun tileTree(n : LIRStmt.FlatStmt) : List<Instruction> {
+    private fun tileTree(n : FlatStmt) : List<Instruction> {
         // clear the memoization table before each new tiling of a statement
         memoizedExprs = mutableMapOf()
         val rootTiles = when (n) {
-            is LIRStmt.LIRCJump -> throw Exception("Un-block-reordered IR")
-            is LIRStmt.LIRLabel -> return listOf(Label(n.l))
-            is LIRStmt.LIRJump -> jumpTiles
-            is LIRStmt.LIRReturn -> returnTiles
-            is LIRStmt.LIRTrueJump -> cjumpTiles
-            is LIRStmt.LIRCallStmt -> callTiles
-            is LIRStmt.LIRMove -> moveTiles
+            is LIRCJump -> throw Exception("Un-block-reordered IR")
+            is LIRLabel -> return listOf(Label(n.l, true))
+            is LIRJump -> jumpTiles
+            is LIRReturn -> returnTiles
+            is LIRTrueJump -> cjumpTiles
+            is LIRCallStmt -> callTiles
+            is LIRMove -> moveTiles
         }
 
         var minCost = Int.MAX_VALUE
@@ -91,7 +168,7 @@ class Tiler(val IR: LIRCompUnit) {
                     currInsns.addAll(insns)
                 }
                 // convert the current tile into instructions using the register
-                val tileInsns = t.instructions(edges)
+                val tileInsns = t.instructions(n, edges)
                 currInsns.addAll(tileInsns)
                 if (currCost < minCost) {
                     minCost = currCost
@@ -110,17 +187,18 @@ class Tiler(val IR: LIRCompUnit) {
         }
         else {
             when (n) {
-                is LIRExpr.LIRName -> throw Exception("should never be trying to tile a name on its own")
+                is LIRExpr.LIRName -> { throw Exception("shouldn't be able to tile a name")
+//                    return Pair(0, listOf(Label(n.l, false)))
+                }
                 // explicit base cases where there's nothing to do
                 is LIRExpr.LIRConst -> {
-                    val movInsn = Instruction.MOV(Destination.RegisterDest(reg), Source.ConstSrc(n.value))
+                    val movInsn = MOV(RegisterDest(reg), ConstSrc(n.value))
                     val costPair = Pair(1, listOf(movInsn))
                     memoizedExprs[n] = costPair
                     return costPair
                 }
                 is LIRExpr.LIRTemp -> {
-                    val movInsn = Instruction.MOV(Destination.RegisterDest(reg),
-                        Source.RegisterSrc(Register.Abstract(n.name)))
+                    val movInsn = MOV(RegisterDest(reg), RegisterSrc(Register.Abstract(n.name)))
                     val costPair = Pair(1, listOf(movInsn))
                     memoizedExprs[n] = costPair
                     return costPair

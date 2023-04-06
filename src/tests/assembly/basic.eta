@@ -1,5 +1,8 @@
+a : int = 5
+c : bool = true
+
 f(){
-    if (true) {
-        a : int = 5
+    if (c) {
+        b : int = a + 1
     }
 }

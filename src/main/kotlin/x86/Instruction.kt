@@ -9,7 +9,9 @@ sealed class Instruction {
 
     sealed class Arith(val dest : Destination, val src : Source) : Instruction() {
         class ADD(dest : Destination, src : Source) : Arith(dest, src) {
-
+            override fun toString(): String {
+                return "add $dest, $src"
+            }
         }
 
         class SUB(dest : Destination, src : Source) : Arith(dest, src)
@@ -39,26 +41,38 @@ sealed class Instruction {
     // the arity is correct, but the types are hella wrong below:
     class CMP(val reg1 : Register, val reg2 : Register) : Instruction()
 
-    class TEST(val reg1: Register, val reg2: Register) : Instruction()
+    class TEST(val reg1: Register, val reg2: Register) : Instruction() {
+        override fun toString(): String {
+            return "test $reg1, $reg2"
+        }
+    }
 
-    sealed class JMP(val reg: Register) : Instruction() {
-        class JE(reg : Register) : JMP(reg) {
+    sealed class Jump(val loc: Location) : Instruction() {
+        class JMP(loc : Location) : Jump(loc) {
             override fun toString(): String {
-                return "je $reg"
+                return "jmp $loc"
+            }
+        }
+        class JE(loc : Location) : Jump(loc) {
+            override fun toString(): String {
+                return "je $loc"
             }
         }
         // TODO: implement toString for all other jumps
 
-        class JNE(reg: Register) : JMP(reg)
-        class JL(reg: Register) : JMP(reg)
-        class JLE(reg: Register) : JMP(reg)
+        class JNE(loc: Location) : Jump(loc)
+        class JL(loc: Location) : Jump(loc)
+        class JLE(loc: Location) : Jump(loc)
 
-        class JG(reg: Register) : JMP(reg)
-        class JGE(reg: Register) : JMP(reg)
+        class JG(loc: Location) : Jump(loc)
+        class JGE(loc: Location) : Jump(loc)
 
-        class JZ(reg: Register) : JMP(reg)
-        class JNZ(reg: Register) : JMP(reg)
-
+        class JZ(loc: Location) : Jump(loc)
+        class JNZ(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jnz $loc"
+            }
+        }
     }
 
     class PUSH(val arg : Register) : Instruction()
@@ -67,8 +81,23 @@ sealed class Instruction {
 
     class CALL(val label : Label) : Instruction() // ?
 
-    // TODO: are these objects OK??
-    class RET : Instruction()
+    class ENTER(val bytes : Long) : Instruction() {
+        override fun toString(): String {
+            return "enter $bytes, 0"
+        }
+    }
+
+    class LEAVE : Instruction() {
+        override fun toString(): String {
+            return "leave"
+        }
+    }
+
+    class RET : Instruction() {
+        override fun toString(): String {
+            return "ret"
+        }
+    }
 
     class NOP : Instruction() {
         override fun toString(): String {
