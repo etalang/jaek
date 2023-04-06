@@ -52,6 +52,12 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to place generated diagnostic files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val diagnosticRelPath: String by dOpt
+    private val assemOpt = option(
+        "-d",
+        metavar = "<folder>",
+        help = "Specify where to place generated assembly files. " + "Default is the current working directory. The directory is expected to exist."
+    ).default(System.getProperty("user.dir"))
+    private val assemblyRelPath: String by assemOpt
     private val sourceOpt = option(
         "-sourcepath",
         metavar = "<folder>",
@@ -75,6 +81,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)
+        val absAssemPath = processDirPath(assemblyRelPath, assemOpt)
 
         val expandedFiles = files.map {
             File(expandPath(it.path).toString())
@@ -88,12 +95,14 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
+                // TODO: pull out it, absDisgnosticPath
                 val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
                 val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
                 val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
                 val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
                 // adding assembly file -- might be unsafe LOL
-                val assemblyFile : File = getOutFileName(it, absDiagnosticPath, ".s")
+                // TODO: test output assembly file to new -d path
+                val assemblyFile : File = getOutFileName(it, absAssemPath, ".s")
 
                 val ast: Node?
                 try {
@@ -113,7 +122,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     val ir = translator.irgen(!disableOpt)
                                     // TODO: CHECK -- ADDED INTERMEDIATE STEP
                                     val irFileGen = ir.java
-                                    // we are sticking with the class IR rep, and do not implement irrun
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
                                         irFileGen.printSExp(writer) // CHANGED HERE ALSO
@@ -136,7 +144,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
 
                                 else -> {}
                             }
-
+                            // we are sticking with the class IR rep, and do not implement irrun
                             if (runIR) throw ProgramResult(2)
                         } catch (e: CompilerError) {
                             println(e.log)

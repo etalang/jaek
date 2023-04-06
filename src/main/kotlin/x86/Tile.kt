@@ -1,13 +1,11 @@
 package x86
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 import ir.lowered.LIRExpr
 import ir.lowered.LIRNode
 import ir.lowered.LIRStmt
 import ir.lowered.LIRStmt.FlatStmt
-import sun.security.krb5.internal.crypto.Des
 
 sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<LIRExpr>>) {
 
