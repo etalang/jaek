@@ -1,4 +1,4 @@
-package x86
+package assembly.x86
 
 data class Memory(val base : Register, val index : Register?, val offset : Long = 0, val shift : Shift = Shift.ONE) {
     enum class Shift {

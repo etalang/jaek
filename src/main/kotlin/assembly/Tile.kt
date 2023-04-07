@@ -1,10 +1,9 @@
-package x86
+package assembly
 
-import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType
-import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import assembly.x86.Instruction
+import assembly.x86.Register
 import ir.lowered.LIRExpr
 import ir.lowered.LIRNode
-import ir.lowered.LIRStmt
 import ir.lowered.LIRStmt.*
 import ir.lowered.LIRStmt.FlatStmt
 

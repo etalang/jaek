@@ -1,7 +1,7 @@
-package x86
+package assembly.x86
 
 sealed class Source {
-    data class MemorySrc(val m:Memory) : Source() {
+    data class MemorySrc(val m: Memory) : Source() {
         override fun toString(): String {
             return m.toString()
         }

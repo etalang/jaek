@@ -1,4 +1,6 @@
-package x86
+package assembly
+
+import assembly.x86.Instruction
 
 class RegisterAllocator {
     // TODO: allocate registers

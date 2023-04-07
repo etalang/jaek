@@ -1,4 +1,4 @@
-package x86
+package assembly.x86
 
 sealed class Register {
     data class Abstract(val name : String) : Register() {
@@ -34,7 +34,7 @@ sealed class Register {
         }
     }
 
-    /** an instance of x86 represents a register in x86 assembly.  */
+    /** an instance of assembly represents a register in assembly assembly.  */
     data class x86(val name : x86Name) : Register() {
         override fun toString(): String {
             return x86NametoString(name)

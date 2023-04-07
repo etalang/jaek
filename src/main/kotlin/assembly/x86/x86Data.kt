@@ -1,4 +1,4 @@
-package x86
+package assembly.x86
 
 class x86Data(val name : String, val data : LongArray) {
     override fun toString(): String {

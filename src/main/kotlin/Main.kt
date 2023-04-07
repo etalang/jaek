@@ -14,7 +14,7 @@ import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.TypeChecker
-import x86.Tiler
+import assembly.Tiler
 import java.io.File
 import java.io.PrintWriter
 import java.nio.file.Path

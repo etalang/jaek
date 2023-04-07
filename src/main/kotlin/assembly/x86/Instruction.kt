@@ -1,4 +1,4 @@
-package x86
+package assembly.x86
 
 sealed class Instruction {
     class MOV(val dest : Destination, val src : Source) : Instruction() {

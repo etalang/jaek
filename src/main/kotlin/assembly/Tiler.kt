@@ -1,17 +1,16 @@
-package x86
+package assembly
 
-import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import ir.IRData
 import ir.lowered.*
-import ir.mid.IRExpr
 import ir.lowered.LIRStmt.*
-import x86.Tile.*
-import x86.Tile.RootTile.*
-import x86.Instruction.*
-import x86.Instruction.Jump.*
-import x86.Destination.*
-import x86.Register.*
-import x86.Source.*
+import assembly.Tile.*
+import assembly.Tile.RootTile.*
+import assembly.x86.Instruction.*
+import assembly.x86.Instruction.Jump.*
+import assembly.x86.Destination.*
+import assembly.x86.Register.*
+import assembly.x86.Source.*
+import assembly.x86.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 
 class Tiler(val IR: LIRCompUnit) {
@@ -43,8 +42,10 @@ class Tiler(val IR: LIRCompUnit) {
                 if (lirret.valList.size > 2) { // begin da push
                     for (i in lirret.valList.size - 1 downTo 3 )
                         insns.add(MOV(
-                            MemoryDest(Memory(x86(x86Name.RDI), null,
-                                offset= (8*(lirret.valList.size - 1 - i)).toLong())),
+                            MemoryDest(
+                                Memory(x86(x86Name.RDI), null,
+                                offset= (8*(lirret.valList.size - 1 - i)).toLong())
+                            ),
                             RegisterSrc(reglst[i])))
                 }
                 // TODO: test whether this works/ensure that the invariants are preserved so that this works

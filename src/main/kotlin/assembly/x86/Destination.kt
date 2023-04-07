@@ -1,7 +1,7 @@
-package x86
+package assembly.x86
 
 sealed class Destination {
-    data class MemoryDest(val m:Memory) : Destination() {
+    data class MemoryDest(val m: Memory) : Destination() {
         override fun toString(): String {
             return m.toString()
         }

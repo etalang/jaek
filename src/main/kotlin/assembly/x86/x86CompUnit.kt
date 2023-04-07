@@ -1,6 +1,4 @@
-package x86
-
-import ir.IRData
+package assembly.x86
 
 class x86CompUnit(val name : String, val functions: List<x86FuncDecl>, val globals: List<x86Data>) {
     override fun toString(): String {

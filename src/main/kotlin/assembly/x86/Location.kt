@@ -1,4 +1,4 @@
-package x86
+package assembly.x86
 
 class Location (val l : Label) {
     override fun toString(): String {
