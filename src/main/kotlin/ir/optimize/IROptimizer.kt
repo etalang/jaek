@@ -20,7 +20,7 @@ sealed class IROptimizer {
             is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(applyExpr(node.guard), applyLabel(node.trueBranch),
                 node.falseBranch?.let { applyLabel(it) })
 
-            is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyExpr(node.address) as LIRExpr.LIRName) // you didn't see anything
+            is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyName(node.address))
             is LIRStmt.LIRReturn -> LIRStmt.LIRReturn(node.valList.map { applyExpr(it) })
             is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), applyLabel(node.trueBranch))
             is LIRStmt.LIRCallStmt -> LIRStmt.LIRCallStmt(applyExpr(node.target),
@@ -46,19 +46,19 @@ sealed class IROptimizer {
         }
     }
 
-    protected open fun applyTemp(node: LIRExpr.LIRTemp): LIRExpr {
+    protected open fun applyTemp(node: LIRExpr.LIRTemp): LIRExpr.LIRTemp {
         return node
     }
 
-    protected open fun applyOp(node: LIRExpr.LIROp): LIRExpr {
+    protected open fun applyOp(node: LIRExpr.LIROp): LIRExpr.LIROp {
         return LIRExpr.LIROp(node.op, applyExpr(node.left), applyExpr(node.right))
     }
 
-    protected open fun applyMem(node: LIRExpr.LIRMem): LIRExpr {
+    protected open fun applyMem(node: LIRExpr.LIRMem): LIRExpr.LIRMem {
         return LIRExpr.LIRMem(applyExpr(node.address))
     }
 
-    protected open fun applyName(node: LIRExpr.LIRName): LIRExpr {
+    protected open fun applyName(node: LIRExpr.LIRName): LIRExpr.LIRName {
         return node
     }
 }
