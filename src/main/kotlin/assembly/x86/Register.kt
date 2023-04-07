@@ -9,7 +9,7 @@ sealed class Register {
 
     /** x86Name represents the register being used to store the information (may not be the whole register) */
     enum class x86Name {
-        RAX, RBX, RCX, RDX, RSP, RBP, RDI, RCI, R8, R9, R10, R11, R12, R13, R14, R15
+        RAX, RBX, RCX, RDX, RSP, RBP, RDI, RSI, R8, R9, R10, R11, R12, R13, R14, R15
     }
 
     /** prints the corresponding name of the register */
@@ -22,7 +22,7 @@ sealed class Register {
             x86Name.RSP -> "rsp"
             x86Name.RBP -> "rbp"
             x86Name.RDI -> "rdi"
-            x86Name.RCI -> "rci"
+            x86Name.RSI -> "rsi"
             x86Name.R8 -> "r8"
             x86Name.R9 -> "r9"
             x86Name.R10 -> "r10"

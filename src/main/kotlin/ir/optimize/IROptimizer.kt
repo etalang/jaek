@@ -23,9 +23,14 @@ sealed class IROptimizer {
             is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyName(node.address))
             is LIRStmt.LIRReturn -> LIRStmt.LIRReturn(node.valList.map { applyExpr(it) })
             is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), applyLabel(node.trueBranch))
-            is LIRStmt.LIRCallStmt -> LIRStmt.LIRCallStmt(applyExpr(node.target),
-                node.n_returns,
-                node.args.map { applyExpr(it) })
+            is LIRStmt.LIRCallStmt -> {
+                val newAddress = applyExpr(node.target)
+                if (newAddress !is LIRExpr.LIRName)
+                    throw Exception("an address has metamorphosed into not a LIRName in applyFlatStmt")
+                LIRStmt.LIRCallStmt(newAddress,
+                    node.n_returns,
+                    node.args.map { applyExpr(it) })
+            }
 
             is LIRStmt.LIRLabel -> applyLabel(node)
             is LIRStmt.LIRMove -> LIRStmt.LIRMove(applyExpr(node.dest), applyExpr(node.expr))

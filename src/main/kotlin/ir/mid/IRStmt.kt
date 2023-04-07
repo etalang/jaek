@@ -51,7 +51,7 @@ sealed class IRStmt : IRNode() {
 
     /** IRCallStmt(address,args) represents a function call on a function code with address [address]
      * and arguments [args] that can return multiple values and must be part of a MultiAssign**/
-    class IRCallStmt(val address: IRExpr, val n_returns : Long, val args: List<IRExpr>) : IRStmt() {
+    class IRCallStmt(val address: IRName, val n_returns : Long, val args: List<IRExpr>) : IRStmt() {
         override val java: JIRCallStmt = factory.IRCallStmt(address.java, n_returns, args.map { it.java })
     }
 

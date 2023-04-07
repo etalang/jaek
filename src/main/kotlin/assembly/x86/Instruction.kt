@@ -14,7 +14,11 @@ sealed class Instruction {
             }
         }
 
-        class SUB(dest : Destination, src : Source) : Arith(dest, src)
+        class SUB(dest : Destination, src : Source) : Arith(dest, src) {
+            override fun toString(): String {
+                return "sub $dest, $src"
+            }
+        }
 
         class MUL(dest : Destination, src : Source) : Arith(dest, src)
 
@@ -75,11 +79,23 @@ sealed class Instruction {
         }
     }
 
-    class PUSH(val arg : Register) : Instruction()
+    class PUSH(val arg : Register) : Instruction() {
+        override fun toString(): String {
+            return "push $arg"
+        }
+    }
 
-    class POP(val dest : Register) : Instruction()
+    class POP(val dest : Register) : Instruction() {
+        override fun toString(): String {
+            return "pop $dest"
+        }
+    }
 
-    class CALL(val label : Label) : Instruction() // ?
+    class CALL(val label : Label) : Instruction() {
+        override fun toString(): String {
+            return "call $label"
+        }
+    }
 
     class ENTER(val bytes : Long) : Instruction() {
         override fun toString(): String {

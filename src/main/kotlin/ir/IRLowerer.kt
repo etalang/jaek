@@ -11,6 +11,7 @@ import ir.mid.IRExpr
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
+import org.graalvm.compiler.lir.LIR
 
 class IRLowerer(val globals: List<String>) {
     private var freshLowTempCount = 0
@@ -162,6 +163,9 @@ class IRLowerer(val globals: List<String>) {
             is IRStmt.IRCallStmt -> {
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 val (addrStmts, addrExpr) = lowerExpr(n.address)
+                if (addrExpr !is LIRName) {
+                    throw Exception("a LIRName metamorphosed into a beautiful bug from lowerStatement")
+                }
                 stmts.addAll(addrStmts)
 
                 val argTmps: MutableList<LIRExpr> = mutableListOf()
@@ -225,6 +229,9 @@ class IRLowerer(val globals: List<String>) {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
                 val allTemps: MutableList<LIRTemp> = mutableListOf()
                 val (s0, e0) = lowerExpr(n.address)
+                if (e0 !is LIRName) {
+                    throw Exception("a name has metamorphosed into a beautiful bug from lowerExpr")
+                }
                 allStmts.addAll(s0)
 
                 n.args.forEach {

@@ -8,25 +8,6 @@ import ir.lowered.LIRStmt.*
 import ir.lowered.LIRStmt.FlatStmt
 
 sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<LIRExpr>>) {
-    /*
-    * // suppose tree = LIRNode we care about
-    * // suppose tilemap = map of tiles organized by roots
-    *
-    * for (t : tilemap[tree]) {
-    *   (b, t) = t.pattern(tree)
-    *   if (b) {
-    *       for (subtree : lst) {
-    *           // try and tile the subtrees
-    *           // memoize the results
-    *       }
-    *   }
-    * }
-    * if (no match) {
-    *   call the node's own tiling that tiles itself
-    * }
-    *
-    * RootTile(17, (lambda x -> ))
-    * */
 
     sealed class RootTile(cost : Int, pattern : (FlatStmt) -> Pair<Boolean, List<LIRExpr>>,
         val instructions : (FlatStmt, List<Register>) -> List<Instruction>) : Tile(cost,
@@ -94,6 +75,20 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
                     else -> listOf()
                 }
             })
+
+        class CallTile(cost : Int, pattern : (LIRCallStmt) -> Pair<Boolean, List<LIRExpr>>,
+                       instructions: (LIRCallStmt, List<Register>) -> List<Instruction>) : RootTile(cost,
+            {
+                when(it) {
+                    is LIRCallStmt -> pattern(it)
+                    else -> false to listOf()
+                }
+            }, { lircall, reglst ->
+                when (lircall) {
+                    is LIRCallStmt -> instructions(lircall, reglst)
+                    else -> listOf()
+                }
+            })
     }
 
 
@@ -116,48 +111,17 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
             }
         },
             instructions)
-//        {
-//            override fun instructions(parent : Register, children: List<Register>) : List<Instruction> {
-//                return when(op) {
-//                    ADD -> TODO()
-//                    SUB -> TODO()
-//                    MUL -> TODO()
-//                    HMUL -> TODO()
-//                    DIV -> TODO()
-//                    MOD -> TODO()
-//                    AND -> TODO()
-//                    OR -> TODO()
-//                    XOR -> TODO()
-//                    LSHIFT -> TODO()
-//                    RSHIFT -> TODO()
-//                    ARSHIFT -> TODO()
-//                    EQ -> TODO()
-//                    NEQ -> TODO()
-//                    LT -> TODO()
-//                    ULT -> TODO()
-//                    GT -> TODO()
-//                    LEQ -> TODO()
-//                    GEQ -> TODO()
-//                }
-//            }
-
-        }
 
         class MemTile(cost : Int, pattern : (LIRExpr.LIRMem) -> Pair<Boolean, List<LIRExpr>>,
-            instructions: (Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
+                    instructions: (Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
             {
                 when(it) {
                     is LIRExpr.LIRMem -> pattern(it)
                     else -> false to listOf()
                 }
-            }, instructions) {
-//            override fun instructions(parent: Register, children: List<Register>): List<Instruction> {
-//                return listOf(
-//                    Instruction.MOV(Destination.RegisterDest(parent), Source.MemorySrc(Memory(children[0], null)))
-//                )
-//            }
-//        }
+             }, instructions)
+        }
 
-    }
+
 
 }
