@@ -55,6 +55,8 @@ etac ("Test --parse") ["../parser"] "--parse" {
     arrayliteralaccess.eta;
     arrayliteralaccessadd.eta;
     blocksinblocks.eta;
+    blocksthenblocks.eta;
+    blockscomplex.eta;
     booleanprecedence.eta;
     earlyreturn.eta (Syntax, "a");
     exampleprogram.eta;
@@ -200,4 +202,15 @@ etac ("Test --irgen") "-libpath $(testpath) --irgen" {
     swap.eta;
     swaparr.eta;
     euclid.eta;
+}
+
+etac ("Test --irgen") ["../ir-fix-tests"] "-libpath $(testpath) --irgen" {
+    arracc04.eta;
+    assign06ir.eta;
+    assign09ir.eta;
+    assign10ir.eta;
+    binary10.eta;
+    localdecl13.eta;
+    localdecl14.eta;
+    medley.eta;
 }

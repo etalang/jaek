@@ -1,0 +1,39 @@
+name: eth
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  eth:
+    runs-on: ubuntu-latest
+    container:
+      image: charlessherk/cs4120-vm:latest
+      volumes:
+        - /docker-data:/home/student/shared
+      options: --user root
+      
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      
+      - uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.6
+          
+      - name: Package source code
+        run: |
+          make
+          mv submission.zip /home/student/shared
+          unzip /home/student/shared/submission.zip -d /home/student/shared/production
+
+      - name: Run vm tests
+        working-directory: /home/student/
+        run: eth /home/student/eth/tests/pa4/ethScript -ec -noout -compilerpath /home/student/shared/production/
+        
+      - name: Run custom tests
+        working-directory: /home/student/
+        run: eth /home/student/shared/production/src/tests/ir/ethScript -ec -noout -compilerpath /home/student/shared/production/
