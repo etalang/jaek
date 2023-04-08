@@ -35,7 +35,12 @@ sealed class Memory {
                 }
             }
             if (offset != 0L) {
-                rep += " + $offset"
+                if (offset < 0) {
+                    rep += " - ${-offset}"
+                }
+                else {
+                    rep += " + $offset"
+                }
             }
             rep += "]"
             return rep

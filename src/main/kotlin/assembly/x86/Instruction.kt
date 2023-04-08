@@ -1,7 +1,7 @@
 package assembly.x86
 
 sealed class Instruction {
-    class MOV(val dest : Destination, val src : Source) : Instruction() {
+    data class MOV(val dest : Destination, val src : Source) : Instruction() {
         override fun toString(): String {
             return "mov $dest, $src" // this might require like a "QWORD PTR" somewhere
         }
@@ -28,7 +28,7 @@ sealed class Instruction {
 
     }
 
-    sealed class Logic(val dest : Destination, val src : Source) : Instruction() {
+    sealed class Logic(var dest : Destination, var src : Source) : Instruction() {
         class AND(dest : Destination, src : Source) : Logic(dest, src) {
             override fun toString(): String {
                 return "and $dest, $src"
@@ -55,9 +55,9 @@ sealed class Instruction {
 
     // TODO: fix the typing on these instructions to be correct (see manual)
     // the arity is correct, but the types are hella wrong below:
-    class CMP(val reg1 : Register, val reg2 : Register) : Instruction()
+    data class CMP(val reg1 : Register, val reg2 : Register) : Instruction()
 
-    class TEST(val reg1: Register, val reg2: Register) : Instruction() {
+    data class TEST(val reg1: Register, val reg2: Register) : Instruction() {
         override fun toString(): String {
             return "test $reg1, $reg2"
         }
@@ -91,13 +91,13 @@ sealed class Instruction {
         }
     }
 
-    class PUSH(val arg : Register) : Instruction() {
+    data class PUSH(val arg : Register) : Instruction() {
         override fun toString(): String {
             return "push $arg"
         }
     }
 
-    class POP(val dest : Register) : Instruction() {
+    data class POP(val dest : Register) : Instruction() {
         override fun toString(): String {
             return "pop $dest"
         }

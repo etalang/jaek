@@ -243,7 +243,8 @@ class Tiler(val IR: LIRCompUnit) {
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.OR)(it) },
             { _, parent, children -> opInstructions(IRBinOp.OpType.OR)(parent, children) }
-        ),OpTile(2, { opPattern(IRBinOp.OpType.XOR)(it) },
+        ),
+        OpTile(2, { opPattern(IRBinOp.OpType.XOR)(it) },
             { _, parent, children -> opInstructions(IRBinOp.OpType.XOR)(parent, children) }
         ),
 
@@ -280,7 +281,8 @@ class Tiler(val IR: LIRCompUnit) {
         }
         // TODO: do register allocation here
         // TODO: add preamble (currently a full guess)
-        insns.add(0, ENTER(8000))
+        val ra = RegisterAllocator()
+        insns = ra.allocateRegisters(insns)
         return insns
     }
 
