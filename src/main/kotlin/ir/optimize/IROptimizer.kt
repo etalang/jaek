@@ -17,19 +17,16 @@ sealed class IROptimizer {
 
     protected open fun applyFlatStmt(node: LIRStmt.FlatStmt): LIRStmt.FlatStmt {
         return when (node) {
-            is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(applyExpr(node.guard), applyLabel(node.trueBranch),
+            is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(
+                applyExpr(node.guard),
+                applyLabel(node.trueBranch),
                 node.falseBranch?.let { applyLabel(it) })
 
-            is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyName(node.address))
+            is LIRStmt.LIRJump -> LIRStmt.LIRJump(node.address)
             is LIRStmt.LIRReturn -> LIRStmt.LIRReturn(node.valList.map { applyExpr(it) })
             is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), applyLabel(node.trueBranch))
             is LIRStmt.LIRCallStmt -> {
-                val newAddress = applyExpr(node.target)
-                if (newAddress !is LIRExpr.LIRName)
-                    throw Exception("an address has metamorphosed into not a LIRName in applyFlatStmt")
-                LIRStmt.LIRCallStmt(newAddress,
-                    node.n_returns,
-                    node.args.map { applyExpr(it) })
+                LIRStmt.LIRCallStmt(node.target, node.n_returns, node.args.map { applyExpr(it) })
             }
 
             is LIRStmt.LIRLabel -> applyLabel(node)
@@ -45,13 +42,13 @@ sealed class IROptimizer {
         return when (node) {
             is LIRExpr.LIRConst -> node
             is LIRExpr.LIRMem -> applyMem(node)
-            is LIRExpr.LIRName -> applyName(node)
+            is LIRExpr.LIRName -> node
             is LIRExpr.LIROp -> applyOp(node)
             is LIRExpr.LIRTemp -> applyTemp(node)
         }
     }
 
-    protected open fun applyTemp(node: LIRExpr.LIRTemp): LIRExpr.LIRTemp {
+    protected open fun applyTemp(node: LIRExpr.LIRTemp): LIRExpr {
         return node
     }
 
@@ -59,11 +56,7 @@ sealed class IROptimizer {
         return LIRExpr.LIROp(node.op, applyExpr(node.left), applyExpr(node.right))
     }
 
-    protected open fun applyMem(node: LIRExpr.LIRMem): LIRExpr.LIRMem {
+    protected open fun applyMem(node: LIRExpr.LIRMem): LIRExpr {
         return LIRExpr.LIRMem(applyExpr(node.address))
-    }
-
-    protected open fun applyName(node: LIRExpr.LIRName): LIRExpr.LIRName {
-        return node
     }
 }
