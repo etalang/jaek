@@ -277,12 +277,16 @@ class Tiler(val IR: LIRCompUnit) {
     private fun tileSeq(n : LIRSeq) : List<Instruction> {
         var insns = mutableListOf<Instruction>()
         for (stmt in n.block) {
-            insns.addAll(tileTree(stmt))
+//            insns.add(NOP()) // debug
+//            insns.add(NOP()) // debug
+//            insns.add(NOP()) // debug
+//            insns.add(NOP()) // debug
+//            insns.addAll(tileTree(stmt))
         }
         // TODO: do register allocation here
         // TODO: add preamble (currently a full guess)
         val ra = RegisterAllocator()
-        insns = ra.allocateRegisters(insns)
+//        insns = ra.allocateRegisters(insns)
         return insns
     }
 
