@@ -27,7 +27,7 @@ sealed class Memory {
 
         @Override
         override fun toString(): String {
-            var rep = "[$base"
+            var rep = "QWORD PTR [$base"
             if (index != null) {
                 rep += " + $index"
                 if (shift != Shift.ONE) {

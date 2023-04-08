@@ -14,7 +14,7 @@ class x86CompUnit(val name : String, val functions: List<x86FuncDecl>, val globa
             }
         }
         fullText.add("")
-        fullText.add(".data")
+        fullText.add(".text")
         for (func in functions) { // cannot be empty
             fullText.add(func.toString())
         }
