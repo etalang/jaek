@@ -11,8 +11,6 @@ class x86FuncDecl(val name : String, val body : List<Instruction>) {
             funcBlock.add(insn.toString())
         }
         funcBlock.add(".size $name, .-$name")
-        // calculate amount to allocate
-        funcBlock.add("enter 8000, 0")
         return funcBlock.joinToString("\n")
     }
 }

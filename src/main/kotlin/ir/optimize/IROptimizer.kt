@@ -55,7 +55,7 @@ sealed class IROptimizer {
         return node
     }
 
-    protected open fun applyOp(node: LIRExpr.LIROp): LIRExpr.LIROp {
+    protected open fun applyOp(node: LIRExpr.LIROp): LIRExpr {
         return LIRExpr.LIROp(node.op, applyExpr(node.left), applyExpr(node.right))
     }
 

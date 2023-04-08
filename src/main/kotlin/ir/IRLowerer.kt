@@ -11,7 +11,6 @@ import ir.mid.IRExpr
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
-import org.graalvm.compiler.lir.LIR
 
 class IRLowerer(val globals: List<String>) {
     private var freshLowTempCount = 0

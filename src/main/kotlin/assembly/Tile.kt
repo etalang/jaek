@@ -93,7 +93,7 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
 
 
     sealed class ExprTile(cost : Int, pattern : (LIRExpr) -> Pair<Boolean, List<LIRExpr>>,
-        val instructions : (Register, List<Register>) -> List<Instruction>) : Tile(cost,
+        val instructions : (LIRExpr, Register, List<Register>) -> List<Instruction>) : Tile(cost,
         {
             when(it) {
                 is LIRExpr -> pattern(it)
@@ -103,23 +103,33 @@ sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<
         ) {
 
         class OpTile(cost : Int, pattern : (LIRExpr.LIROp) -> Pair<Boolean, List<LIRExpr>>,
-            instructions : (Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
+            instructions : (LIRExpr.LIROp, Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
         {
             when(it) {
                 is LIRExpr.LIROp -> pattern(it)
                 else -> false to listOf()
             }
         },
-            instructions)
+            { n, parent, children ->
+                when(n) {
+                    is LIRExpr.LIROp -> instructions(n, parent, children)
+                    else -> listOf()
+                }
+            })
 
         class MemTile(cost : Int, pattern : (LIRExpr.LIRMem) -> Pair<Boolean, List<LIRExpr>>,
-                    instructions: (Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
+                    instructions: (LIRExpr.LIRMem, Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
             {
                 when(it) {
                     is LIRExpr.LIRMem -> pattern(it)
                     else -> false to listOf()
                 }
-             }, instructions)
+             }, { n, parent, children ->
+                when(n) {
+                    is LIRExpr.LIRMem -> instructions(n, parent, children)
+                    else -> listOf()
+                }
+            })
         }
 
 

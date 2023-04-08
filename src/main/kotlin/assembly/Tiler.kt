@@ -11,9 +11,9 @@ import assembly.x86.Instruction.Jump.*
 import assembly.x86.Destination.*
 import assembly.x86.Register.*
 import assembly.x86.Source.*
+import assembly.x86.Memory.*
 import assembly.x86.*
 import assembly.x86.Instruction.Arith.*
-import com.sun.org.apache.xpath.internal.operations.Bool
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 
@@ -47,8 +47,8 @@ class Tiler(val IR: LIRCompUnit) {
                     for (i in lirret.valList.size - 1 downTo 3 )
                         insns.add(MOV(
                             MemoryDest(
-                                Memory(x86(x86Name.RDI), null,
-                                offset= (8*(lirret.valList.size - i)).toLong())
+                                RegisterMem(x86(x86Name.RDI), null,
+                                offset= 8L * (i - 3L))
                             ),
                             RegisterSrc(reglst[i])))
                 }
@@ -89,8 +89,9 @@ class Tiler(val IR: LIRCompUnit) {
                 lirCallStmt, reglst ->
                 val insns = mutableListOf<Instruction>()
                 val argNumber = lirCallStmt.args.size
-                if (lirCallStmt.n_returns < 3) {
+                if (lirCallStmt.n_returns >= 3) {
                     // can only store 5 arguments in registers
+                    // TODO: make sure this aligns with how we store return values
                     insns.add(Arith.SUB(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (lirCallStmt.n_returns - 2L))))
                     insns.add(MOV(RegisterDest(x86(x86Name.RDI)), RegisterSrc(x86(x86Name.RSP))))
                     if (argNumber > 5) {
@@ -209,23 +210,41 @@ class Tiler(val IR: LIRCompUnit) {
     private val exprTiles = listOf(
         MemTile(
          1,
-            { lirMem -> Pair(true, listOf(lirMem.address)) },
-            { parent, children ->
-                listOf(MOV(RegisterDest(parent), MemorySrc(Memory(children[0], null)))) }
+            { lirMem ->
+                if (lirMem.address is LIRExpr.LIRTemp
+                    || lirMem.address is LIRExpr.LIRConst
+                    || lirMem.address is LIRExpr.LIROp)
+                    true to listOf(lirMem.address)
+                else false to listOf()
+            },
+            { _, parent, children ->
+                listOf(MOV(RegisterDest(parent), MemorySrc(RegisterMem(children[0], null)))) }
+        ),
+        MemTile(
+            1,
+            { lirMem ->
+                if (lirMem.address is LIRExpr.LIRName)
+                    true to emptyList()
+                else false to emptyList()
+            },
+            { node, parent, _ ->
+                listOf(MOV(RegisterDest(parent),
+                    MemorySrc(LabelMem(Label((node.address as LIRExpr.LIRName).l, false)))))
+            }
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.ADD)(it) },
-            {  parent, children -> opInstructions(IRBinOp.OpType.ADD)(parent, children) }
+            {  _, parent, children -> opInstructions(IRBinOp.OpType.ADD)(parent, children) }
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.SUB)(it) },
-            {  parent, children -> opInstructions(IRBinOp.OpType.SUB)(parent, children) }
+            {  _, parent, children -> opInstructions(IRBinOp.OpType.SUB)(parent, children) }
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.AND)(it) },
-            {  parent, children -> opInstructions(IRBinOp.OpType.AND)(parent, children) }
+            {  _, parent, children -> opInstructions(IRBinOp.OpType.AND)(parent, children) }
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.OR)(it) },
-            {  parent, children -> opInstructions(IRBinOp.OpType.OR)(parent, children) }
+            { _, parent, children -> opInstructions(IRBinOp.OpType.OR)(parent, children) }
         ),OpTile(2, { opPattern(IRBinOp.OpType.XOR)(it) },
-            {  parent, children -> opInstructions(IRBinOp.OpType.XOR)(parent, children) }
+            { _, parent, children -> opInstructions(IRBinOp.OpType.XOR)(parent, children) }
         ),
 
     )
@@ -259,6 +278,9 @@ class Tiler(val IR: LIRCompUnit) {
         for (stmt in n.block) {
             insns.addAll(tileTree(stmt))
         }
+        // TODO: do register allocation here
+        // TODO: add preamble (currently a full guess)
+        insns.add(0, ENTER(8000))
         return insns
     }
 
@@ -336,8 +358,8 @@ class Tiler(val IR: LIRCompUnit) {
         }
         else {
             when (n) {
-                is LIRExpr.LIRName -> { throw Exception("shouldn't be able to tile a name")
-//                    return Pair(0, listOf(Label(n.l, false)))
+                is LIRExpr.LIRName -> {
+                    return Pair(0, listOf(Label(n.l, false)))
                 }
                 // explicit base cases where there's nothing to do
                 is LIRExpr.LIRConst -> {
@@ -364,12 +386,13 @@ class Tiler(val IR: LIRCompUnit) {
                             for (subtree in trees) {
                                 val regEdge = freshRegister()
                                 edges.add(regEdge)
+                                // TODO: this needs to do DP
                                 val (cost, insns) = tileExprSubtree(subtree, regEdge)
                                 currCost += cost
                                 currInsns.addAll(insns)
                             }
                             // convert the current tile into instructions using the register
-                            val tileInsns = tile.instructions(reg, edges)
+                            val tileInsns = tile.instructions(n, reg, edges)
                             currInsns.addAll(tileInsns)
                             if (currCost < minCost) {
                                 minCost = currCost

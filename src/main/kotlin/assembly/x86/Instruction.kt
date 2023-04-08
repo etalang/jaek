@@ -29,11 +29,23 @@ sealed class Instruction {
     }
 
     sealed class Logic(val dest : Destination, val src : Source) : Instruction() {
-        class AND(dest : Destination, src : Source) : Logic(dest, src)
+        class AND(dest : Destination, src : Source) : Logic(dest, src) {
+            override fun toString(): String {
+                return "and $dest, $src"
+            }
+        }
 
-        class OR(dest : Destination, src : Source) : Logic(dest, src)
+        class OR(dest : Destination, src : Source) : Logic(dest, src) {
+            override fun toString(): String {
+                return "or $dest, $src"
+            }
+        }
 
-        class XOR(dest : Destination, src : Source) : Logic(dest, src)
+        class XOR(dest : Destination, src : Source) : Logic(dest, src) {
+            override fun toString(): String {
+                return "xor $dest, $src"
+            }
+        }
 
         class SHL(dest : Destination, src : Source) : Logic(dest, src)
 
