@@ -14,7 +14,8 @@ import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 class IRTranslator(val AST: Program, val name: String, functions: Map<String, EtaType.ContextType.FunType>) {
     private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
-    private val globalsByFunction : MutableMap<String, MutableList<String>> = HashMap()
+    private val globalsByFunction : Map<String, HashSet<String>> = functions.mapValues { HashSet() }
+    private val callsByFunction : Map<String, HashSet<String>> = functions.mapValues { HashSet() }
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -95,7 +96,8 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         for (i in 0 until n.args.size) {
             funcMoves.add(IRMove(IRTemp(n.args[i].id), IRTemp("_ARG${i + 1}")))
         }
-        funcMoves.add(translateStatement(n.body!!))
+        val funcBody = translateStatement(n.body!!)
+        funcMoves.add(funcBody)
         if (n.returnTypes.size != 0) {
             return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
         } else { // if the method is a proc, add empty return
