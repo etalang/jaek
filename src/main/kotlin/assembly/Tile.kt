@@ -17,7 +17,7 @@ sealed class Tile(val cost: Int) {
         val instrs: List<Instruction> = listOf()
     ) {
         init {
-            assert(subtrees.size == subregs.size) // probably does not work sad
+            require(subtrees.size == subregs.size)
         }
     }
 
