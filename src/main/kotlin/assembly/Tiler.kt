@@ -3,6 +3,7 @@ package assembly
 import ir.IRData
 import ir.lowered.*
 import ir.lowered.LIRStmt.*
+import ir.lowered.LIRExpr.*
 import assembly.Tile.*
 import assembly.Tile.RootTile.*
 import assembly.Tile.ExprTile.*
@@ -26,177 +27,185 @@ class Tiler(val IR: LIRCompUnit) {
 
     // TILE DEFINITIONS
     private val jumpTiles = listOf(
-        JumpTile(1, { Pair(true, listOf()) }, {
-            lirjump, _ ->
-            listOf(JMP(Location(Label(lirjump.address.l, false))))
-        })
+        JumpTile(1) {
+            TileAttempt(true,
+                instrs = listOf(JMP(Location(Label(it.address.l, false)))))
+        }
     )
     private val returnTiles = listOf(
-        ReturnTile(1,
-            { Pair(true, it.valList) },
-            { lirret, reglst ->
-                // PRECONDITION: lirret and reglst have the same length
-                val insns = mutableListOf<Instruction>()
-                if (lirret.valList.isNotEmpty()) { // single return
+        ReturnTile(1) {
+            val insns = mutableListOf<Instruction>()
+            val reglst = mutableListOf<Register>()
+            if (it.valList.isNotEmpty()) { // single return
+                    reglst.add(freshRegister())
                     insns.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(reglst[0])))
-                }
-                if (lirret.valList.size > 1) { // multireturn
-                    insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[1])))
-                }
-                if (lirret.valList.size > 2) { // begin da push
-                    for (i in lirret.valList.size - 1 downTo 3 )
-                        insns.add(MOV(
-                            MemoryDest(
-                                RegisterMem(x86(x86Name.RDI), null,
-                                offset= 8L * (i - 3L))
-                            ),
-                            RegisterSrc(reglst[i])))
-                }
-                // TODO: test whether this works/ensure that the invariants are preserved so that this works
-                insns.add(LEAVE())
-                insns.add(RET())
-                insns
             }
-        )
+            if (it.valList.size > 1) { // multireturn
+                reglst.add(freshRegister())
+                insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[1])))
+            }
+            if (it.valList.size > 2) { // begin da push
+                for (i in it.valList.size - 1 downTo 3 ) {
+                    reglst.add(freshRegister())
+                    insns.add(MOV(
+                        MemoryDest(
+                            RegisterMem(x86(x86Name.RDI), null,
+                            offset= 8L * (i - 3L))
+                        ),
+                        RegisterSrc(reglst[i])))
+                }
+            }
+            // TODO: test whether this works/ensure that the invariants are preserved so that this works
+            insns.add(LEAVE())
+            insns.add(RET())
+//            assert(it.valList.size == reglst.size) aaserted in init
+            TileAttempt(true, it.valList, reglst, insns)
+        }
     )
     private val cjumpTiles = listOf(
-        CJumpTile(2,
-            { Pair(true, listOf(it.guard)) },
-            { lircjump, reglst ->
+        CJumpTile(2) {
+            val guardReg = freshRegister()
+            TileAttempt(true, listOf(it.guard), listOf(guardReg),
                 listOf(
-                    TEST(reglst[0], reglst[0]),
-                    JNZ(Location(Label(lircjump.trueBranch.l, false)))) })
+                    TEST(guardReg, guardReg),
+                    JNZ(Location(Label(it.trueBranch.l, false)))
+                )
+            )
+        }
     )
     private val moveTiles = listOf(
-        // base tile
         MoveTile(1,
-            { lirMove: LIRMove ->
-                if (lirMove.dest is LIRExpr.LIRMem) {
-                    if (lirMove.dest.address is LIRExpr.LIRName)
-                        Pair(true, listOf(lirMove.expr))
-                    else
-                        Pair(true, listOf(lirMove.dest.address, lirMove.expr))
+        ) { lirMove: LIRMove ->
+            if (lirMove.dest is LIRMem) {
+                val srcReg = freshRegister()
+                if (lirMove.dest.address is LIRName) {
+                    TileAttempt(
+                        true, listOf(lirMove.expr), listOf(srcReg),
+                        listOf(
+                            MOV(
+                                MemoryDest(LabelMem(Label(lirMove.dest.address.l, false))),
+                                RegisterSrc(srcReg)
+                            )
+                        )
+                    )
                 } else {
-                    Pair(false, listOf())
+                    val destReg = freshRegister()
+                    TileAttempt(
+                        true, listOf(lirMove.dest.address, lirMove.expr), listOf(destReg, srcReg),
+                        listOf(MOV(MemoryDest(RegisterMem(destReg, null)), RegisterSrc(srcReg)))
+                    )
                 }
-            },
-            { lirMove, it ->
-                val loc = (lirMove.dest as LIRExpr.LIRMem)
-                if (loc.address is LIRExpr.LIRName) {
-                    listOf(MOV(MemoryDest(LabelMem(Label(loc.address.l, false))), RegisterSrc(it[1])))
-                }
-                else {
-                    listOf(MOV(MemoryDest(RegisterMem(it[0], null)), RegisterSrc(it[1])))
-                }
+            } else {
+                TileAttempt(false)
             }
-        ),
+        },
         MoveTile(1,
-            { lirMove: LIRMove ->
-                if (lirMove.dest is LIRExpr.LIRTemp) {
-                     Pair(true, listOf(lirMove.expr))
-                }
-                else {
-                    Pair(false, listOf())
-                }
-            },
-            { lirMove, it ->
-                listOf(MOV(RegisterDest(Abstract((lirMove.dest as LIRExpr.LIRTemp).name)), RegisterSrc(it[0])))
+        ) { lirMove: LIRMove ->
+            if (lirMove.dest is LIRTemp) {
+                val srcReg = freshRegister()
+                TileAttempt(
+                    true, listOf(lirMove.expr), listOf(srcReg),
+                    listOf(MOV(RegisterDest(Abstract((lirMove.dest).name)), RegisterSrc(srcReg)))
+                )
+            } else {
+                TileAttempt(false)
             }
-        )
+        }
     )
     private val callTiles = listOf<RootTile>(
-        CallTile(
-            1,
-            { lirCallStmt ->
-                // DO NOT give the address of the function -- we absorb it automatically, since our Tiler will blow up on NAMEs.
-                Pair(true, lirCallStmt.args)
-            },
-            {
-                lirCallStmt, reglst ->
-                val insns = mutableListOf<Instruction>()
-                val argNumber = lirCallStmt.args.size
-                if (lirCallStmt.n_returns >= 3) {
-                    // can only store 5 arguments in registers
-                    // TODO: make sure this aligns with how we store return values
-                    insns.add(Arith.SUB(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (lirCallStmt.n_returns - 2L))))
-                    insns.add(MOV(RegisterDest(x86(x86Name.RDI)), RegisterSrc(x86(x86Name.RSP))))
-                    if (argNumber > 5) {
-                        for (i in lirCallStmt.args.size - 1 downTo 5) {
-                            insns.add(PUSH(reglst[i]))
-                        }
+        CallTile(1) {
+            val insns = mutableListOf<Instruction>()
+            val reglst = mutableListOf<Register>()
+            val argNumber = it.args.size
+            for (i in 0 until argNumber)
+                reglst.add(freshRegister())
+
+            if (it.n_returns >= 3) {
+                // can only store 5 arguments in registers
+                // TODO: make sure this aligns with how we store return values
+                insns.add(Arith.SUB(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (it.n_returns - 2L))))
+                insns.add(MOV(RegisterDest(x86(x86Name.RDI)), RegisterSrc(x86(x86Name.RSP))))
+                if (argNumber > 5) {
+                    for (i in it.args.size - 1 downTo 5) {
+                        insns.add(PUSH(reglst[i]))
                     }
-                    if (argNumber > 4) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.R9)), RegisterSrc(reglst[4])))
-                    }
-                    if (argNumber > 3) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.R8)), RegisterSrc(reglst[3])))
-                    }
-                    if (argNumber > 2) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RCX)), RegisterSrc(reglst[2])))
-                    }
-                    if (argNumber > 1) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[1])))
-                    }
-                    if (lirCallStmt.args.isNotEmpty()) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RSI)), RegisterSrc(reglst[1])))
-                    }
+                }
+                if (argNumber > 4) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.R9)), RegisterSrc(reglst[4])))
+                }
+                if (argNumber > 3) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.R8)), RegisterSrc(reglst[3])))
+                }
+                if (argNumber > 2) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RCX)), RegisterSrc(reglst[2])))
+                }
+                if (argNumber > 1) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[1])))
+                }
+                if (it.args.isNotEmpty()) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RSI)), RegisterSrc(reglst[1])))
+                }
 //                    insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
-                    insns.add(CALL(Label(lirCallStmt.target.l, false)))
-                    insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
-                    if (argNumber > 5) {
-                        insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber - 5L))))
-                    }
-                    insns.add(MOV(RegisterDest(Abstract("_RV1")), RegisterSrc(x86(x86Name.RAX))))
-                    insns.add(MOV(RegisterDest(Abstract("_RV2")), RegisterSrc(x86(x86Name.RDX))))
-                    for (i in 3 .. lirCallStmt.n_returns.toInt()) {
-                        insns.add(POP(Abstract("_RV$i")))
-                    }
+                insns.add(CALL(Label(it.target.l, false)))
+                insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
+                if (argNumber > 5) {
+                    insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber - 5L))))
                 }
-                else {
-                    // can only store 5 arguments in registers
-                    if (argNumber > 6) {
-                        for (i in lirCallStmt.args.size - 1 downTo 6) {
-                            insns.add(PUSH(reglst[i]))
-                        }
-                    }
-                    if (argNumber > 5) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.R9)), RegisterSrc(reglst[5])))
-                    }
-                    if (argNumber > 4) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.R8)), RegisterSrc(reglst[4])))
-                    }
-                    if (argNumber > 3) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RCX)), RegisterSrc(reglst[3])))
-                    }
-                    if (argNumber > 2) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[2])))
-                    }
-                    if (argNumber > 1) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RSI)), RegisterSrc(reglst[1])))
-                    }
-                    if (lirCallStmt.args.isNotEmpty()) {
-                        insns.add(MOV(RegisterDest(x86(x86Name.RDI)), RegisterSrc(reglst[0])))
-                    }
-                    insns.add(CALL(Label(lirCallStmt.target.l, false)))
-                    insns.add(MOV(RegisterDest(Abstract("_RV1")), RegisterSrc(x86(x86Name.RAX))))
-                    insns.add(MOV(RegisterDest(Abstract("_RV2")), RegisterSrc(x86(x86Name.RDX))))
-                    if (argNumber > 6) {
-                        insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber.toLong() - 6))))
-                    }
+                insns.add(MOV(RegisterDest(Abstract("_RV1")), RegisterSrc(x86(x86Name.RAX))))
+                insns.add(MOV(RegisterDest(Abstract("_RV2")), RegisterSrc(x86(x86Name.RDX))))
+                for (i in 3 .. it.n_returns.toInt()) {
+                    insns.add(POP(Abstract("_RV$i")))
                 }
-                insns
             }
-        )
+            else {
+                // can only store 5 arguments in registers
+                if (argNumber > 6) {
+                    for (i in it.args.size - 1 downTo 6) {
+                        insns.add(PUSH(reglst[i]))
+                    }
+                }
+                if (argNumber > 5) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.R9)), RegisterSrc(reglst[5])))
+                }
+                if (argNumber > 4) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.R8)), RegisterSrc(reglst[4])))
+                }
+                if (argNumber > 3) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RCX)), RegisterSrc(reglst[3])))
+                }
+                if (argNumber > 2) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RDX)), RegisterSrc(reglst[2])))
+                }
+                if (argNumber > 1) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RSI)), RegisterSrc(reglst[1])))
+                }
+                if (it.args.isNotEmpty()) {
+                    insns.add(MOV(RegisterDest(x86(x86Name.RDI)), RegisterSrc(reglst[0])))
+                }
+                insns.add(CALL(Label(it.target.l, false)))
+                insns.add(MOV(RegisterDest(Abstract("_RV1")), RegisterSrc(x86(x86Name.RAX))))
+                insns.add(MOV(RegisterDest(Abstract("_RV2")), RegisterSrc(x86(x86Name.RDX))))
+                if (argNumber > 6) {
+                    insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber.toLong() - 6))))
+                }
+            }
+
+            TileAttempt(true, it.args, reglst, insns)
+        }
     )
 
     /** refactoring LIRExpr.Op instruction production */
-    private val opPattern : (IRBinOp.OpType) -> ((LIRExpr.LIROp) -> (Pair<Boolean, List<LIRExpr>>)) =
+    private val opMunch : (IRBinOp.OpType) -> ((LIROp, Register) -> TileAttempt) =
         {
             opType : IRBinOp.OpType ->
-            { n: LIRExpr.LIROp ->
+            { n: LIROp, parent : Register ->
                 if (n.op == opType) {
-                    Pair(true, listOf(n.left, n.right))
-                } else Pair(false, listOf())
+                    val leftReg = freshRegister()
+                    val rightReg = freshRegister()
+                    val regList = listOf(leftReg, rightReg)
+                    TileAttempt(true, listOf(n.left, n.right), regList,
+                        opInstructions(opType)(parent, regList))
+                } else TileAttempt(false)
             }
         }
     private val opInstructions : (IRBinOp.OpType) -> ((Register, List<Register>) -> List<Instruction>) =
@@ -236,50 +245,29 @@ class Tiler(val IR: LIRCompUnit) {
             }
         }
 
-    private val exprTiles = listOf(
-        MemTile(
-         1,
-            { lirMem ->
-                if (lirMem.address is LIRExpr.LIRTemp
-                    || lirMem.address is LIRExpr.LIRConst
-                    || lirMem.address is LIRExpr.LIROp)
-                    true to listOf(lirMem.address)
-                else false to listOf()
-            },
-            { _, parent, children ->
-                listOf(MOV(RegisterDest(parent), MemorySrc(RegisterMem(children[0], null)))) }
-        ),
-        MemTile(
-            1,
-            { lirMem ->
-                if (lirMem.address is LIRExpr.LIRName)
-                    true to emptyList()
-                else false to emptyList()
-            },
-            { node, parent, _ ->
-                listOf(MOV(RegisterDest(parent),
-                    MemorySrc(LabelMem(Label((node.address as LIRExpr.LIRName).l, false)))))
-            }
-        ),
-        OpTile(2, { opPattern(IRBinOp.OpType.ADD)(it) },
-            {  _, parent, children -> opInstructions(IRBinOp.OpType.ADD)(parent, children) }
-        ),
-        OpTile(2, { opPattern(IRBinOp.OpType.SUB)(it) },
-            {  _, parent, children -> opInstructions(IRBinOp.OpType.SUB)(parent, children) }
-        ),
-        OpTile(2, { opPattern(IRBinOp.OpType.MUL)(it) },
-            { _, parent, children -> opInstructions(IRBinOp.OpType.MUL)(parent, children) }
-        ),
-        OpTile(2, { opPattern(IRBinOp.OpType.AND)(it) },
-            {  _, parent, children -> opInstructions(IRBinOp.OpType.AND)(parent, children) }
-        ),
-        OpTile(2, { opPattern(IRBinOp.OpType.OR)(it) },
-            { _, parent, children -> opInstructions(IRBinOp.OpType.OR)(parent, children) }
-        ),
-        OpTile(2, { opPattern(IRBinOp.OpType.XOR)(it) },
-            { _, parent, children -> opInstructions(IRBinOp.OpType.XOR)(parent, children) }
-        ),
-
+    private val exprTiles = listOf<ExprTile>(
+        MemTile(1) { lirMem, parent ->
+            if (lirMem.address !is LIRName) {
+                val addrReg = freshRegister()
+                TileAttempt(true, listOf(lirMem.address), listOf(addrReg),
+                    listOf(MOV(RegisterDest(parent), MemorySrc(RegisterMem(addrReg, null)))))
+            } else TileAttempt(false)
+        },
+        MemTile(1) {
+            lirMem, parent ->
+            if (lirMem.address is LIRName) {
+                TileAttempt(true, instrs = listOf(
+                    MOV(RegisterDest(parent),
+                    MemorySrc(LabelMem(Label(lirMem.address.l, false)))))
+                )
+            } else TileAttempt(false)
+        },
+        OpTile(2, opMunch(IRBinOp.OpType.ADD)),
+        OpTile(2, opMunch(IRBinOp.OpType.SUB)),
+        OpTile(2, opMunch(IRBinOp.OpType.MUL)),
+        OpTile(2, opMunch(IRBinOp.OpType.AND)),
+        OpTile(2, opMunch(IRBinOp.OpType.OR)),
+        OpTile(2, opMunch(IRBinOp.OpType.XOR)),
     )
 
 
@@ -355,16 +343,15 @@ class Tiler(val IR: LIRCompUnit) {
         var minCost = Int.MAX_VALUE
         var minInsns = listOf<Instruction>()
         for (t in rootTiles) {
-            val (b, trees) = t.pattern(n)
-            if (b) {
+            val attempt = t.munch(n)
+            if (attempt.match) {
                 var currCost = t.cost
                 val currInsns = mutableListOf<Instruction>()
-                val edges = mutableListOf<Register>()
-                for (subtree in trees) {
+                for (i in 0 until attempt.subtrees.size) {
                     val cost : Int
                     val insns : List<Instruction>
-                    val regEdge = freshRegister()
-                    edges.add(regEdge)
+                    val subtree = attempt.subtrees[i]
+                    val regEdge = attempt.subregs[i]
                     if (subtree in memoizedExprs.keys) {
                         // this should never throw an exception, for I have literally just checked it
                         memoizedExprs[subtree]!!.let{ (c, il) -> cost = c; insns = il}
@@ -377,7 +364,7 @@ class Tiler(val IR: LIRCompUnit) {
                     currInsns.addAll(insns)
                 }
                 // convert the current tile into instructions using the register
-                val tileInsns = t.instructions(n, edges)
+                val tileInsns = attempt.instrs
                 currInsns.addAll(tileInsns)
                 if (currCost < minCost) {
                     minCost = currCost
@@ -416,21 +403,18 @@ class Tiler(val IR: LIRCompUnit) {
                     var minCost = Int.MAX_VALUE
                     var minInsns = listOf<Instruction>()
                     for (tile in exprTiles) {
-                        val (b, trees) = tile.pattern(n)
-                        if (b) {
+                        val attempt = tile.munch(n, reg)
+                        if (attempt.match) {
                             var currCost = tile.cost
                             val currInsns = mutableListOf<Instruction>()
-                            val edges = mutableListOf<Register>()
-                            for (subtree in trees) {
-                                val regEdge = freshRegister()
-                                edges.add(regEdge)
+                            for (i in 0 until attempt.subtrees.size) {
                                 // TODO: this needs to do DP
-                                val (cost, insns) = tileExprSubtree(subtree, regEdge)
+                                val (cost, insns) = tileExprSubtree(attempt.subtrees[i], attempt.subregs[i])
                                 currCost += cost
                                 currInsns.addAll(insns)
                             }
                             // convert the current tile into instructions using the register
-                            val tileInsns = tile.instructions(n, reg, edges)
+                            val tileInsns = attempt.instrs
                             currInsns.addAll(tileInsns)
                             if (currCost < minCost) {
                                 minCost = currCost

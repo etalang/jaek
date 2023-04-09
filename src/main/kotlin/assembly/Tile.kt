@@ -7,131 +7,81 @@ import ir.lowered.LIRNode
 import ir.lowered.LIRStmt.*
 import ir.lowered.LIRStmt.FlatStmt
 
-sealed class Tile(val cost : Int, val pattern : (LIRNode) -> Pair<Boolean, List<LIRExpr>>) {
+sealed class Tile(val cost: Int) {
 
-    sealed class RootTile(cost : Int, pattern : (FlatStmt) -> Pair<Boolean, List<LIRExpr>>,
-        val instructions : (FlatStmt, List<Register>) -> List<Instruction>) : Tile(cost,
-        {
-            when(it) {
-                is FlatStmt -> pattern(it)
-                else -> false to listOf()
-            }
-        }
+    /** INVARIANT: the length of subtrees and subregs MUST be equal. */
+    data class TileAttempt(
+        val match: Boolean,
+        val subtrees: List<LIRExpr> = listOf(),
+        val subregs: List<Register> = listOf(),
+        val instrs: List<Instruction> = listOf()
     ) {
+        init {
+            assert(subtrees.size == subregs.size) // probably does not work sad
+        }
+    }
 
-        class MoveTile(cost : Int, pattern : (LIRMove) -> Pair<Boolean, List<LIRExpr>>,
-            instructions: (LIRMove, List<Register>) -> List<Instruction>) : RootTile(cost,
-            {
-                when(it) {
-                    is LIRMove -> pattern(it)
-                    else -> false to listOf()
-                }
-            },
-            { lirmove, reglst ->
-                when (lirmove) {
-                    is LIRMove -> instructions(lirmove, reglst)
-                    else -> listOf()
+    sealed class RootTile(cost: Int, val munch: (FlatStmt) -> TileAttempt) : Tile(cost) {
+        class MoveTile(cost: Int, munch: (LIRMove) -> TileAttempt) : RootTile(cost, {
+                when (it) {
+                    is LIRMove -> munch(it)
+                    else -> TileAttempt(false)
                 }
             })
 
-        class JumpTile(cost : Int, pattern : (LIRJump) -> Pair<Boolean, List<LIRExpr>>,
-                       instructions: (LIRJump, List<Register>) -> List<Instruction>) : RootTile(cost,
-            {
-                when(it) {
-                    is LIRJump -> pattern(it)
-                    else -> false to listOf()
-                }
-            }, { lirjump, reglst ->
-                when (lirjump) {
-                    is LIRJump -> instructions(lirjump, reglst)
-                    else -> listOf()
-                }
-            })
+        class JumpTile(cost: Int, munch: (LIRJump) -> TileAttempt) : RootTile(cost, {
+            when (it) {
+                is LIRJump -> munch(it)
+                else -> TileAttempt(false)
+            }
+        })
 
-        class CJumpTile(cost : Int, pattern : (LIRTrueJump) -> Pair<Boolean, List<LIRExpr>>,
-                       instructions: (LIRTrueJump, List<Register>) -> List<Instruction>) : RootTile(cost,
-            {
-                when(it) {
-                    is LIRTrueJump -> pattern(it)
-                    else -> false to listOf()
-                }
-            }, { lircjump, reglst ->
-                when (lircjump) {
-                    is LIRTrueJump -> instructions(lircjump, reglst)
-                    else -> listOf()
-                }
-            })
+        class CJumpTile(cost: Int, munch: (LIRTrueJump) -> TileAttempt) : RootTile(cost, {
+            when (it) {
+                is LIRTrueJump -> munch(it)
+                else -> TileAttempt(false)
+            }
+        })
 
-        class ReturnTile(cost : Int, pattern : (LIRReturn) -> Pair<Boolean, List<LIRExpr>>,
-                        instructions: (LIRReturn, List<Register>) -> List<Instruction>) : RootTile(cost,
-            {
-                when(it) {
-                    is LIRReturn -> pattern(it)
-                    else -> false to listOf()
-                }
-            }, { lirret, reglst ->
-                when (lirret) {
-                    is LIRReturn -> instructions(lirret, reglst)
-                    else -> listOf()
-                }
-            })
+        class ReturnTile(cost: Int, munch: (LIRReturn) -> TileAttempt) : RootTile(cost, {
+            when (it) {
+                is LIRReturn -> munch(it)
+                else -> TileAttempt(false)
+            }
+        })
 
-        class CallTile(cost : Int, pattern : (LIRCallStmt) -> Pair<Boolean, List<LIRExpr>>,
-                       instructions: (LIRCallStmt, List<Register>) -> List<Instruction>) : RootTile(cost,
-            {
-                when(it) {
-                    is LIRCallStmt -> pattern(it)
-                    else -> false to listOf()
-                }
-            }, { lircall, reglst ->
-                when (lircall) {
-                    is LIRCallStmt -> instructions(lircall, reglst)
-                    else -> listOf()
-                }
-            })
+        class CallTile(cost: Int, munch: (LIRCallStmt) -> TileAttempt) : RootTile(cost, {
+            when (it) {
+                is LIRCallStmt -> munch(it)
+                else -> TileAttempt(false)
+            }
+        })
     }
 
 
-    sealed class ExprTile(cost : Int, pattern : (LIRExpr) -> Pair<Boolean, List<LIRExpr>>,
-        val instructions : (LIRExpr, Register, List<Register>) -> List<Instruction>) : Tile(cost,
-        {
-            when(it) {
-                is LIRExpr -> pattern(it)
-                else -> false to listOf()
+    sealed class ExprTile(cost: Int, val munch: (LIRExpr, Register) -> TileAttempt) : Tile(cost) {
+
+        class OpTile(
+            cost: Int,
+            munch: (LIRExpr.LIROp, Register) -> TileAttempt) : ExprTile(cost, {
+            it, r ->
+            when (it) {
+                is LIRExpr.LIROp -> munch(it, r)
+                else -> TileAttempt(false)
             }
-        }
-        ) {
+        })
 
-        class OpTile(cost : Int, pattern : (LIRExpr.LIROp) -> Pair<Boolean, List<LIRExpr>>,
-            instructions : (LIRExpr.LIROp, Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
-        {
-            when(it) {
-                is LIRExpr.LIROp -> pattern(it)
-                else -> false to listOf()
+        class MemTile(
+            cost: Int,
+            munch: (LIRExpr.LIRMem, Register) -> TileAttempt
+        ) : ExprTile(cost, {
+            it, r ->
+            when (it) {
+                is LIRExpr.LIRMem -> munch(it, r)
+                else -> TileAttempt(false)
             }
-        },
-            { n, parent, children ->
-                when(n) {
-                    is LIRExpr.LIROp -> instructions(n, parent, children)
-                    else -> listOf()
-                }
-            })
-
-        class MemTile(cost : Int, pattern : (LIRExpr.LIRMem) -> Pair<Boolean, List<LIRExpr>>,
-                    instructions: (LIRExpr.LIRMem, Register, List<Register>) -> List<Instruction>) : ExprTile(cost,
-            {
-                when(it) {
-                    is LIRExpr.LIRMem -> pattern(it)
-                    else -> false to listOf()
-                }
-             }, { n, parent, children ->
-                when(n) {
-                    is LIRExpr.LIRMem -> instructions(n, parent, children)
-                    else -> listOf()
-                }
-            })
-        }
-
+        })
+    }
 
 
 }
