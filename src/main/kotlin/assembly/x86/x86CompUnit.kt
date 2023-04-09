@@ -18,6 +18,6 @@ class x86CompUnit(val name : String, val functions: List<x86FuncDecl>, val globa
         for (func in functions) { // cannot be empty
             fullText.add(func.toString())
         }
-        return fullText.joinToString("\n")
+        return fullText.joinToString("\n") + "\n"
     }
 }

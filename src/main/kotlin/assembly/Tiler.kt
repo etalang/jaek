@@ -71,10 +71,36 @@ class Tiler(val IR: LIRCompUnit) {
         // base tile
         MoveTile(1,
             { lirMove: LIRMove ->
-                Pair(true, listOf(lirMove.dest, lirMove.expr))
+                if (lirMove.dest is LIRExpr.LIRMem) {
+                    if (lirMove.dest.address is LIRExpr.LIRName)
+                        Pair(true, listOf(lirMove.expr))
+                    else
+                        Pair(true, listOf(lirMove.dest.address, lirMove.expr))
+                } else {
+                    Pair(false, listOf())
+                }
             },
-            { _, it ->
-                listOf(MOV(RegisterDest(it[0]), RegisterSrc(it[1])))
+            { lirMove, it ->
+                val loc = (lirMove.dest as LIRExpr.LIRMem)
+                if (loc.address is LIRExpr.LIRName) {
+                    listOf(MOV(MemoryDest(LabelMem(Label(loc.address.l, false))), RegisterSrc(it[1])))
+                }
+                else {
+                    listOf(MOV(MemoryDest(RegisterMem(it[0], null)), RegisterSrc(it[1])))
+                }
+            }
+        ),
+        MoveTile(1,
+            { lirMove: LIRMove ->
+                if (lirMove.dest is LIRExpr.LIRTemp) {
+                     Pair(true, listOf(lirMove.expr))
+                }
+                else {
+                    Pair(false, listOf())
+                }
+            },
+            { lirMove, it ->
+                listOf(MOV(RegisterDest(Abstract((lirMove.dest as LIRExpr.LIRTemp).name)), RegisterSrc(it[0])))
             }
         )
     )
@@ -114,9 +140,11 @@ class Tiler(val IR: LIRCompUnit) {
                     if (lirCallStmt.args.isNotEmpty()) {
                         insns.add(MOV(RegisterDest(x86(x86Name.RSI)), RegisterSrc(reglst[1])))
                     }
+//                    insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
                     insns.add(CALL(Label(lirCallStmt.target.l, false)))
+                    insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
                     if (argNumber > 5) {
-                        insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber.toLong() - 5))))
+                        insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber - 5L))))
                     }
                     insns.add(MOV(RegisterDest(Abstract("_RV1")), RegisterSrc(x86(x86Name.RAX))))
                     insns.add(MOV(RegisterDest(Abstract("_RV2")), RegisterSrc(x86(x86Name.RDX))))
@@ -183,7 +211,8 @@ class Tiler(val IR: LIRCompUnit) {
                         IRBinOp.OpType.SUB ->
                             listOf(MOV(RegisterDest(parent), RegisterSrc(children[0])),
                                 Arith.SUB(RegisterDest(parent), RegisterSrc(children[1])))
-                        IRBinOp.OpType.MUL -> TODO()
+                        IRBinOp.OpType.MUL -> listOf(MOV(RegisterDest(parent), RegisterSrc(children[0])),
+                            Arith.MUL(RegisterDest(parent), RegisterSrc(children[1])))
                         HMUL -> TODO()
                         IRBinOp.OpType.DIV -> TODO()
                         MOD -> TODO()
@@ -237,6 +266,9 @@ class Tiler(val IR: LIRCompUnit) {
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.SUB)(it) },
             {  _, parent, children -> opInstructions(IRBinOp.OpType.SUB)(parent, children) }
+        ),
+        OpTile(2, { opPattern(IRBinOp.OpType.MUL)(it) },
+            { _, parent, children -> opInstructions(IRBinOp.OpType.MUL)(parent, children) }
         ),
         OpTile(2, { opPattern(IRBinOp.OpType.AND)(it) },
             {  _, parent, children -> opInstructions(IRBinOp.OpType.AND)(parent, children) }

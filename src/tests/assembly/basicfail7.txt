@@ -1,0 +1,77 @@
+.file "basic.eta"
+.intel_syntax noprefix
+
+.text
+.globl _Imain_paai
+.type _Imain_paai, @function
+.align 32
+_Imain_paai:
+$B1:
+mov $A1, _ARG1
+mov args, $A1
+mov $A2, 64
+mov $TL1, $A2
+mov $A3, $TL1
+mov rdi, $A3
+call _eta_alloc
+mov _RV1, rax
+mov _RV2, rdx
+mov $A4, _RV1
+mov $TL2, $A4
+mov $A5, $TL2
+mov $T1, $A5
+mov $A6, $T1
+mov $A7, 7
+mov QWORD PTR [$A6], $A7
+mov $A9, $T1
+mov $A10, 8
+mov $A8, $A9
+add $A8, $A10
+mov $A11, 1
+mov QWORD PTR [$A8], $A11
+mov $A13, $T1
+mov $A14, 16
+mov $A12, $A13
+add $A12, $A14
+mov $A15, 2
+mov QWORD PTR [$A12], $A15
+mov $A17, $T1
+mov $A18, 24
+mov $A16, $A17
+add $A16, $A18
+mov $A19, 3
+mov QWORD PTR [$A16], $A19
+mov $A21, $T1
+mov $A22, 32
+mov $A20, $A21
+add $A20, $A22
+mov $A23, 4
+mov QWORD PTR [$A20], $A23
+mov $A25, $T1
+mov $A26, 40
+mov $A24, $A25
+add $A24, $A26
+mov $A27, 5
+mov QWORD PTR [$A24], $A27
+mov $A29, $T1
+mov $A30, 48
+mov $A28, $A29
+add $A28, $A30
+mov $A31, 6
+mov QWORD PTR [$A28], $A31
+mov $A33, $T1
+mov $A34, 56
+mov $A32, $A33
+add $A32, $A34
+mov $A35, 7
+mov QWORD PTR [$A32], $A35
+mov $A37, $T1
+mov $A38, 8
+mov $A36, $A37
+add $A36, $A38
+mov $T2, $A36
+mov $A39, $T2
+mov str, $A39
+leave
+ret
+.size _Imain_paai, .-_Imain_paai

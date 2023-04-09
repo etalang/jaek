@@ -1,0 +1,11 @@
+use io
+
+main(args: int[][]) {
+    println("hello world")
+//    argc: int = length(args)
+//    a: int = 0
+//    while (a < argc) {
+//        println(args[a])
+//        a = a + 1
+//    }
+}

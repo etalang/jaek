@@ -1,6 +1,13 @@
 package assembly.x86
 
 sealed class Instruction {
+
+    data class COMMENT(val str: String) : Instruction() {
+        override fun toString(): String {
+            return "# $str"
+        }
+    }
+
     data class MOV(val dest : Destination, val src : Source) : Instruction() {
         override fun toString(): String {
             return "mov $dest, $src" // this might require like a "QWORD PTR" somewhere
@@ -20,7 +27,11 @@ sealed class Instruction {
             }
         }
 
-        class MUL(dest : Destination, src : Source) : Arith(dest, src)
+        class MUL(dest : Destination, src : Source) : Arith(dest, src) {
+            override fun toString(): String {
+                return "imul $dest, $src"
+            }
+        }
 
         class DIV(dest : Destination, src : Source) : Arith(dest, src)
 

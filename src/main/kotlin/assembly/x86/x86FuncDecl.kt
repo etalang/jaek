@@ -5,7 +5,7 @@ class x86FuncDecl(val name : String, val body : List<Instruction>) {
         var funcBlock = mutableListOf<String>(
             ".globl $name",
             ".type $name, @function",
-//            ".align 32",
+            ".align 32",
             "$name:",
 //            "and rsp, -16" // force rsp to be aligned on entry
         )

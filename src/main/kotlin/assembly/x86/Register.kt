@@ -34,7 +34,7 @@ sealed class Register {
         }
     }
 
-    /** an instance of assembly represents a register in assembly assembly.  */
+    /** an instance of assembly represents a register in assembly.  */
     data class x86(val name : x86Name) : Register() {
         override fun toString(): String {
             return x86NametoString(name)
