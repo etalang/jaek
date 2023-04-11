@@ -16,7 +16,6 @@ use conv
 main(args : int[][]) {
     arr : int[2]
 //    str : int[] = {1,2,3,4,5,6}
-//    str : int[] = "hellohellohello"
 //    intarr : int[] = unparseInt(5)
 //    x : int[] = unparseInt(f())
 
