@@ -70,6 +70,12 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
         help = "Specify where to find library or interface files. " + "Default is the current working directory. The directory is expected to exist."
     ).default(System.getProperty("user.dir"))
     private val libpath: String by libOpt
+    private val targetOpt = option(
+        "-target",
+        metavar = "<OS>",
+        help = "Specify the operating system for which to generate code " + "Default is linux. No other OS is supported."
+    ).default("linux")
+    private val target: String by targetOpt
 
     /**
      * [run] is the main loop of the CLI. All program arguments have already been
@@ -78,6 +84,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
     override fun run() {
         // the irrun flag should also generate the IR, just like irgen
         val outputIR = if (runIR) true else initOutputIR
+        if (target != "linux") {
+            throw BadParameterValue("The only supported OS is linux", targetOpt)
+        }
         val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
         val absSourcepath = processDirPath(sourcepath, sourceOpt)
         val absLibpath = processDirPath(libpath, libOpt)

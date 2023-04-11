@@ -48,7 +48,15 @@ eth ~/shared/production/src/tests/parser/parseScript -compilerpath ~/shared/prod
 ```bash
 eth ~/shared/production/src/tests/typing/ethScript -compilerpath ~/shared/production/
 ```
-- **all** test cases:
+**ir** test cases:
 ```bash
 eth ~/shared/production/src/tests/ir/ethScript -compilerpath ~/shared/production/
+```
+**assembly** test cases:
+```bash
+eth ~/shared/production/src/tests/assembly/ethScript -compilerpath ~/shared/production/
+```
+**all** test cases:
+```bash
+eth ~/shared/production/src/tests/ethScript -compilerpath ~/shared/production/
 ```
