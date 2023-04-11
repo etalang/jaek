@@ -1,11 +1,19 @@
 package ir.lowered
 
+import assembly.tile.BuiltTile
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
 /** IRSeq represents the sequential composition of IR statements in [block]**/
 class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     override val java: IRSeq get() = factory.IRSeq(block.map { it.java })
+
+    override val defaultTile: BuiltTile.RegularTile
+        get() = TODO("Not yet implemented")
+
+    override fun findBestTile() {
+        TODO("Not yet implemented")
+    }
 
     fun blockReordering(freshLabel: () -> String): LIRSeq {
         val b = maximalBasicBlocks(freshLabel)
