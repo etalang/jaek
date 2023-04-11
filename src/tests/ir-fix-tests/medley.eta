@@ -9,9 +9,9 @@ main(args:int[][]) {
 
     aa:int[][] = {{1,2,3},{4,5},{6}}
     //revised
-    temp:int[] = ff(aa)
+//    temp:int[] = ff(aa)
     //println("here")
-    temp[1] = aa[2][0]
+    ff(aa)[1] = aa[2][0]
     //println("here2")
     println(unparseInt(aa[0][1]))
     println(unparseInt(length(aa[2])))
