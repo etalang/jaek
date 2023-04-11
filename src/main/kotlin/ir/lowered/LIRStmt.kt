@@ -12,14 +12,14 @@ import edu.cornell.cs.cs4120.etac.ir.IRReturn as JIRReturn
 import edu.cornell.cs.cs4120.etac.ir.IRStmt as JIRStmt
 
 /** IRStmt represents a statement **/
-sealed class LIRStmt<TileType> : LIRNode.TileableNode<TileType>() where TileType : BuiltTile{
+sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
     abstract override val java: JIRStmt;
 
-    sealed class FlatStmt<TileType> : LIRStmt<TileType>() where TileType : BuiltTile
-    sealed class EndBlock<TileType> : FlatStmt<TileType>() where TileType : BuiltTile
+    sealed class FlatStmt : LIRStmt()
+    sealed class EndBlock : FlatStmt()
 
     /** IRMove represents moving the result of an expression to a destination**/
-    class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : FlatStmt<BuiltTile.RegularTile>() {
+    class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : FlatStmt() {
         override val java: JIRMove = factory.IRMove(dest.java, expr.java)
 
         override val defaultTile: BuiltTile.RegularTile
@@ -75,9 +75,8 @@ sealed class LIRStmt<TileType> : LIRNode.TileableNode<TileType>() where TileType
 
     /** IRJump represents a jump to address [address]
      *
-     * IMPORTANT INVARIANT: ANY INSTANCES OF [LIRExpr.LIRName] MUST BE IMMEDIATELY IN [address]
-     * **/
-    class LIRJump(val address: LIRExpr.LIRName) : EndBlock<BuiltTile.RegularTile>() {
+     **/
+    class LIRJump(val address: LIRExpr.LIRName) : EndBlock() {
         override val java: JIRJump = factory.IRJump(address.java)
 
         override val defaultTile
@@ -88,7 +87,8 @@ sealed class LIRStmt<TileType> : LIRNode.TileableNode<TileType>() where TileType
     }
 
     /** IRCJump represents a jump to [trueBranch] if [guard] is non-zero and a jump to [falseBranch] otherwise**/
-    class LIRCJump(val guard: LIRExpr, val trueBranch: LIRLabel, val falseBranch: LIRLabel?) : EndBlock<BuiltTile.RegularTile>() {
+    class LIRCJump(val guard: LIRExpr, val trueBranch: LIRLabel, val falseBranch: LIRLabel?) :
+        EndBlock() {
         override val java: JIRCJump =
         //WE SHOULDN'T EVER CALL THIS : UNSUPPORTED OPERATION
             //(WHEN WE CALL THIS falseBranch SHOULD BE NULL!!!!!!) THUS IT SHOULD BE LIRTrueJump
@@ -102,7 +102,7 @@ sealed class LIRStmt<TileType> : LIRNode.TileableNode<TileType>() where TileType
     }
 
     /** IRCJump represents a jump to [trueBranch] if [guard] is non-zero and a jump to [falseBranch] otherwise**/
-    class LIRTrueJump(val guard: LIRExpr, val trueBranch: LIRLabel) : EndBlock<BuiltTile.RegularTile>() {
+    class LIRTrueJump(val guard: LIRExpr, val trueBranch: LIRLabel) : EndBlock() {
         override val java: JIRCJump = factory.IRCJump(guard.java, trueBranch.l)
 
         override val defaultTile
@@ -122,16 +122,16 @@ sealed class LIRStmt<TileType> : LIRNode.TileableNode<TileType>() where TileType
     }
 
     /** IRLabel represents giving a name [l] to the next statement **/
-    class LIRLabel(val l: String) : FlatStmt<BuiltTile.LabelTile>() {
+    class LIRLabel(val l: String) : FlatStmt() {
         override val java: JIRLabel = factory.IRLabel(l)
 
-        override val defaultTile get() = BuiltTile.LabelTile(l)
+        override val defaultTile get() = BuiltTile.RegularTile(listOf(Label(l, TODO())),0)
 
         override fun findBestTile() {}
     }
 
     /** IRReturn represents returning 0 or more values in [valList] from the current function **/
-    class LIRReturn(val valList: List<LIRExpr>) : EndBlock<BuiltTile.RegularTile>() {
+    class LIRReturn(val valList: List<LIRExpr>) : EndBlock() {
         override val java: JIRReturn = factory.IRReturn(valList.map { it.java })
 
         override val defaultTile: BuiltTile.RegularTile
@@ -185,7 +185,8 @@ sealed class LIRStmt<TileType> : LIRNode.TileableNode<TileType>() where TileType
         override fun findBestTile() {}
     }
 
-    class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: List<LIRExpr>) : FlatStmt<BuiltTile.RegularTile>() {
+    class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: List<LIRExpr>) :
+        FlatStmt() {
         override val java: JIRCallStmt = factory.IRCallStmt(target.java, n_returns, args.map { it.java })
 
         override val defaultTile : BuiltTile.RegularTile

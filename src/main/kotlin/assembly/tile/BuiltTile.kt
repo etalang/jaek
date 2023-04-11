@@ -8,8 +8,4 @@ sealed class BuiltTile(val instructions: List<Instruction>, val cost: Int) {
         BuiltTile(instructions, cost)
 
     class RegularTile(instructions: List<Instruction>, cost: Int) : BuiltTile(instructions, cost)
-
-    class LabelTile(val label: String) :
-        BuiltTile(listOf(), 0)
-
 }
