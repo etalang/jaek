@@ -7,7 +7,11 @@ import ir.InterRep
 sealed class LIRNode : InterRep() {
     sealed class TileableNode<TileType> : LIRNode() where TileType : BuiltTile {
         fun optimalTile(): TileType {
-            return bestTile ?: let { findBestTile(); bestTile ?: defaultTile }
+            return bestTile ?: let {
+                findBestTile(); bestTile ?: defaultTile.let { default ->
+                bestTile = default; default
+            }
+            }
         }
 
         private var bestTile: TileType? = null
