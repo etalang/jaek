@@ -1,9 +1,17 @@
 package assembly.x86
 
 sealed class Register {
-    data class Abstract(val name : String) : Register() {
+    data class Abstract(val name: String) : Register() {
         override fun toString(): String {
             return name
+        }
+
+        companion object {
+            private var freshRegisterCount = 0
+            fun freshRegister(): Abstract {
+                freshRegisterCount++
+                return Abstract("\$A$freshRegisterCount")
+            }
         }
     }
 
@@ -13,8 +21,8 @@ sealed class Register {
     }
 
     /** prints the corresponding name of the register */
-    fun x86NametoString(n : x86Name) : String {
-        return when(n) {
+    fun x86NametoString(n: x86Name): String {
+        return when (n) {
             x86Name.RAX -> "rax"
             x86Name.RBX -> "rbx"
             x86Name.RCX -> "rcx"
@@ -35,7 +43,7 @@ sealed class Register {
     }
 
     /** an instance of assembly represents a register in assembly.  */
-    data class x86(val name : x86Name) : Register() {
+    data class x86(val name: x86Name) : Register() {
         override fun toString(): String {
             return x86NametoString(name)
         }
