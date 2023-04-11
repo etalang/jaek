@@ -145,9 +145,9 @@ class Tiler(val IR: LIRCompUnit) {
                 if (it.args.isNotEmpty()) {
                     insns.add(MOV(RegisterDest(x86(x86Name.RSI)), RegisterSrc(reglst[1])))
                 }
-//                    insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
-                insns.add(CALL(Label(it.target.l, false)))
                 insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
+                insns.add(CALL(Label(it.target.l, false)))
+//                insns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
                 if (argNumber > 5) {
                     insns.add(Arith.ADD(RegisterDest(x86(x86Name.RSP)), ConstSrc(8L * (argNumber - 5L))))
                 }
