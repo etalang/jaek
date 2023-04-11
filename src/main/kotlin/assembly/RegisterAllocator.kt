@@ -28,6 +28,7 @@ class RegisterAllocator {
     fun allocateRegisters(insns : MutableList<Instruction>) : MutableList<Instruction>{
         val returnedInsns = mutableListOf<Instruction>()
         for (insn in insns) {
+            returnedInsns.add(COMMENT(insn.toString()))
             val (written, used)  = detectRegisters(insn)
             val mentioned = written union used
             // holds whether each abstract register mentioned should be assigned 0, 1, or 2
