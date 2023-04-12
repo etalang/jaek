@@ -110,7 +110,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                 val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
                 // adding assembly file -- might be unsafe LOL
                 // TODO: test output assembly file to new -d path
-                val assemblyFile : File = getOutFileName(it, absAssemPath, ".s")
+                val assemblyFile: File = getOutFileName(it, absAssemPath, ".s")
 
                 val ast: Node?
                 try {
@@ -138,10 +138,14 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     }
 
                                     // TODO: CHECK IF THE PIPELINING IS FINE HERE
-                                    val assembly = ir.tile()
-
-                                    // print to file.s
-                                    assemblyFile.writeText(assembly.toString())
+                                    try {
+                                        val assembly = ir.tile()
+                                        // print to file.s
+                                        assemblyFile.writeText(assembly.toString())
+                                    } catch (e: Exception) {
+                                        assemblyFile.writeText("Failed to generate assembly for " + it.name)
+                                        println("Failed to generate assembly for " + it.name)
+                                    }
 
                                 }
 
