@@ -142,7 +142,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                         val assembly = ir.tile()
                                         // print to file.s
                                         assemblyFile.writeText(assembly.toString())
-                                    } catch (e: Exception) {
+                                    } catch (e: Throwable) {
                                         assemblyFile.writeText("Failed to generate assembly for " + it.name)
                                         println("Failed to generate assembly for " + it.name)
                                     }
