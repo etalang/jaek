@@ -2,8 +2,7 @@ package assembly
 
 import assembly.x86.Instruction
 import assembly.x86.Register
-import ir.lowered.LIRExpr
-import ir.lowered.LIRNode
+import ir.lowered.*
 import ir.lowered.LIRStmt.*
 import ir.lowered.LIRStmt.FlatStmt
 
@@ -63,21 +62,21 @@ sealed class Tile(val cost: Int) {
 
         class OpTile(
             cost: Int,
-            munch: (LIRExpr.LIROp, Register) -> TileAttempt) : ExprTile(cost, {
+            munch: (LIROp, Register) -> TileAttempt) : ExprTile(cost, {
             it, r ->
             when (it) {
-                is LIRExpr.LIROp -> munch(it, r)
+                is LIROp -> munch(it, r)
                 else -> TileAttempt(false)
             }
         })
 
         class MemTile(
             cost: Int,
-            munch: (LIRExpr.LIRMem, Register) -> TileAttempt
+            munch: (LIRMem, Register) -> TileAttempt
         ) : ExprTile(cost, {
             it, r ->
             when (it) {
-                is LIRExpr.LIRMem -> munch(it, r)
+                is LIRMem -> munch(it, r)
                 else -> TileAttempt(false)
             }
         })

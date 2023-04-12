@@ -209,7 +209,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                                 Node.Conditional(
                                     node.statements,
                                     node.label,
-                                    LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
+                                    LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
                                     node.falseEdge,
                                     null
                                 )

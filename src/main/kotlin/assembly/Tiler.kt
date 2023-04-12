@@ -14,7 +14,6 @@ import assembly.x86.Register.*
 import assembly.x86.Source.*
 import assembly.x86.Memory.*
 import assembly.x86.*
-import assembly.x86.Instruction.Arith.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 

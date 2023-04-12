@@ -1,10 +1,7 @@
 package ir
 
-import ir.lowered.LIRCompUnit
-import ir.lowered.LIRExpr
+import ir.lowered.*
 import ir.lowered.LIRExpr.*
-import ir.lowered.LIRFuncDecl
-import ir.lowered.LIRSeq
 import ir.lowered.LIRStmt.*
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
