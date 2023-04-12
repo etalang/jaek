@@ -1,10 +1,7 @@
 package ir
 
-import ir.lowered.LIRCompUnit
-import ir.lowered.LIRExpr
+import ir.lowered.*
 import ir.lowered.LIRExpr.*
-import ir.lowered.LIRFuncDecl
-import ir.lowered.LIRSeq
 import ir.lowered.LIRStmt.*
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
@@ -127,7 +124,10 @@ class IRLowerer(val globals: List<String>) {
                 val (addrStmts, guardExpr) = lowerExpr(n.address)
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 stmts.addAll(addrStmts)
-                stmts.add(LIRJump(guardExpr))
+                if (guardExpr is LIRName)
+                    stmts.add(LIRJump(guardExpr))
+                else
+                    throw Exception("name metamorphosed into a caterpillar")
                 stmts
             }
 
@@ -159,6 +159,9 @@ class IRLowerer(val globals: List<String>) {
             is IRStmt.IRCallStmt -> {
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 val (addrStmts, addrExpr) = lowerExpr(n.address)
+                if (addrExpr !is LIRName) {
+                    throw Exception("a LIRName metamorphosed into a beautiful bug from lowerStatement")
+                }
                 stmts.addAll(addrStmts)
 
                 val argTmps: MutableList<LIRExpr> = mutableListOf()
@@ -222,6 +225,9 @@ class IRLowerer(val globals: List<String>) {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
                 val allTemps: MutableList<LIRTemp> = mutableListOf()
                 val (s0, e0) = lowerExpr(n.address)
+                if (e0 !is LIRName) {
+                    throw Exception("a name has metamorphosed into a beautiful bug from lowerExpr")
+                }
                 allStmts.addAll(s0)
 
                 n.args.forEach {

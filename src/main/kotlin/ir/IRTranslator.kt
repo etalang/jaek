@@ -2,6 +2,7 @@ package ir
 
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import ir.lowered.LIRCompUnit
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
 import ir.mid.IRExpr.*
@@ -19,12 +20,12 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
-    fun irgen(optimize: Boolean = false): JIRNode {
+    fun irgen(optimize: Boolean = false): LIRCompUnit { // TODO: LOOK HOW I CHANGED RETURN TYPE
         val mir = translateCompUnit(AST)
         var lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
-        lir = ConstantFolder().apply(lir);
-        return lir.java
+        lir = ConstantFolder().apply(lir)
+        return lir
     }
 
     private fun freshLabel(): IRLabel {

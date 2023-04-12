@@ -1,5 +1,8 @@
 package ir.lowered
 
+import assembly.x86.x86CompUnit
+import assembly.x86.x86Data
+import assembly.x86.x86FuncDecl
 import ir.IRData
 import edu.cornell.cs.cs4120.etac.ir.IRCompUnit as JIRCompUnit
 
@@ -7,7 +10,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRCompUnit as JIRCompUnit
 class LIRCompUnit(
     val name: String, val functions: List<LIRFuncDecl>, val globals: List<IRData>
 ) : LIRNode() {
-    private var freshLabelCount =0
+    private var freshLabelCount = 0
 
     fun reorderBlocks() {
         functions.forEach { it.reorderBlocks(this::freshLabel) }
@@ -18,8 +21,12 @@ class LIRCompUnit(
         return "\$B$freshLabelCount"
     }
 
-    fun constantFold() {
-        TODO("Not yet implemented")
+    fun tile(): x86CompUnit {
+        val assemblyFuncs: MutableList<x86FuncDecl> = ArrayList()
+        functions.forEach { assemblyFuncs.add(it.tile) }
+        val assemblyData: MutableList<x86Data> = ArrayList()
+        globals.forEach { assemblyData.add(it.tile) }
+        return x86CompUnit(name, assemblyFuncs, assemblyData)
     }
 
     override val java: JIRCompUnit

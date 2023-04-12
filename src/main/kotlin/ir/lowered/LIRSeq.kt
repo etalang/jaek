@@ -1,11 +1,31 @@
 package ir.lowered
 
+import assembly.RegisterAllocator
+import assembly.tile.BuiltTile
+import assembly.tile.TileBuilder
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
 /** IRSeq represents the sequential composition of IR statements in [block]**/
 class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     override val java: IRSeq get() = factory.IRSeq(block.map { it.java })
+
+    override val defaultTile: BuiltTile.RegularTile
+        get() {
+            // TODO!!!! WE SHOULD USE BUILDER HERE!!!!!!!!! @blu
+
+            val builder = TileBuilder.Regular(0, this)
+            for (stmt in block) builder.consume(stmt.optimalTile())
+
+            // TODO: do register allocation here
+            // TODO: add preamble (currently a full guess)
+            val ra = RegisterAllocator()
+            val insns = ra.allocateRegisters(builder.publicIns)
+            return BuiltTile.RegularTile(insns, builder.publicCost)
+//            return builder.build()
+        }
+
+    override fun findBestTile() {}
 
     fun blockReordering(freshLabel: () -> String): LIRSeq {
         val b = maximalBasicBlocks(freshLabel)
@@ -201,7 +221,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                                 Node.Conditional(
                                     node.statements,
                                     node.label,
-                                    LIRExpr.LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
+                                    LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
                                     node.falseEdge,
                                     null
                                 )

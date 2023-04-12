@@ -17,18 +17,20 @@ sealed class IROptimizer {
 
     protected open fun applyFlatStmt(node: LIRStmt.FlatStmt): LIRStmt.FlatStmt {
         return when (node) {
-            is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(applyExpr(node.guard), applyLabel(node.trueBranch),
+            is LIRStmt.LIRCJump -> LIRStmt.LIRCJump(
+                applyExpr(node.guard),
+                applyLabel(node.trueBranch),
                 node.falseBranch?.let { applyLabel(it) })
 
-            is LIRStmt.LIRJump -> LIRStmt.LIRJump(applyExpr(node.address))
-            is LIRStmt.LIRReturn -> LIRStmt.LIRReturn(node.valList.map { applyExpr(it) })
+            is LIRStmt.LIRJump -> LIRStmt.LIRJump(node.address)
+            is LIRReturn -> LIRReturn(node.valList.map { applyExpr(it) })
             is LIRStmt.LIRTrueJump -> LIRStmt.LIRTrueJump(applyExpr(node.guard), applyLabel(node.trueBranch))
-            is LIRStmt.LIRCallStmt -> LIRStmt.LIRCallStmt(applyExpr(node.target),
-                node.n_returns,
-                node.args.map { applyExpr(it) })
+            is LIRCallStmt -> {
+                LIRCallStmt(node.target, node.n_returns, node.args.map { applyExpr(it) })
+            }
 
             is LIRStmt.LIRLabel -> applyLabel(node)
-            is LIRStmt.LIRMove -> LIRStmt.LIRMove(applyExpr(node.dest), applyExpr(node.expr))
+            is LIRMove -> LIRMove(applyExpr(node.dest), applyExpr(node.expr))
         }
     }
 
@@ -39,9 +41,9 @@ sealed class IROptimizer {
     protected open fun applyExpr(node: LIRExpr): LIRExpr {
         return when (node) {
             is LIRExpr.LIRConst -> node
-            is LIRExpr.LIRMem -> applyMem(node)
-            is LIRExpr.LIRName -> applyName(node)
-            is LIRExpr.LIROp -> applyOp(node)
+            is LIRMem -> applyMem(node)
+            is LIRExpr.LIRName -> node
+            is LIROp -> applyOp(node)
             is LIRExpr.LIRTemp -> applyTemp(node)
         }
     }
@@ -50,15 +52,11 @@ sealed class IROptimizer {
         return node
     }
 
-    protected open fun applyOp(node: LIRExpr.LIROp): LIRExpr {
-        return LIRExpr.LIROp(node.op, applyExpr(node.left), applyExpr(node.right))
+    protected open fun applyOp(node: LIROp): LIRExpr {
+        return LIROp(node.op, applyExpr(node.left), applyExpr(node.right))
     }
 
-    protected open fun applyMem(node: LIRExpr.LIRMem): LIRExpr {
-        return LIRExpr.LIRMem(applyExpr(node.address))
-    }
-
-    protected open fun applyName(node: LIRExpr.LIRName): LIRExpr {
-        return node
+    protected open fun applyMem(node: LIRMem): LIRExpr {
+        return LIRMem(applyExpr(node.address))
     }
 }

@@ -2,9 +2,10 @@ package ir.optimize
 
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import ir.lowered.LIRExpr
+import ir.lowered.LIROp
 
 class ConstantFolder : IROptimizer() {
-    override fun applyOp(node: LIRExpr.LIROp): LIRExpr {
+    override fun applyOp(node: LIROp): LIRExpr {
         val left = applyExpr(node.left)
         val right = applyExpr(node.right)
 
