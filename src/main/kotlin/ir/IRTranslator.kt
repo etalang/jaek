@@ -144,40 +144,46 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is MultiAssign -> {
 
                 val first = n.vals.first()
+                val stmts: MutableList<IRStmt> = mutableListOf()
+                val targetList: List<IRExpr> = n.targets.map {
+                    val transl = translateAssignTarget(it)
+                    if (transl is IRESeq) { // this fixes order of eval
+                        stmts.add(transl.statement)
+                        transl.value
+                    } else
+                        transl
+                }
 
                 if (n.vals.size == 1 && first is Expr.FunctionCall) {
                     // go straight to IRCallStmt and do not pass go
                     // get the right number of returns from _RV whatever
-                    val returnTemps: MutableList<IRTemp> = mutableListOf()
-                    for (i in 1..n.targets.size) {
-                        returnTemps.add(IRTemp("_RV$i"))
-                    }
+
                     // DO THE CALL IN HERE DO NOT PASS IT DOWN
                     // assuming that the number of returns must match the number of targets, checked in typecheck
-                    val stmts: MutableList<IRStmt> = mutableListOf(
+                    stmts.add(
                         IRCallStmt(IRName(
                             functionMap[first.fn]!!
                         ),
                             n.targets.size.toLong(),
                             first.args.map { translateExpr(it) }
-                        )
-                    )
-                    val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
+                        ))
+                    val returnTemps: MutableList<IRTemp> = mutableListOf()
+                    for (i in 1..n.targets.size) {
+                        returnTemps.add(IRTemp("_RV$i"))
+                    }
                     stmts.addAll((targetList zip returnTemps).map { multiAssignMove(it) })
                     IRSeq(stmts)
                 } else {
                     val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) } // rhs first
                     val exprTempList : MutableList<IRExpr> = mutableListOf()
-                    val moveList : MutableList<IRStmt> = mutableListOf()
                     for (it in translatedExprs) {
                         val ti = freshTemp()
                         exprTempList.add(ti)
-                        moveList.add(IRMove(ti, it))
+                        stmts.add(IRMove(ti, it))
                     }
-                    val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
                     val assignList: List<IRStmt> = (targetList zip exprTempList).map { multiAssignMove(it) }
-                    moveList.addAll(assignList)
-                    IRSeq(moveList)
+                    stmts.addAll(assignList)
+                    IRSeq(stmts)
                 }
 
             }
