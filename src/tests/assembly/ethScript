@@ -1,0 +1,6 @@
+build
+
+etac ("Test assembly") "-libpath $(testpath) -target linux" {
+    helloworld.eta;
+}
+

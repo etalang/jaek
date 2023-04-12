@@ -1,0 +1,61 @@
+use io
+use conv
+
+main(args:int[][]) {
+    println({{"hello"}, {"world"}}[1][0])
+    _ = id(id(id(1)))
+
+    foo()
+
+    aa:int[][] = {{1,2,3},{4,5},{6}}
+    //revised
+//    temp:int[] = ff(aa)
+    //println("here")
+    ff(aa)[1] = aa[2][0]
+    //println("here2")
+    println(unparseInt(aa[0][1]))
+    println(unparseInt(length(aa[2])))
+
+    aa[0][2] = gg(aa)
+    println(unparseInt(aa[0][2]))
+}
+
+ff(a:int[][]): int[] {
+    a[2] = {47,48,49,50}
+    return a[0]
+}
+
+gg(a:int[][]): int {
+    a[0] = {0}
+    return 59
+}
+
+foo() {
+    a:int[] = {1,2,3}
+    //print("pretempone")
+    // revised to enforce their eval order
+    tempone:int = f(a)[1]
+    a[tempone] = a[g(a)]
+    //print("here3")
+    println(unparseInt(a[0]))
+    //print("hereaf0")
+    println(unparseInt(a[1]))
+    //print("hereaf1")
+    println(unparseInt(a[2]))
+    //print("hereaf2")
+}
+
+f(a:int[]):int[] {
+    println("hello");
+    return a;
+}
+
+g(a:int[]):int {
+    println("world");
+    a[1] = 6
+    return 1;
+}
+
+id(x: int): int {
+    return x;
+}

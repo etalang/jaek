@@ -2,12 +2,14 @@ package ir
 
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import ir.lowered.LIRCompUnit
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
 import ir.mid.IRExpr.*
 import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
+import ir.optimize.ConstantFolder
 import typechecker.EtaType
 import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
@@ -19,11 +21,12 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
-    fun irgen(optimize: Boolean = false): JIRNode {
+    fun irgen(optimize: Boolean = false): LIRCompUnit { // TODO: LOOK HOW I CHANGED RETURN TYPE
         val mir = translateCompUnit(AST)
-        val lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
+        var lir = IRLowerer(globals.map { it.name }).lowirgen(mir, optimize)
         lir.reorderBlocks()
-        return lir.java
+        lir = ConstantFolder().apply(lir)
+        return lir
     }
 
     private fun freshLabel(): IRLabel {
@@ -143,40 +146,46 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             is MultiAssign -> {
 
                 val first = n.vals.first()
+                val stmts: MutableList<IRStmt> = mutableListOf()
+                val targetList: List<IRExpr> = n.targets.map {
+                    val transl = translateAssignTarget(it)
+                    if (transl is IRESeq) { // this fixes order of eval
+                        stmts.add(transl.statement)
+                        transl.value
+                    } else
+                        transl
+                }
 
                 if (n.vals.size == 1 && first is Expr.FunctionCall) {
                     // go straight to IRCallStmt and do not pass go
                     // get the right number of returns from _RV whatever
-                    val returnTemps: MutableList<IRTemp> = mutableListOf()
-                    for (i in 1..n.targets.size) {
-                        returnTemps.add(IRTemp("_RV$i"))
-                    }
+
                     // DO THE CALL IN HERE DO NOT PASS IT DOWN
                     // assuming that the number of returns must match the number of targets, checked in typecheck
-                    val stmts: MutableList<IRStmt> = mutableListOf(
+                    stmts.add(
                         IRCallStmt(IRName(
                             functionMap[first.fn]!!
                         ),
                             n.targets.size.toLong(),
                             first.args.map { translateExpr(it) }
-                        )
-                    )
-                    val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
+                        ))
+                    val returnTemps: MutableList<IRTemp> = mutableListOf()
+                    for (i in 1..n.targets.size) {
+                        returnTemps.add(IRTemp("_RV$i"))
+                    }
                     stmts.addAll((targetList zip returnTemps).map { multiAssignMove(it) })
                     IRSeq(stmts)
                 } else {
                     val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) } // rhs first
                     val exprTempList : MutableList<IRExpr> = mutableListOf()
-                    val moveList : MutableList<IRStmt> = mutableListOf()
                     for (it in translatedExprs) {
                         val ti = freshTemp()
                         exprTempList.add(ti)
-                        moveList.add(IRMove(ti, it))
+                        stmts.add(IRMove(ti, it))
                     }
-                    val targetList: List<IRExpr> = n.targets.map { translateAssignTarget(it) }
                     val assignList: List<IRStmt> = (targetList zip exprTempList).map { multiAssignMove(it) }
-                    moveList.addAll(assignList)
-                    IRSeq(moveList)
+                    stmts.addAll(assignList)
+                    IRSeq(stmts)
                 }
 
             }
@@ -190,12 +199,29 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             }
 
             is VarDecl.InitArr -> {
-                val (arrLoc, arrInstrs) = arrayInitHelp(n.arrInit.dimensions.toList().filterNotNull())
+                val moves = mutableListOf<IRStmt>()
+                val dimensions = n.arrInit.dimensions.toList().filterNotNull()
+                // enforce l to r eval order with reversed
+                val evalDims = dimensions.reversed().map {
+                    when (val translateDim = translateExpr(it)) {
+                        is IRESeq -> {
+                            moves.add(translateDim.statement)
+                            translateDim.value
+                        }
+                        else -> {
+                            val evalTemp = freshTemp()
+                            moves.add(IRMove(evalTemp, translateDim))
+                            evalTemp
+                        }
+                    }
+                }
+                val (arrLoc, arrInstrs) = arrayInitHelp(evalDims)
+                moves.addAll(listOf(
+                    arrInstrs,
+                    IRMove(IRTemp(n.id), arrLoc)
+                ))
                 IRSeq(
-                    listOf(
-                        arrInstrs,
-                        IRMove(IRTemp(n.id), arrLoc)
-                    )
+                    moves
                 )
             }
 
@@ -241,7 +267,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     }
 
     // precondition -- lst always has at least one element
-    private fun arrayInitHelp(lst: List<Expr>): Pair<IRTemp, IRSeq> {
+    private fun arrayInitHelp(lst: List<IRExpr>): Pair<IRTemp, IRSeq> {
         return if (lst.size <= 1) {
             val tempN = freshTemp()
             val tempM = freshTemp()
@@ -249,7 +275,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 tempM,
                 IRSeq(
                     listOf(
-                        IRMove(tempN, translateExpr(lst[0])),
+                        IRMove(tempN, lst.first()),
                         IRMove(
                             tempM,
                             IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, tempN, IRConst(8)), IRConst(8))))
@@ -266,7 +292,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             val arrSize = freshTemp()
             val memTemp = freshTemp()
             val loop = mutableListOf(
-                IRMove(arrSize, translateExpr(lst.last())),
+                IRMove(arrSize, lst.first()),
                 IRMove(
                     memTemp,
                     IRCall(IRName("_eta_alloc"), listOf(IROp(ADD, IROp(MUL, arrSize, IRConst(8)), IRConst(8))))
@@ -276,7 +302,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 IRMove(counter, IRConst(0)),
                 loopLabel
             )
-            val (subtemp, subarray) = arrayInitHelp(lst.dropLast(1))
+            val (subtemp, subarray) = arrayInitHelp(lst.drop(1))
             loop.add(subarray)
             loop.addAll(
                 listOf(
@@ -343,14 +369,28 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     var translateLeft = translateExpr(n.left)
                     var translateRight = translateExpr(n.right)
                     val moves: MutableList<IRStmt> = mutableListOf()
-                    // avoid nesting of duplicate code by raising ESeq stmts
-                    if (translateLeft is IRESeq) {
-                        moves.add(translateLeft.statement)
-                        translateLeft = translateLeft.value
+                    // avoid nesting of duplicate code by raising ESeq stmts, eval fn calls early
+                    translateLeft = when (translateLeft) {
+                        is IRESeq -> {
+                            moves.add(translateLeft.statement)
+                            translateLeft.value
+                        }
+                        else -> {
+                            val evalTemp = freshTemp()
+                            moves.add(IRMove(evalTemp, translateLeft))
+                            evalTemp
+                        }
                     }
-                    if (translateRight is IRESeq) {
-                        moves.add(translateRight.statement)
-                        translateRight = translateRight.value
+                    translateRight = when (translateRight) {
+                        is IRESeq -> {
+                            moves.add(translateRight.statement)
+                            translateRight.value
+                        }
+                        else -> {
+                            val evalTemp = freshTemp()
+                            moves.add(IRMove(evalTemp, translateRight))
+                            evalTemp
+                        }
                     }
                     // compute left/right array lengths from memory
                     val tempLeftLength = freshTemp()

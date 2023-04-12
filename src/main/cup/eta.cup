@@ -51,7 +51,7 @@ nonterminal Expr expr;
 nonterminal ArrayList<VarDecl.RawVarDecl> methodArgs;
 nonterminal Statement.Block returnableBlock;
 nonterminal Statement block;
-nonterminal ArrayList<Statement> statementList;
+nonterminal ArrayList<Statement> statementOrBlockList;
 nonterminal Statement statement;
 nonterminal Statement elseOptional; // might have to add empty list in empty case to type check?
 nonterminal Statement.Procedure procedureCall;
@@ -126,8 +126,10 @@ methodArgs      ::= methodArg:ma                                                
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
-statementList   ::= statement:s                                                     {:RESULT = ParseUtil.singleton(s);:}
-                    | statementList:sl statement:s                                  {:sl.add(s); RESULT = sl;:};
+statementOrBlockList   ::= statement:s                                                    {:RESULT = ParseUtil.singleton(s);:}
+                           | returnableBlock:rb                                           {:RESULT = ParseUtil.singleton(rb);:}
+                           | statementOrBlockList:sbl statement:s                         {:sbl.add(s); RESULT = sbl;:}
+                           | statementOrBlockList:sbl returnableBlock:rb                  {:sbl.add(rb); RESULT = sbl;:};
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
@@ -140,23 +142,10 @@ while           ::= WHILE:o OPEN_PAREN expr:e CLOSE_PAREN block:b               
                     | WHILE:o expr:e block:b                                          {: RESULT = new Statement.While(e, b, new Terminal(oleft,oright)); :};
 block           ::= statement:s                                                     {: RESULT = s; :}
                     | returnableBlock:rb                                            {: RESULT = rb; :};
-returnableBlock ::= OPEN_BRACE:b statementList:sLst CLOSE_BRACE                       {: RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b statementList:sLst return:r CLOSE_BRACE            {: sLst.add(r); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b CLOSE_BRACE                                        {: RESULT = new Statement.Block(new ArrayList<Statement>(), new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b return:r CLOSE_BRACE                               {: RESULT = new Statement.Block(ParseUtil.singleton(r), new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b statementList:sLst returnableBlock:rb CLOSE_BRACE  {: sLst.add(rb); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b statementList:sLst
-                    returnableBlock:rb return:r CLOSE_BRACE                         {:sLst.add(rb); sLst.add(r); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b
-                    returnableBlock:rb statementList:sLst return:r CLOSE_BRACE     {:sLst.add(0, rb); sLst.add(r); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b
-                    returnableBlock:rb statementList:sLst CLOSE_BRACE               {:sLst.add(0, rb); RESULT = new Statement.Block(sLst, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b statementList:sLst1 returnableBlock:rb
-                    statementList:sLst2 CLOSE_BRACE                                 {:sLst1.add(rb); sLst1.addAll(sLst2); RESULT = new Statement.Block(sLst1, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b statementList:sLst1 returnableBlock:rb
-                    statementList:sLst2 return:r CLOSE_BRACE                        {:sLst1.add(rb); sLst1.addAll(sLst2); sLst1.add(r); RESULT = new Statement.Block(sLst1, new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b returnableBlock:rb CLOSE_BRACE                     {: RESULT = new Statement.Block(ParseUtil.singleton(rb), new Terminal(bleft, bright)); :}
-                    | OPEN_BRACE:b returnableBlock:rb return:r CLOSE_BRACE            {: ArrayList<Statement> st = ParseUtil.singleton(rb); st.add(r); RESULT = new Statement.Block(st, new Terminal(bleft, bright)); :};
+returnableBlock ::= OPEN_BRACE:b statementOrBlockList:sbl CLOSE_BRACE               {: RESULT = new Statement.Block(sbl, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b statementOrBlockList:sbl return:r CLOSE_BRACE    {: sbl.add(r); RESULT = new Statement.Block(sbl, new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b return:r CLOSE_BRACE                             {: RESULT = new Statement.Block(ParseUtil.singleton(r), new Terminal(bleft, bright)); :}
+                    | OPEN_BRACE:b CLOSE_BRACE                                      {: RESULT = new Statement.Block(new ArrayList<Statement>(), new Terminal(bleft, bright)); :};
 procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl, new Terminal(idleft,idright));:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>(), new Terminal(idleft,idright));:};
 elseOptional    ::=

@@ -1,12 +1,7 @@
 package ir
 
-import edu.cornell.cs.cs4120.etac.ir.IRBinOp
-import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
-import ir.lowered.LIRCompUnit
-import ir.lowered.LIRExpr
+import ir.lowered.*
 import ir.lowered.LIRExpr.*
-import ir.lowered.LIRFuncDecl
-import ir.lowered.LIRSeq
 import ir.lowered.LIRStmt.*
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
@@ -14,22 +9,22 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
 
-class IRLowerer(val globals : List<String>) {
+class IRLowerer(val globals: List<String>) {
     private var freshLowTempCount = 0
     private var opt = false
-    private var globalsByFunction : MutableMap<String, MutableList<String>> = mutableMapOf()
+    private var globalsByFunction: MutableMap<String, MutableList<String>> = mutableMapOf()
 
     private fun freshTemp(): LIRTemp {
         freshLowTempCount++
         return LIRTemp("\$TL$freshLowTempCount")
     }
 
-    private fun isGlobal(name : String) : Boolean {
+    private fun isGlobal(name: String): Boolean {
         return globals.contains(name)
     }
 
     /** Checks if the statements in stmts changes the value of expr */
-    private fun commutes(stmts : List<FlatStmt>, expr : LIRExpr): Boolean {
+    private fun commutes(stmts: List<FlatStmt>, expr: LIRExpr): Boolean {
         var memUsed = false
         var unknownGlobalsUsed = false
         var unknownTempsUsed = false
@@ -53,14 +48,18 @@ class IRLowerer(val globals : List<String>) {
 //                        }
 //                    }
                 }
-                is LIRLabel -> { }
+
+                is LIRLabel -> {}
                 is LIRMove -> {
                     when (node.dest) {
                         is LIRMem -> memUsed = true
                         is LIRTemp -> tempsUsed.add(node.dest.name)
-                        else -> { throw Exception("Invalid LIRMove") }
+                        else -> {
+                            throw Exception("Invalid LIRMove")
+                        }
                     }
                 }
+
                 else -> {
                     unknownGlobalsUsed = true
                     memUsed = true
@@ -70,11 +69,11 @@ class IRLowerer(val globals : List<String>) {
 
         }
 
-        stmts.forEach(){
+        stmts.forEach() {
             updateMemTempsUsed(it)
         }
 
-        fun exprCommutes(expr : LIRExpr)  : Boolean {
+        fun exprCommutes(expr: LIRExpr): Boolean {
             return when (expr) {
                 is LIRConst -> true
                 is LIRMem -> !memUsed
@@ -82,6 +81,7 @@ class IRLowerer(val globals : List<String>) {
                 is LIROp -> {
                     exprCommutes(expr.left) && exprCommutes(expr.right)
                 }
+
                 is LIRTemp -> !unknownTempsUsed && !tempsUsed.contains(expr.name)
             }
         }
@@ -124,7 +124,10 @@ class IRLowerer(val globals : List<String>) {
                 val (addrStmts, guardExpr) = lowerExpr(n.address)
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 stmts.addAll(addrStmts)
-                stmts.add(LIRJump(guardExpr))
+                if (guardExpr is LIRName)
+                    stmts.add(LIRJump(guardExpr))
+                else
+                    throw Exception("name metamorphosed into a caterpillar")
                 stmts
             }
 
@@ -156,6 +159,9 @@ class IRLowerer(val globals : List<String>) {
             is IRStmt.IRCallStmt -> {
                 val stmts: MutableList<FlatStmt> = mutableListOf()
                 val (addrStmts, addrExpr) = lowerExpr(n.address)
+                if (addrExpr !is LIRName) {
+                    throw Exception("a LIRName metamorphosed into a beautiful bug from lowerStatement")
+                }
                 stmts.addAll(addrStmts)
 
                 val argTmps: MutableList<LIRExpr> = mutableListOf()
@@ -187,7 +193,7 @@ class IRLowerer(val globals : List<String>) {
             is IRExpr.IRMem -> {
                 val (e1Stmts, e1) = lowerExpr(target.address)
                 val (e2Stmts, e2) = lowerExpr(arg)
-                if (commutes(e2Stmts, e1)){
+                if (commutes(e2Stmts, e1)) {
                     returnList.addAll(e1Stmts)
                     returnList.addAll(e2Stmts)
                     returnList.add(LIRMove(LIRMem(e1), e2))
@@ -219,6 +225,9 @@ class IRLowerer(val globals : List<String>) {
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
                 val allTemps: MutableList<LIRTemp> = mutableListOf()
                 val (s0, e0) = lowerExpr(n.address)
+                if (e0 !is LIRName) {
+                    throw Exception("a name has metamorphosed into a beautiful bug from lowerExpr")
+                }
                 allStmts.addAll(s0)
 
                 n.args.forEach {
@@ -256,78 +265,20 @@ class IRLowerer(val globals : List<String>) {
                 val (rightStmt, rightExpr) = lowerExpr(n.right)
                 val allStmts: MutableList<FlatStmt> = mutableListOf()
 
-                // constant folding
-                if (leftExpr is LIRConst && rightExpr is LIRConst && opt
-                    && !(n.op == DIV && rightExpr.value == 0L)
-                ) {
+                if (commutes(rightStmt, leftExpr)) {
                     allStmts.addAll(leftStmt)
                     allStmts.addAll(rightStmt)
-                    Pair(allStmts, LIRConst(calculate(leftExpr.value, rightExpr.value, n.op)))
-                }
-                else {
-                    if (commutes(rightStmt, leftExpr)){
-                        allStmts.addAll(leftStmt)
-                        allStmts.addAll(rightStmt)
-                        Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
-                    } else {
-                        val newTemp = freshTemp()
-                        allStmts.addAll(leftStmt)
-                        allStmts.add(LIRMove(newTemp, leftExpr))
-                        allStmts.addAll(rightStmt)
-                        Pair(allStmts, LIROp(n.op, newTemp, rightExpr))
-                    }
+                    Pair(allStmts, LIROp(n.op, leftExpr, rightExpr))
+                } else {
+                    val newTemp = freshTemp()
+                    allStmts.addAll(leftStmt)
+                    allStmts.add(LIRMove(newTemp, leftExpr))
+                    allStmts.addAll(rightStmt)
+                    Pair(allStmts, LIROp(n.op, newTemp, rightExpr))
                 }
             }
 
             is IRExpr.IRTemp -> Pair(listOf(), LIRTemp(n.name))
-        }
-    }
-
-    companion object {
-        private fun lowMul(n1: Long, n2: Long): Long {
-            val sgn1 = if (n1 >= 0) 1 else -1
-            val sgn2 = if (n2 >= 0) 1 else -1
-            val n1H = (n1 * sgn1) ushr 32
-            val n1L = ((n1 * sgn1) shl 32) ushr 32
-            val n2H = (n2 * sgn2) ushr 32
-            val n2L = ((n2 * sgn2) shl 32) ushr 32
-            return ((n1L * n2L) + ((n1H * n2L) shl 32) + ((n2H * n1L) shl 32)) * sgn1 * sgn2
-        }
-
-        private fun highMul(n1: Long, n2: Long): Long {
-            // https://stackoverflow.com/questions/28868367/getting-the-high-part-of-64-bit-integer-multiplication
-            val sgn1 = if (n1 >= 0) 1 else -1
-            val sgn2 = if (n2 >= 0) 1 else -1
-            val n1H = (n1 * sgn1) ushr 32
-            val n1L = ((n1 * sgn1) shl 32) ushr 32
-            val n2H = (n2 * sgn2) ushr 32
-            val n2L = ((n2 * sgn2) shl 32) ushr 32
-            val carry = ((((n1H * n2L) shl 32) ushr 32) + (((n2H * n1L) shl 32) ushr 32) + ((n1L * n2L) ushr 32)) ushr 32
-            return ((n1H * n2H) + ((n1H * n2L) ushr 32) + ((n2H * n1L) ushr 32) + carry) * sgn1 * sgn2
-        }
-
-        fun calculate(n1: Long, n2: Long, op: IRBinOp.OpType): Long {
-            return when (op) {
-                ADD -> n1 + n2
-                SUB -> n1 - n2
-                MUL -> lowMul(n1, n2)
-                HMUL -> highMul(n1, n2)
-                DIV -> n1 / n2
-                MOD -> n1 % n2
-                AND -> n1 and n2
-                OR -> n1 or n2
-                XOR -> n1 xor n2
-                LSHIFT -> n1 shl n2.toInt()
-                RSHIFT -> n1 ushr n2.toInt()
-                ARSHIFT -> n1 shr n2.toInt()
-                EQ -> if (n1 == n2) 1 else 0
-                NEQ -> if (n1 != n2) 1 else 0
-                LT -> if (n1 < n2) 1 else 0
-                ULT -> if (n1.toULong() < n2.toULong()) 1 else 0
-                GT -> if (n1 > n2) 1 else 0
-                LEQ -> if (n1 <= n2) 1 else 0
-                GEQ -> if (n1 >= n2) 1 else 0
-            }
         }
     }
 
