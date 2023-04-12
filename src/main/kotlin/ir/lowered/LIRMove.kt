@@ -1,7 +1,7 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
-import assembly.tile.TileBuilder
+import assembly.Tile
+import assembly.TileBuilder
 import assembly.x86.*
 import edu.cornell.cs.cs4120.etac.ir.IRMove
 
@@ -9,7 +9,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRMove
 class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
     override val java: IRMove = factory.IRMove(dest.java, expr.java)
 
-    override val defaultTile: BuiltTile.RegularTile
+    override val defaultTile: Tile.Regular
         get() {
             val builder = TileBuilder.Regular(1, this)
             val srcTile = expr.optimalTile()
@@ -57,7 +57,7 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
         attempt(coolTiling())
     }
 
-    private fun coolTiling(): BuiltTile.RegularTile? {
+    private fun coolTiling(): Tile.Regular? {
         return null
     }
 

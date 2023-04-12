@@ -11,12 +11,11 @@ import ir.mid.IRStmt
 import ir.mid.IRStmt.*
 import ir.optimize.ConstantFolder
 import typechecker.EtaType
-import edu.cornell.cs.cs4120.etac.ir.IRNode as JIRNode
 
 class IRTranslator(val AST: Program, val name: String, functions: Map<String, EtaType.ContextType.FunType>) {
     private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
-    private val globalsByFunction : MutableMap<String, MutableList<String>> = HashMap()
+    private val globalsByFunction: MutableMap<String, MutableList<String>> = HashMap()
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -175,7 +174,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     IRSeq(stmts)
                 } else {
                     val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it) } // rhs first
-                    val exprTempList : MutableList<IRExpr> = mutableListOf()
+                    val exprTempList: MutableList<IRExpr> = mutableListOf()
                     for (it in translatedExprs) {
                         val ti = freshTemp()
                         exprTempList.add(ti)
@@ -206,6 +205,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                             moves.add(translateDim.statement)
                             translateDim.value
                         }
+
                         else -> {
                             val evalTemp = freshTemp()
                             moves.add(IRMove(evalTemp, translateDim))
@@ -214,10 +214,12 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                     }
                 }
                 val (arrLoc, arrInstrs) = arrayInitHelp(evalDims)
-                moves.addAll(listOf(
-                    arrInstrs,
-                    IRMove(IRTemp(n.id), arrLoc)
-                ))
+                moves.addAll(
+                    listOf(
+                        arrInstrs,
+                        IRMove(IRTemp(n.id), arrLoc)
+                    )
+                )
                 IRSeq(
                     moves
                 )
@@ -242,7 +244,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         }
     }
 
-    private fun multiAssignMove(pair : Pair<IRExpr, IRExpr>) : IRStmt {
+    private fun multiAssignMove(pair: Pair<IRExpr, IRExpr>): IRStmt {
         val fst = pair.first
         val snd = pair.second
         when (fst) {
@@ -255,9 +257,11 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 // if it was not found in any of the globals, must be local
                 return IRMove(fst, snd)
             }
+
             is IRESeq -> {
                 return IRSeq(mutableListOf(fst.statement, IRMove(fst.value, snd)))
             }
+
             else -> {
                 return IRMove(fst, snd)
             }
@@ -373,6 +377,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                             moves.add(translateLeft.statement)
                             translateLeft.value
                         }
+
                         else -> {
                             val evalTemp = freshTemp()
                             moves.add(IRMove(evalTemp, translateLeft))
@@ -384,6 +389,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                             moves.add(translateRight.statement)
                             translateRight.value
                         }
+
                         else -> {
                             val evalTemp = freshTemp()
                             moves.add(IRMove(evalTemp, translateRight))
@@ -488,8 +494,9 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                         foundGlobal = true
                     }
                 }
-                if (foundGlobal) IRMem(IRName(n.name)) else IRTemp (n.name)
+                if (foundGlobal) IRMem(IRName(n.name)) else IRTemp(n.name)
             }
+
             is Expr.FunctionCall.LengthFn -> {
                 val lengthTemp = freshTemp()
                 val arrTemp = freshTemp()

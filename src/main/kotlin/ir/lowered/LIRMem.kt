@@ -1,7 +1,7 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
-import assembly.tile.TileBuilder
+import assembly.Tile
+import assembly.TileBuilder
 import assembly.x86.*
 import edu.cornell.cs.cs4120.etac.ir.IRMem
 
@@ -9,7 +9,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRMem
 class LIRMem(val address: LIRExpr) : LIRExpr() {
     override val java: IRMem = factory.IRMem(address.java)
 
-    override val defaultTile: BuiltTile.ExprTile
+    override val defaultTile: Tile.Expr
         get() {
             val builder = TileBuilder.Expr(1, Register.Abstract.freshRegister(), this)
             if (address is LIRName) {

@@ -1,11 +1,11 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
+import assembly.Tile
 import ir.InterRep
 
 /** IRNode represents a node in the intermediate representation abstract syntax tree**/
 sealed class LIRNode : InterRep() {
-    sealed class TileableNode<TileType> : LIRNode() where TileType : BuiltTile {
+    sealed class TileableNode<TileType> : LIRNode() where TileType : Tile {
         fun optimalTile(): TileType {
             return bestTile ?: let {
                 bestTile = defaultTile

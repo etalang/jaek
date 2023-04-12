@@ -35,7 +35,7 @@ sealed class IROptimizer {
     }
 
     protected open fun applyLabel(node: LIRStmt.LIRLabel): LIRStmt.LIRLabel {
-        return node;
+        return node
     }
 
     protected open fun applyExpr(node: LIRExpr): LIRExpr {

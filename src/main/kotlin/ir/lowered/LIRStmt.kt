@@ -1,17 +1,19 @@
 package ir.lowered
 
 //import assembly.Tile
-import assembly.tile.BuiltTile
-import assembly.tile.TileBuilder
-import assembly.x86.*
+import assembly.Tile
+import assembly.TileBuilder
+import assembly.x86.Instruction
+import assembly.x86.Label
+import assembly.x86.Location
 import edu.cornell.cs.cs4120.etac.ir.IRCJump as JIRCJump
 import edu.cornell.cs.cs4120.etac.ir.IRJump as JIRJump
 import edu.cornell.cs.cs4120.etac.ir.IRLabel as JIRLabel
 import edu.cornell.cs.cs4120.etac.ir.IRStmt as JIRStmt
 
 /** IRStmt represents a statement **/
-sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
-    abstract override val java: JIRStmt;
+sealed class LIRStmt : LIRNode.TileableNode<Tile.Regular>() {
+    abstract override val java: JIRStmt
 
     sealed class FlatStmt : LIRStmt()
     sealed class EndBlock : FlatStmt()
@@ -24,7 +26,7 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
 
         override val defaultTile
             get() =
-                BuiltTile.RegularTile(listOf(Instruction.Jump.JMP(Location(Label(address.l, false)))), 1)
+                Tile.Regular(listOf(Instruction.Jump.JMP(Location(Label(address.l, false)))), 1)
 
         override fun findBestTile() {}
     }
@@ -44,11 +46,11 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
 
     }
 
-    /** IRCJump represents a jump to [trueBranch] if [guard] is non-zero and a jump to [falseBranch] otherwise**/
+    /** IRCJump represents a jump to [trueBranch] if [guard] is non-zero**/
     class LIRTrueJump(val guard: LIRExpr, val trueBranch: LIRLabel) : EndBlock() {
         override val java: JIRCJump = factory.IRCJump(guard.java, trueBranch.l)
 
-        override val defaultTile: BuiltTile.RegularTile
+        override val defaultTile: Tile.Regular
             get() {
                 val builder = TileBuilder.Regular(2, this)
                 val guardTile = guard.optimalTile()
@@ -70,7 +72,7 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
         override val java: JIRLabel = factory.IRLabel(l)
 
         //TODO: no clue what false / true
-        override val defaultTile get() = BuiltTile.RegularTile(listOf(Label(l, true)), 0)
+        override val defaultTile get() = Tile.Regular(listOf(Label(l, true)), 0)
 
         override fun findBestTile() {}
     }

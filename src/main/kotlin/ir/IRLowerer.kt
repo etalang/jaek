@@ -181,7 +181,7 @@ class IRLowerer(val globals: List<String>) {
     }
 
     private fun factorMoveTarget(target: IRExpr, arg: IRExpr): List<FlatStmt> {
-        var returnList = mutableListOf<FlatStmt>()
+        val returnList = mutableListOf<FlatStmt>()
         when (target) {
             is IRExpr.IRTemp -> {
                 val (e2Stmts, e2) = lowerExpr(arg)

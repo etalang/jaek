@@ -1,6 +1,6 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
+import assembly.Tile
 import assembly.x86.*
 import edu.cornell.cs.cs4120.etac.ir.IRReturn
 
@@ -8,7 +8,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRReturn
 class LIRReturn(val valList: List<LIRExpr>) : LIRStmt.EndBlock() {
     override val java: IRReturn = factory.IRReturn(valList.map { it.java })
 
-    override val defaultTile: BuiltTile.RegularTile
+    override val defaultTile: Tile.Regular
         get() {
             val insns = mutableListOf<Instruction>()
 //            val reglst = mutableListOf<Register>()
@@ -53,7 +53,7 @@ class LIRReturn(val valList: List<LIRExpr>) : LIRStmt.EndBlock() {
             insns.add(Instruction.LEAVE())
             insns.add(Instruction.RET())
 
-            return BuiltTile.RegularTile(insns, 1)
+            return Tile.Regular(insns, 1)
         }
 
     override fun findBestTile() {}

@@ -1,7 +1,7 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
-import assembly.tile.TileBuilder
+import assembly.Tile
+import assembly.TileBuilder
 import assembly.x86.Destination
 import assembly.x86.Instruction
 import assembly.x86.Register
@@ -13,7 +13,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIRExpr() {
     override val java: IRBinOp = factory.IRBinOp(op, left.java, right.java)
 
-    override val defaultTile : BuiltTile.ExprTile
+    override val defaultTile : Tile.Expr
     get() {
         val leftTile = left.optimalTile()
         val rightTile = right.optimalTile()
