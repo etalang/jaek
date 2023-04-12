@@ -18,8 +18,20 @@ sealed class LIRExpr : LIRNode.TileableNode<BuiltTile.ExprTile>() {
     class LIRConst(val value: Long) : LIRExpr() {
         override val java: JIRConst = factory.IRConst(value)
 
-        override val defaultTile get() = TODO("Not yet implemented")
-        override fun findBestTile() { TODO("Not yet implemented") }
+        override val defaultTile: BuiltTile.ExprTile
+            get() {
+                val temp = Register.Abstract.freshRegister()
+                return BuiltTile.ExprTile(
+                    listOf(
+                        Instruction.MOV(
+                            Destination.RegisterDest(temp),
+                            Source.ConstSrc(value)
+                        )
+                    ), 1, temp
+                )
+            }
+
+        override fun findBestTile() {}
     }
 
     /** IRTemp(name) represents a temporary register or value named [name] **/

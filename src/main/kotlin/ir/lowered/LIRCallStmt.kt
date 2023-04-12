@@ -20,6 +20,11 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             reglst.add(argTile.outputRegister)
             insns.addAll(argTile.instructions)
         }
+        insns.add(
+            Instruction.Logic.AND(
+                Destination.RegisterDest(Register.x86(Register.x86Name.RSP)),
+                Source.ConstSrc(-16)
+            ))
         if (n_returns >= 3) {
             argOffset = 1
             insns.add(
@@ -88,11 +93,6 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             )
         }
-//            insns.add(
-//                Instruction.Logic.AND(
-//                    Destination.RegisterDest(Register.x86(Register.x86Name.RSP)),
-//                    Source.ConstSrc(-16)
-//                ))
         insns.add(Instruction.CALL(Label(target.l, false)))
         if (argNumber > 6 - argOffset) {
             insns.add(

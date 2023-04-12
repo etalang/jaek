@@ -85,6 +85,7 @@ class RegisterAllocator {
                     is Logic.SHL -> Logic.SHL(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
                     is Logic.SHR -> Logic.SHR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
                     is Logic.XOR -> Logic.XOR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
+                    is Logic.SAR -> Logic.SAR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
                 }
             }
             is MOV -> MOV(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
@@ -146,32 +147,32 @@ class RegisterAllocator {
     /** detects the registers written to by the destination */
     private fun detectDestRegsUsed(dest : Destination) : Set<Register> {
         return when (dest) {
-            is Destination.MemoryDest -> detectMemoryRegisters(dest.m)
-            is Destination.RegisterDest -> setOf(dest.r)
+            is MemoryDest -> detectMemoryRegisters(dest.m)
+            is RegisterDest -> setOf(dest.r)
         }
     }
 
     /** detects the registers used to by the instruction */
     private fun detectDestRegsWritten(dest : Destination) : Set<Register> {
         return when (dest) {
-            is Destination.MemoryDest -> emptySet()
-            is Destination.RegisterDest -> setOf(dest.r)
+            is MemoryDest -> emptySet()
+            is RegisterDest -> setOf(dest.r)
         }
     }
 
     /** detects the registers used in the source */
     private fun detectSrcRegs(src : Source) : Set<Register> {
         return when (src) {
-            is Source.ConstSrc -> emptySet()
-            is Source.MemorySrc -> detectMemoryRegisters(src.m)
-            is Source.RegisterSrc -> setOf(src.r)
+            is ConstSrc -> emptySet()
+            is MemorySrc -> detectMemoryRegisters(src.m)
+            is RegisterSrc -> setOf(src.r)
         }
     }
 
     private fun detectMemoryRegisters(mem : Memory) : Set<Register> {
         return when (mem) {
-            is Memory.LabelMem -> emptySet()
-            is Memory.RegisterMem -> {
+            is LabelMem -> emptySet()
+            is RegisterMem -> {
                 val returnedSet = mutableSetOf(mem.base)
                 if (mem.index != null)
                     returnedSet.add(mem.index)
