@@ -230,7 +230,8 @@ class Tiler(val IR: LIRCompUnit) {
                             Logic.OR(RegisterDest(parent), RegisterSrc(children[1])))
                         XOR -> listOf(MOV(RegisterDest(parent), RegisterSrc(children[0])),
                             Logic.XOR(RegisterDest(parent), RegisterSrc(children[1])))
-                        LSHIFT -> TODO()
+                        LSHIFT -> listOf(MOV(RegisterDest(parent), RegisterSrc(children[0])),
+                            Logic.SHL(RegisterDest(parent), RegisterSrc(children[1])))
                         RSHIFT -> TODO()
                         ARSHIFT -> TODO()
                         EQ -> TODO()

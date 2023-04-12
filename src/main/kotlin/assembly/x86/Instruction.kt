@@ -58,9 +58,23 @@ sealed class Instruction {
             }
         }
 
-        class SHL(dest : Destination, src : Source) : Logic(dest, src)
+        class SHL(dest : Destination, src : Source) : Logic(dest, src) {
+            override fun toString(): String {
+                return "shl $dest, $src"
+            }
+        }
 
-        class SHR(dest : Destination, src : Source) : Logic(dest, src)
+        class SHR(dest : Destination, src : Source) : Logic(dest, src) {
+            override fun toString(): String {
+                return "shr $dest, $src"
+            }
+        }
+
+        class SAR(dest : Destination, src : Source) : Logic(dest, src) {
+            override fun toString(): String {
+                return "sar $dest, $src"
+            }
+        }
 
     }
 
@@ -87,14 +101,38 @@ sealed class Instruction {
         }
         // TODO: implement toString for all other jumps
 
-        class JNE(loc: Location) : Jump(loc)
-        class JL(loc: Location) : Jump(loc)
-        class JLE(loc: Location) : Jump(loc)
+        class JNE(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jne $loc"
+            }
+        }
+        class JL(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jl $loc"
+            }
+        }
+        class JLE(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jle $loc"
+            }
+        }
 
-        class JG(loc: Location) : Jump(loc)
-        class JGE(loc: Location) : Jump(loc)
+        class JG(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jg $loc"
+            }
+        }
+        class JGE(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jge $loc"
+            }
+        }
 
-        class JZ(loc: Location) : Jump(loc)
+        class JZ(loc: Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jz $loc"
+            }
+        }
         class JNZ(loc: Location) : Jump(loc) {
             override fun toString(): String {
                 return "jnz $loc"
