@@ -9,28 +9,28 @@ import edu.cornell.cs.cs4120.etac.ir.IRMem
 class LIRMem(val address: LIRExpr) : LIRExpr() {
     override val java: IRMem = factory.IRMem(address.java)
 
-    override val defaultTile : BuiltTile.ExprTile
-    get() {
-        val builder = TileBuilder.Expr(1, Register.Abstract.freshRegister())
-        if (address is LIRName) {
-            builder.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(builder.outputRegister),
-                    Source.MemorySrc(Memory.LabelMem(Label(address.l, false)))
+    override val defaultTile: BuiltTile.ExprTile
+        get() {
+            val builder = TileBuilder.Expr(1, Register.Abstract.freshRegister(), this)
+            if (address is LIRName) {
+                builder.add(
+                    Instruction.MOV(
+                        Destination.RegisterDest(builder.outputRegister),
+                        Source.MemorySrc(Memory.LabelMem(Label(address.l, false)))
+                    )
                 )
-            )
-        }
-        else {
-            val addressTile = address.optimalTile()
-            builder.consume(addressTile)
-            builder.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(builder.outputRegister),
-                    Source.MemorySrc(Memory.RegisterMem(addressTile.outputRegister, null))
+            } else {
+                val addressTile = address.optimalTile()
+                builder.consume(addressTile)
+                builder.add(
+                    Instruction.MOV(
+                        Destination.RegisterDest(builder.outputRegister),
+                        Source.MemorySrc(Memory.RegisterMem(addressTile.outputRegister, null))
+                    )
                 )
-            )
+            }
+            return builder.build()
         }
-        return builder.build()
-    }
+
     override fun findBestTile() {}
 }

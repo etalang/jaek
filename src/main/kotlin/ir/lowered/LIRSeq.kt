@@ -14,7 +14,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         get() {
             // TODO!!!! WE SHOULD USE BUILDER HERE!!!!!!!!! @blu
 
-            val builder = TileBuilder.Regular(0)
+            val builder = TileBuilder.Regular(0, this)
             for (stmt in block) builder.consume(stmt.optimalTile())
 
             // TODO: do register allocation here

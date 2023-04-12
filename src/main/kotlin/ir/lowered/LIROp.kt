@@ -19,7 +19,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
         val rightTile = right.optimalTile()
         return when (op) {
             IRBinOp.OpType.ADD -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -37,7 +37,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.SUB -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -55,7 +55,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.MUL -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -76,7 +76,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
             IRBinOp.OpType.DIV -> TODO()
             IRBinOp.OpType.MOD -> TODO()
             IRBinOp.OpType.AND -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -94,7 +94,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.OR -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -112,7 +112,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.XOR -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -130,7 +130,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.LSHIFT -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -148,7 +148,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.RSHIFT -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(
@@ -166,7 +166,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.build()
             }
             IRBinOp.OpType.ARSHIFT -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
                 builder.add(

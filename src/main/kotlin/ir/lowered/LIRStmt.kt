@@ -50,7 +50,7 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
 
         override val defaultTile: BuiltTile.RegularTile
             get() {
-                val builder = TileBuilder.Regular(2)
+                val builder = TileBuilder.Regular(2, this)
                 val guardTile = guard.optimalTile()
                 builder.consume(guardTile)
                 builder.add(

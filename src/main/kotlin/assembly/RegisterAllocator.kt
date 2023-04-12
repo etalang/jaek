@@ -1,11 +1,13 @@
 package assembly
 
 import assembly.x86.*
+import assembly.x86.Destination.MemoryDest
+import assembly.x86.Destination.RegisterDest
 import assembly.x86.Instruction.*
+import assembly.x86.Memory.LabelMem
+import assembly.x86.Memory.RegisterMem
 import assembly.x86.Register.*
-import assembly.x86.Destination.*
 import assembly.x86.Source.*
-import assembly.x86.Memory.*
 
 class RegisterAllocator {
     /** default three registers used in trivial register allocation
@@ -25,11 +27,11 @@ class RegisterAllocator {
            * put in the instruction with all abstract registers replaced
            * if there are any written to, write them into memory
            * */
-    fun allocateRegisters(insns : List<Instruction>) : MutableList<Instruction>{
+    fun allocateRegisters(insns: List<Instruction>): MutableList<Instruction> {
         val returnedInsns = mutableListOf<Instruction>()
         for (insn in insns) {
-            returnedInsns.add(COMMENT(insn.toString()))
-            val (written, used)  = detectRegisters(insn)
+            if (insn !is COMMENT) returnedInsns.add(COMMENT("[AA] $insn"))
+            val (written, used) = detectRegisters(insn)
             val mentioned = written union used
             // holds whether each abstract register mentioned should be assigned 0, 1, or 2
             val replaced = mutableMapOf<String, Int>()
@@ -38,7 +40,7 @@ class RegisterAllocator {
             for (r in mentioned) {
                 if (r is Abstract) {
                     replaced[r.name] = replaced.keys.size
-                    if (r.name !in offsetMap.keys){
+                    if (r.name !in offsetMap.keys) {
                         offsetMap[r.name] = offsetMap.keys.size + 1
                     }
                     if (r in written) {
@@ -51,61 +53,125 @@ class RegisterAllocator {
             }
 
             for (ru in abstractUsed) {
-                replaced[ru.name]?.let { idx -> offsetMap[ru.name]?.let{ shift ->
-                    returnedInsns.add(MOV(RegisterDest(defaults[idx]),
-                        MemorySrc(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift)))) }}
+                replaced[ru.name]?.let { idx ->
+                    offsetMap[ru.name]?.let { shift ->
+                        returnedInsns.add(
+                            MOV(
+                                RegisterDest(defaults[idx]),
+                                MemorySrc(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift))
+                            )
+                        )
+                    }
+                }
             }
             returnedInsns.add(replaceInsnRegisters(insn, replaced))
             for (rw in abstractWritten) {
-                replaced[rw.name]?.let { idx -> offsetMap[rw.name]?.let{ shift ->
-                    returnedInsns.add(MOV(MemoryDest(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift)),
-                        RegisterSrc(defaults[idx]))) }}
+                replaced[rw.name]?.let { idx ->
+                    offsetMap[rw.name]?.let { shift ->
+                        returnedInsns.add(
+                            MOV(
+                                MemoryDest(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift)),
+                                RegisterSrc(defaults[idx])
+                            )
+                        )
+                    }
+                }
             }
         }
         returnedInsns.add(0, ENTER(8L * offsetMap.keys.size))
         return returnedInsns
     }
 
-    private fun replaceInsnRegisters(insn : Instruction, replaceMap : Map<String, Int>) : Instruction {
+    private fun replaceInsnRegisters(insn: Instruction, replaceMap: Map<String, Int>): Instruction {
         return when (insn) {
             is Arith -> {
                 when (insn) {
-                    is Arith.ADD -> Arith.ADD(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Arith.DIV -> Arith.DIV(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Arith.LEA -> Arith.LEA(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Arith.MUL -> Arith.MUL(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Arith.SUB -> Arith.SUB(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
+                    is Arith.ADD -> Arith.ADD(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Arith.DIV -> Arith.DIV(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Arith.LEA -> Arith.LEA(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Arith.MUL -> Arith.MUL(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Arith.SUB -> Arith.SUB(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
                 }
             }
-            is CMP -> insn.copy(reg1 = replaceRegister(insn.reg1, replaceMap),
-                reg2 = replaceRegister(insn.reg2, replaceMap))
+
+            is CMP -> insn.copy(
+                reg1 = replaceRegister(insn.reg1, replaceMap),
+                reg2 = replaceRegister(insn.reg2, replaceMap)
+            )
+
             is Logic -> {
                 when (insn) {
-                    is Logic.AND -> Logic.AND(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Logic.OR -> Logic.OR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Logic.SHL -> Logic.SHL(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Logic.SHR -> Logic.SHR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Logic.XOR -> Logic.XOR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-                    is Logic.SAR -> Logic.SAR(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
+                    is Logic.AND -> Logic.AND(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Logic.OR -> Logic.OR(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Logic.SHL -> Logic.SHL(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Logic.SHR -> Logic.SHR(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Logic.XOR -> Logic.XOR(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
+
+                    is Logic.SAR -> Logic.SAR(
+                        replaceDestRegister(insn.dest, replaceMap),
+                        replaceSrcRegister(insn.src, replaceMap)
+                    )
                 }
             }
+
             is MOV -> MOV(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
             is POP -> insn.copy(dest = replaceRegister(insn.dest, replaceMap))
             is PUSH -> insn.copy(arg = replaceRegister(insn.arg, replaceMap))
-            is TEST -> insn.copy(reg1 = replaceRegister(insn.reg1, replaceMap),
-                reg2 = replaceRegister(insn.reg2, replaceMap))
+            is TEST -> insn.copy(
+                reg1 = replaceRegister(insn.reg1, replaceMap),
+                reg2 = replaceRegister(insn.reg2, replaceMap)
+            )
+
             else -> insn
         }
     }
 
-    private fun replaceDestRegister(d : Destination, replaceMap: Map<String, Int>) : Destination {
+    private fun replaceDestRegister(d: Destination, replaceMap: Map<String, Int>): Destination {
         return when (d) {
             is MemoryDest -> MemoryDest(replaceMemRegister(d.m, replaceMap))
             is RegisterDest -> RegisterDest(replaceRegister(d.r, replaceMap))
         }
     }
 
-    private fun replaceSrcRegister(s : Source, replaceMap: Map<String, Int>) : Source {
+    private fun replaceSrcRegister(s: Source, replaceMap: Map<String, Int>): Source {
         return when (s) {
             is ConstSrc -> s
             is MemorySrc -> MemorySrc(replaceMemRegister(s.m, replaceMap))
@@ -113,17 +179,18 @@ class RegisterAllocator {
         }
     }
 
-    private fun replaceMemRegister(m : Memory, replaceMap: Map<String, Int>) : Memory {
+    private fun replaceMemRegister(m: Memory, replaceMap: Map<String, Int>): Memory {
         return when (m) {
             is LabelMem -> m
             is RegisterMem -> RegisterMem(
                 replaceRegister(m.base, replaceMap),
                 if (m.index == null) null else replaceRegister(m.index, replaceMap),
-                shift = m.shift, offset = m.offset)
+                shift = m.shift, offset = m.offset
+            )
         }
     }
 
-    private fun replaceRegister(r : Register, replaceMap: Map<String, Int>) : x86 {
+    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>): x86 {
         return when (r) {
             is Abstract -> defaults[replaceMap[r.name]!!]
             is x86 -> r
@@ -132,7 +199,7 @@ class RegisterAllocator {
 
     /** detectRegisters(insn) returns a pair of sets of registers, the first being the
      * registers written to and the second being the registers read from */
-    private fun detectRegisters(insn : Instruction) : Pair<Set<Register>, Set<Register>> {
+    private fun detectRegisters(insn: Instruction): Pair<Set<Register>, Set<Register>> {
         return when (insn) {
             is Arith -> detectDestRegsWritten(insn.dest) to (detectDestRegsUsed(insn.dest) union detectSrcRegs(insn.src))
             is CMP -> emptySet<Register>() to setOf(insn.reg1, insn.reg2)
@@ -146,7 +213,7 @@ class RegisterAllocator {
     }
 
     /** detects the registers written to by the destination */
-    private fun detectDestRegsUsed(dest : Destination) : Set<Register> {
+    private fun detectDestRegsUsed(dest: Destination): Set<Register> {
         return when (dest) {
             is MemoryDest -> detectMemoryRegisters(dest.m)
             is RegisterDest -> setOf(dest.r)
@@ -154,7 +221,7 @@ class RegisterAllocator {
     }
 
     /** detects the registers used to by the instruction */
-    private fun detectDestRegsWritten(dest : Destination) : Set<Register> {
+    private fun detectDestRegsWritten(dest: Destination): Set<Register> {
         return when (dest) {
             is MemoryDest -> emptySet()
             is RegisterDest -> setOf(dest.r)
@@ -162,7 +229,7 @@ class RegisterAllocator {
     }
 
     /** detects the registers used in the source */
-    private fun detectSrcRegs(src : Source) : Set<Register> {
+    private fun detectSrcRegs(src: Source): Set<Register> {
         return when (src) {
             is ConstSrc -> emptySet()
             is MemorySrc -> detectMemoryRegisters(src.m)
@@ -170,7 +237,7 @@ class RegisterAllocator {
         }
     }
 
-    private fun detectMemoryRegisters(mem : Memory) : Set<Register> {
+    private fun detectMemoryRegisters(mem: Memory): Set<Register> {
         return when (mem) {
             is LabelMem -> emptySet()
             is RegisterMem -> {

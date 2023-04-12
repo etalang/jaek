@@ -11,7 +11,7 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
 
     override val defaultTile: BuiltTile.RegularTile
         get() {
-            val builder = TileBuilder.Regular(1)
+            val builder = TileBuilder.Regular(1, this)
             val srcTile = expr.optimalTile()
             builder.consume(srcTile)
             when (dest) {
