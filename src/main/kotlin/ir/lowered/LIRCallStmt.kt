@@ -85,7 +85,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             )
         }
-        if (n_returns < 3) {
+        if (n_returns < 3 && argNumber > 0) {
             insns.add(
                 Instruction.MOV(
                     Destination.RegisterDest(Register.x86(Register.x86Name.RDI)),

@@ -1,0 +1,19 @@
+# mov $A1, _ARG1
+# mov args, $A1
+# mov $A2, 48
+# mov $TL1, $A2
+# mov $A3, $TL1
+# mov rdi, $A3
+# call _eta_alloc
+# mov _RV1, rax
+# mov _RV2, rdx
+# mov $A4, _RV1
+# mov $TL2, $A4
+
+# mov $A5, $TL2
+# mov $T1, $A5
+   (MOVE (MEM (TEMP $T1)) (CONST 5))
+# mov $A6, 5
+# mov $A8, $T1
+# mov $A7, QWORD PTR [$A8]
+# mov QWORD PTR [$A7], $A6

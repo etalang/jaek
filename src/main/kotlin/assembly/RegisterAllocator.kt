@@ -10,7 +10,7 @@ import assembly.x86.Memory.*
 class RegisterAllocator {
     /** default three registers used in trivial register allocation
      * ASSUME: we don't use these registers ANYWHERE in a nontrivial capacity before we allocate */
-    private val defaults = listOf(x86(x86Name.RAX), x86(x86Name.RCX), x86(x86Name.RDX))
+    private val defaults = listOf(x86(x86Name.R11), x86(x86Name.R12), x86(x86Name.R13))
 
     /** map for all temps encountered */
     private val offsetMap = mutableMapOf<String, Int>()

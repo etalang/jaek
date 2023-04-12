@@ -147,8 +147,42 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 )
                 builder.build()
             }
-            IRBinOp.OpType.RSHIFT -> TODO()
-            IRBinOp.OpType.ARSHIFT -> TODO()
+            IRBinOp.OpType.RSHIFT -> {
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                builder.consume(leftTile)
+                builder.consume(rightTile)
+                builder.add(
+                    Instruction.MOV(
+                        Destination.RegisterDest(builder.outputRegister),
+                        Source.RegisterSrc(leftTile.outputRegister)
+                    )
+                )
+                builder.add(
+                    Instruction.Logic.SHR(
+                        Destination.RegisterDest(builder.outputRegister),
+                        Source.RegisterSrc(rightTile.outputRegister)
+                    )
+                )
+                builder.build()
+            }
+            IRBinOp.OpType.ARSHIFT -> {
+                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister())
+                builder.consume(leftTile)
+                builder.consume(rightTile)
+                builder.add(
+                    Instruction.MOV(
+                        Destination.RegisterDest(builder.outputRegister),
+                        Source.RegisterSrc(leftTile.outputRegister)
+                    )
+                )
+                builder.add(
+                    Instruction.Logic.SAR(
+                        Destination.RegisterDest(builder.outputRegister),
+                        Source.RegisterSrc(rightTile.outputRegister)
+                    )
+                )
+                builder.build()
+            }
             IRBinOp.OpType.EQ -> TODO()
             IRBinOp.OpType.NEQ -> TODO()
             IRBinOp.OpType.LT -> TODO()

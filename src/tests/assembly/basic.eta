@@ -1,22 +1,26 @@
 use io
 use conv
 
-//f() : int {
-//    c : bool = true
-//    if (c) {
-//        a : int = 5555555
-//        b : int = a + 1
-////        print(unparseInt(b))
-//        return b
-//    }
-//
-//    return 17
-//}
+f() : int {
+    c : bool = true
+    if (c) {
+        a : int = 5555555
+        b : int = a + 1
+//        print(unparseInt(b))
+        return b
+    }
+
+    return 17
+}
 
 main(args : int[][]) {
-    arr : int[2]
+//    arr : int[2]
+//    a : int = 5
+//    x : int = a + 1
+    print("hello")
 //    str : int[] = {1,2,3,4,5,6}
-//    intarr : int[] = unparseInt(5)
-//    x : int[] = unparseInt(f())
+    intarr : int[] = unparseInt(5)
+//    x : int[] = unparseInt(intarr)
+    print(unparseInt(f()))
 
 }

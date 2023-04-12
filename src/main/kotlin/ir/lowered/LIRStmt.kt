@@ -70,7 +70,7 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
         override val java: JIRLabel = factory.IRLabel(l)
 
         //TODO: no clue what false / true
-        override val defaultTile get() = BuiltTile.RegularTile(listOf(Label(l, false)), 0)
+        override val defaultTile get() = BuiltTile.RegularTile(listOf(Label(l, true)), 0)
 
         override fun findBestTile() {}
     }

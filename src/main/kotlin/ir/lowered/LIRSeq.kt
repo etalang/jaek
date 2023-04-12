@@ -22,6 +22,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             val ra = RegisterAllocator()
             val insns = ra.allocateRegisters(builder.publicIns)
             return BuiltTile.RegularTile(insns, builder.publicCost)
+//            return builder.build()
         }
 
     override fun findBestTile() {}

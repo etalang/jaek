@@ -24,7 +24,7 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
                             ),
                         )
                     } else {
-                        val destTile = dest.optimalTile()
+                        val destTile = dest.address.optimalTile()
                         builder.consume(destTile)
                         builder.add(
                             Instruction.MOV(
