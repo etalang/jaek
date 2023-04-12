@@ -1,6 +1,8 @@
 package ir.lowered
 
+import assembly.RegisterAllocator
 import assembly.tile.BuiltTile
+import assembly.tile.TileBuilder
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
@@ -9,11 +11,20 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     override val java: IRSeq get() = factory.IRSeq(block.map { it.java })
 
     override val defaultTile: BuiltTile.RegularTile
-        get() = TODO("Not yet implemented")
+        get() {
+            // TODO!!!! WE SHOULD USE BUILDER HERE!!!!!!!!! @blu
 
-    override fun findBestTile() {
-        TODO("Not yet implemented")
-    }
+            val builder = TileBuilder.Regular(0)
+            for (stmt in block) builder.consume(stmt.optimalTile())
+
+            // TODO: do register allocation here
+            // TODO: add preamble (currently a full guess)
+            val ra = RegisterAllocator()
+            val insns = ra.allocateRegisters(builder.publicIns)
+            return BuiltTile.RegularTile(insns, builder.publicCost)
+        }
+
+    override fun findBestTile() {}
 
     fun blockReordering(freshLabel: () -> String): LIRSeq {
         val b = maximalBasicBlocks(freshLabel)

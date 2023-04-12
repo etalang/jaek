@@ -14,7 +14,6 @@ import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.TypeChecker
-import assembly.Tiler
 import java.io.File
 import java.io.PrintWriter
 import java.nio.file.Path
@@ -130,8 +129,7 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     }
 
                                     // TODO: CHECK IF THE PIPELINING IS FINE HERE
-                                    val tiler = Tiler(ir)
-                                    val assembly = tiler.tile()
+                                    val assembly = ir.tile()
 
                                     // print to file.s
                                     assemblyFile.writeText(assembly.toString())

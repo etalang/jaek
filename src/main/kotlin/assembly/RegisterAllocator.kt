@@ -25,7 +25,7 @@ class RegisterAllocator {
            * put in the instruction with all abstract registers replaced
            * if there are any written to, write them into memory
            * */
-    fun allocateRegisters(insns : MutableList<Instruction>) : MutableList<Instruction>{
+    fun allocateRegisters(insns : List<Instruction>) : MutableList<Instruction>{
         val returnedInsns = mutableListOf<Instruction>()
         for (insn in insns) {
             val (written, used)  = detectRegisters(insn)

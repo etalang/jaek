@@ -8,6 +8,7 @@ sealed class LIRNode : InterRep() {
     sealed class TileableNode<TileType> : LIRNode() where TileType : BuiltTile {
         fun optimalTile(): TileType {
             return bestTile ?: let {
+                bestTile = defaultTile
                 findBestTile(); bestTile ?: defaultTile.let { default ->
                 bestTile = default; default
             }

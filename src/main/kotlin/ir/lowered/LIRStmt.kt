@@ -2,6 +2,7 @@ package ir.lowered
 
 //import assembly.Tile
 import assembly.tile.BuiltTile
+import assembly.tile.TileBuilder
 import assembly.x86.*
 import edu.cornell.cs.cs4120.etac.ir.IRCJump as JIRCJump
 import edu.cornell.cs.cs4120.etac.ir.IRJump as JIRJump
@@ -47,18 +48,19 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
     class LIRTrueJump(val guard: LIRExpr, val trueBranch: LIRLabel) : EndBlock() {
         override val java: JIRCJump = factory.IRCJump(guard.java, trueBranch.l)
 
-        override val defaultTile
-            get() = guard.optimalTile().let {
-                BuiltTile.RegularTile(
-                    it.instructions.plus(
-                        listOf(
-                            Instruction.TEST(it.outputRegister, it.outputRegister),
-                            Instruction.Jump.JNZ(Location(Label(trueBranch.l, false)))
-                        )
-                    ), 2
+        override val defaultTile: BuiltTile.RegularTile
+            get() {
+                val builder = TileBuilder.Regular(2)
+                val guardTile = guard.optimalTile()
+                builder.consume(guardTile)
+                builder.add(
+                    listOf(
+                        Instruction.TEST(guardTile.outputRegister, guardTile.outputRegister),
+                        Instruction.Jump.JNZ(Location(Label(trueBranch.l, false)))
+                    )
                 )
+                return builder.build()
             }
-
 
         override fun findBestTile() {}
     }
@@ -67,7 +69,8 @@ sealed class LIRStmt : LIRNode.TileableNode<BuiltTile.RegularTile>() {
     class LIRLabel(val l: String) : FlatStmt() {
         override val java: JIRLabel = factory.IRLabel(l)
 
-        override val defaultTile get() = BuiltTile.RegularTile(listOf(Label(l, TODO())),0)
+        //TODO: no clue what false / true
+        override val defaultTile get() = BuiltTile.RegularTile(listOf(Label(l, false)), 0)
 
         override fun findBestTile() {}
     }
