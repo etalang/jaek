@@ -17,7 +17,6 @@ class RegisterAllocator {
     /** map for all temps encountered */
     private val offsetMap = mutableMapOf<String, Int>()
 
-    // TODO: allocate registers
     /* for each instruction:
            * detect the temps/registers in the instruction
            * -- if there are any new abstract ones, add them to our list of offsets we need to keep track of
@@ -159,6 +158,17 @@ class RegisterAllocator {
                 reg1 = replaceRegister(insn.reg1, replaceMap),
                 reg2 = replaceRegister(insn.reg2, replaceMap)
             )
+            is JumpSet -> {
+                when (insn) { // need to indicate to replaceRegister that we need the 8 bit versions
+                    is JumpSet.SETB -> JumpSet.SETB(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETG -> JumpSet.SETG(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETGE -> JumpSet.SETGE(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETL -> JumpSet.SETL(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETLE -> JumpSet.SETLE(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETNZ -> JumpSet.SETNZ(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETZ -> JumpSet.SETZ(replaceRegister(insn.reg, replaceMap, 8))
+                }
+            }
 
             else -> insn
         }
@@ -190,9 +200,14 @@ class RegisterAllocator {
         }
     }
 
-    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>): x86 {
+    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size : Int = 64): x86 {
         return when (r) {
-            is Abstract -> defaults[replaceMap[r.name]!!]
+            is Abstract ->
+                if (size == 64)
+                    defaults[replaceMap[r.name]!!]
+                else {
+                    defaults[replaceMap[r.name]!!].copy(size = 8)
+                }
             is x86 -> r
         }
     }
@@ -208,6 +223,7 @@ class RegisterAllocator {
             is POP -> setOf(insn.dest) to emptySet()
             is PUSH -> emptySet<Register>() to setOf(insn.arg)
             is TEST -> emptySet<Register>() to setOf(insn.reg1, insn.reg2)
+            is JumpSet -> setOf(insn.reg) to emptySet() // TODO: the register being written to is ALSO THE 64 BIT ONE
             else -> emptySet<Register>() to emptySet()
         }
     }

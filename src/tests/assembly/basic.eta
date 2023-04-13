@@ -22,5 +22,9 @@ main(args : int[][]) {
     intarr : int[] = unparseInt(5)
 //    x : int[] = unparseInt(intarr)
     print(unparseInt(f()))
-
+    if (f() < 100) {
+        print("teeny")
+    } else {
+        print("bigg")
+    }
 }

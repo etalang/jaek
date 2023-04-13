@@ -3,9 +3,11 @@ package ir.lowered
 import assembly.Tile
 import assembly.TileBuilder
 import assembly.x86.Destination
+import assembly.x86.Destination.*
 import assembly.x86.Instruction
 import assembly.x86.Register
 import assembly.x86.Source
+import assembly.x86.Source.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 
 /** IROp(left,right) represents the evaluation of an arithmetic, logical, or relational
@@ -24,14 +26,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Arith.ADD(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -42,14 +44,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Arith.SUB(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -60,14 +62,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Arith.MUL(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -81,14 +83,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Logic.AND(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -99,14 +101,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Logic.OR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -117,14 +119,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Logic.XOR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -135,14 +137,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Logic.SHL(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -153,14 +155,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Logic.SHR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
@@ -171,26 +173,87 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 builder.consume(rightTile)
                 builder.add(
                     Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)
                     )
                 )
                 builder.add(
                     Instruction.Logic.SAR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
+                        RegisterDest(builder.outputRegister),
+                        RegisterSrc(rightTile.outputRegister)
                     )
                 )
                 builder.build()
             }
-            IRBinOp.OpType.EQ -> TODO()
-            IRBinOp.OpType.NEQ -> TODO()
-            IRBinOp.OpType.LT -> TODO()
-            IRBinOp.OpType.ULT -> TODO()
-            IRBinOp.OpType.GT -> TODO()
-            IRBinOp.OpType.LEQ -> TODO()
-            IRBinOp.OpType.GEQ -> TODO()
+            IRBinOp.OpType.EQ -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETZ(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.NEQ -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETNZ(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.LT -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETL(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.ULT -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETB(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.GT -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETG(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.LEQ -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETLE(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.GEQ -> {
+                val outReg = Register.Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                builder.add(Instruction.JumpSet.SETGE(eightByte))
+                builder.build()
+            }
         }
+    }
+
+    private fun zeroAndCmp(builder : TileBuilder.Expr, leftTile : Tile.Expr, rightTile: Tile.Expr,
+                   outReg : Register.Abstract) : Register {
+        builder.consume(leftTile)
+        builder.consume(rightTile)
+        builder.add(
+            Instruction.Logic.XOR(
+                RegisterDest(builder.outputRegister),
+                RegisterSrc(builder.outputRegister)
+            )
+        )
+        builder.add(
+            Instruction.CMP(
+                leftTile.outputRegister,
+                rightTile.outputRegister
+            )
+        )
+        return Register.Abstract(outReg.name, 8)
     }
     override fun findBestTile() {  }
 }
