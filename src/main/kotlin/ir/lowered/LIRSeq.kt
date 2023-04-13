@@ -147,11 +147,8 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 )
 
                 is LIRJump -> {
-                    if (end.address is LIRExpr.LIRName) {
-                        Node.Unconditional(ArrayList(it.ordinary), it.label, end.address.l)
-                    } else {
-                        Node.None(ArrayList(it.ordinary.plus(end)), it.label)
-                    }
+                    Node.Unconditional(ArrayList(it.ordinary), it.label, end.address.l)
+                    // former else branch: Node.None(ArrayList(it.ordinary.plus(end)), it.label)
                 }
 
                 is LIRReturn -> Node.None(ArrayList(it.ordinary.plus(end)), it.label)

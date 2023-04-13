@@ -33,7 +33,17 @@ sealed class Instruction {
             }
         }
 
-        class DIV(dest : Destination, src : Source) : Arith(dest, src)
+        class IMULSingle(val factor : Register) : Instruction() {
+            override fun toString(): String {
+                return "imul $factor"
+            }
+        }
+
+        class DIV(val divisor : Register) : Instruction() {
+            override fun toString(): String {
+                return "idiv $divisor"
+            }
+        }
 
         class LEA(dest : Destination, src : Source) : Arith(dest, src)
 
@@ -193,6 +203,12 @@ sealed class Instruction {
         }
     }
 
+    /** extends sign of argument in RAX into RDX. used in division */
+    class CQO : Instruction() {
+        override fun toString(): String {
+            return "cqo"
+        }
+    }
     data class PUSH(val arg : Register) : Instruction() {
         override fun toString(): String {
             return "push $arg"
