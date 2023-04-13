@@ -27,16 +27,22 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
     fun getGlobalsTouched() {
         val functions : MutableSet<String> = globalsByFunction.keys
 
-        fun bfs(startingFunc : String, func : String) {
+
+        fun bfs(startFunc : String) {
             val visited : MutableSet<String> = HashSet()
-            if (func in visited) return
-            globalsByFunction[startingFunc]?.union(globalsByFunction[func] ?: emptySet())
-            visited.add(func)
-            functionCalls[func]?.forEach { bfs(startingFunc, it) }
+
+            fun visit(func : String) {
+                if (func in visited) return
+                visited.add(func)
+                globalsByFunction[startFunc]?.union(globalsByFunction[func] ?: emptySet())
+                functionCalls[func]?.forEach { visit(it) }
+            }
+
+            visit(startFunc)
         }
 
         functions.forEach(){function ->
-            bfs(function, function)
+            bfs(function)
         }
         println(functionCalls)
     }
