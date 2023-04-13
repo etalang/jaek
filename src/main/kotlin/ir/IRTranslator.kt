@@ -19,15 +19,22 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
     private val globalsByFunction : MutableMap<String, MutableSet<String>> = HashMap()
     // Tracks function calls done by a function
     private val functionCalls : MutableMap<String, MutableSet<String>> = HashMap()
+    private val globalArrays : MutableSet<String> = HashSet()
+
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
     fun getGlobalsTouched() {
 
+        globalsByFunction.keys.forEach(){function ->
+
+        }
+
         TODO()
     }
     fun irgen(optimize: Boolean = false): LIRCompUnit { // TODO: LOOK HOW I CHANGED RETURN TYPE
         val mir = translateCompUnit(AST)
+        getGlobalsTouched()
         var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
         lir.reorderBlocks()
         lir = ConstantFolder().apply(lir)
@@ -78,10 +85,17 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         // Make two passes
         p.definitions.forEach {
             when (it) {
-                is GlobalDecl -> globals.add(translateData(it))
+                is GlobalDecl -> {
+                    if (it.type is Type.Array) globalArrays.add(it.id)
+                    globals.add(translateData(it))
+                }
                 else -> { }
             }
         }
+
+//        globals.forEach { println(it.name) }
+//
+//        globalArrays.forEach { println(it) }
 
         p.definitions.forEach {
             when (it) {
@@ -134,6 +148,17 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
 
     }
 
+    private fun getGlobalTargets(target: Expr, f: String){
+        when (target){
+            is Expr.ArrayAccess -> {getGlobalTargets(target.arr, f)
+            }
+            // Difficult to track the arrays, so we treat them all as affected
+            is Expr.FunctionCall -> { globalArrays.forEach() { it -> globalsByFunction[f]?.add(it)} }
+            is Expr.Identifier -> { globalsByFunction[f]?.add(target.name) }
+            else -> {  throw Exception("Not a valid array assignment") }
+        }
+    }
+
     private fun translateStatement(n: Statement, f : String): IRStmt {
         return when (n) {
             is Statement.Block -> {
@@ -164,6 +189,22 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
                 val stmts: MutableList<IRStmt> = mutableListOf()
                 val targetList: List<IRExpr> = n.targets.map {
                     val transl = translateAssignTarget(it, f)
+
+                    when (it) {
+                        //TODO: possibly allow array assignments to different parts of arrays or check if same array
+                        is AssignTarget.ArrayAssign -> {
+                            getGlobalTargets(it.arrayAssign.arr, f)
+                        }
+                        is AssignTarget.IdAssign -> {
+                            globals.forEach {global ->
+                                if (it.idAssign.name == global.name) {// if the LHS is a global
+                                    globalsByFunction[f]?.add(it.idAssign.name)
+                                }
+                            }
+                        }
+                        else -> { }
+                    }
+
                     if (transl is IRESeq) { // this fixes order of eval
                         stmts.add(transl.statement)
                         transl.value
@@ -209,6 +250,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
             }
 
             is Statement.Procedure -> {
+                functionCalls[f]?.add(n.id)
                 IRCallStmt(IRName(functionMap[n.id]!!), 0, n.args.map { translateExpr(it, f) })
             }
 

@@ -37,6 +37,8 @@ class IRLowerer(val globals: List<String>, globalsByFunction : MutableMap<String
                     unknownGlobalsUsed = true
                     memUsed = true
 
+                    print(node.target.l)
+
 //                    unknownTempsUsed = true
 //                    when (val calledfn = node.args.first()){
 //                        is LIRName -> {
