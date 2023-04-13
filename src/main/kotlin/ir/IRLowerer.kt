@@ -9,10 +9,9 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
 
-class IRLowerer(val globals: List<String>) {
+class IRLowerer(val globals: List<String>, globalsByFunction : MutableMap<String, MutableSet<String>>) {
     private var freshLowTempCount = 0
     private var opt = false
-    private var globalsByFunction: MutableMap<String, MutableList<String>> = mutableMapOf()
 
     private fun freshTemp(): LIRTemp {
         freshLowTempCount++
@@ -49,14 +48,12 @@ class IRLowerer(val globals: List<String>) {
 //                    }
                 }
 
-                is LIRLabel -> {}
+                is LIRLabel -> { }
                 is LIRMove -> {
                     when (node.dest) {
                         is LIRMem -> memUsed = true
                         is LIRTemp -> tempsUsed.add(node.dest.name)
-                        else -> {
-                            throw Exception("Invalid LIRMove")
-                        }
+                        else -> { throw Exception("Invalid LIRMove") }
                     }
                 }
 
@@ -69,9 +66,7 @@ class IRLowerer(val globals: List<String>) {
 
         }
 
-        stmts.forEach() {
-            updateMemTempsUsed(it)
-        }
+        stmts.forEach() {updateMemTempsUsed(it) }
 
         fun exprCommutes(expr: LIRExpr): Boolean {
             return when (expr) {
