@@ -38,7 +38,7 @@ class IRLowerer(val globals: List<String>, val globalsByFunction : MutableMap<St
 
                     when (val calledfn = node.args.first()){
                         is LIRName -> {
-                            globalsUsed.union(globalsByFunction[calledfn.l]!!)
+                            globalsUsed.union(globalsByFunction[calledfn.l] ?: emptySet())
                             //Think about when mem is used
                             memUsed = true
                         } else -> {
