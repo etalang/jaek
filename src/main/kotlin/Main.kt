@@ -138,14 +138,14 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     }
 
                                     // TODO: CHECK IF THE PIPELINING IS FINE HERE
-//                                    try {
+                                    try {
                                         val assembly = ir.tile()
                                         // print to file.s
                                         assemblyFile.writeText(assembly.toString())
-//                                    } catch (e: Throwable) {
+                                    } catch (e: Throwable) {
                                         assemblyFile.writeText("Failed to generate assembly for " + it.name)
                                         println("Failed to generate assembly for " + it.name)
-//                                    }
+                                    }
 
                                 }
 

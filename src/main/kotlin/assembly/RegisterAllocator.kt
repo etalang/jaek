@@ -223,7 +223,7 @@ class RegisterAllocator {
             is POP -> setOf(insn.dest) to emptySet()
             is PUSH -> emptySet<Register>() to setOf(insn.arg)
             is TEST -> emptySet<Register>() to setOf(insn.reg1, insn.reg2)
-            is JumpSet -> setOf(insn.reg) to emptySet() // TODO: the register being written to is ALSO THE 64 BIT ONE
+            is JumpSet ->  emptySet<Register>() to setOf(insn.reg) // TODO: the register being written to is ALSO THE 64 BIT ONE
             else -> emptySet<Register>() to emptySet()
         }
     }
