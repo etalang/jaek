@@ -1,7 +1,11 @@
 package ir.lowered
 
 import assembly.Tile
+import assembly.TileBuilder
 import assembly.x86.*
+import assembly.x86.Instruction.*
+import assembly.x86.Destination.*
+import assembly.x86.Source.*
 import edu.cornell.cs.cs4120.etac.ir.IRCallStmt
 
 class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: List<LIRExpr>) :
@@ -10,7 +14,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
 
     override val defaultTile : Tile.Regular
         get() {
-        val insns = mutableListOf<Instruction>()
+            val builder = TileBuilder.Regular(1, this)
         val reglst = mutableListOf<Register>()
         val argNumber = args.size
         var argOffset = 0
@@ -18,110 +22,63 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             // ensures arguments are still evaluated left to right
             val argTile = arg.optimalTile()
             reglst.add(argTile.outputRegister)
-            insns.addAll(argTile.instructions)
+            builder.add(argTile.instructions)
         }
-        insns.add(
-            Instruction.Logic.AND(
-                Destination.RegisterDest(Register.x86(Register.x86Name.RSP)),
-                Source.ConstSrc(-16)
-            ))
+        builder.add(Logic.AND(RegisterDest(Register.x86(Register.x86Name.RSP)),
+                ConstSrc(-16)))
         if (n_returns >= 3) {
             argOffset = 1
-            insns.add(
-                Instruction.Arith.SUB(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RSP)),
-                    Source.ConstSrc(8L * (n_returns - 2L))
-                )
-            )
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RDI)),
-                    Source.RegisterSrc(Register.x86(Register.x86Name.RSP))
-                )
-            )
+            builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)),
+                    ConstSrc(8L * (n_returns - 2L))))
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDI)),
+                    RegisterSrc(Register.x86(Register.x86Name.RSP))))
         }
         if (argNumber > 6 - argOffset) {
             for (i in args.size - 1 downTo 6 - argOffset) {
-                insns.add(Instruction.PUSH(reglst[i]))
+                builder.add(PUSH(reglst[i]))
             }
         }
         if (argNumber > 5 - argOffset) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.R9)),
-                    Source.RegisterSrc(reglst[5 - argOffset])
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.R9)),
+                RegisterSrc(reglst[5 - argOffset])))
         }
         if (argNumber > 4 - argOffset) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.R8)),
-                    Source.RegisterSrc(reglst[4 - argOffset])
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.R8)),
+                    RegisterSrc(reglst[4 - argOffset])))
         }
         if (argNumber > 3 - argOffset) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RCX)),
-                    Source.RegisterSrc(reglst[3 - argOffset])
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RCX)),
+                    RegisterSrc(reglst[3 - argOffset])))
         }
         if (argNumber > 2 - argOffset) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RDX)),
-                    Source.RegisterSrc(reglst[2 - argOffset])
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDX)),
+                RegisterSrc(reglst[2 - argOffset])))
         }
         if (argNumber > 1 - argOffset) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RSI)),
-                    Source.RegisterSrc(reglst[1 - argOffset])
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RSI)),
+                RegisterSrc(reglst[1 - argOffset])))
         }
         if (n_returns < 3 && argNumber > 0) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RDI)),
-                    Source.RegisterSrc(reglst.first())
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDI)),
+                    RegisterSrc(reglst.first())))
         }
-        insns.add(Instruction.CALL(Label(target.l, false)))
+        builder.add(CALL(Label(target.l, false)))
         if (argNumber > 6 - argOffset) {
-            insns.add(
-                Instruction.Arith.ADD(
-                    Destination.RegisterDest(Register.x86(Register.x86Name.RSP)),
-                    Source.ConstSrc(8L * (argNumber - (6 - argOffset)))
-                )
-            )
+            builder.add(Arith.ADD(RegisterDest(Register.x86(Register.x86Name.RSP)),
+                    ConstSrc(8L * (argNumber - (6 - argOffset)))))
         }
-        insns.add(
-            Instruction.MOV(
-                Destination.RegisterDest(Register.Abstract("_RV1")),
-                Source.RegisterSrc(Register.x86(Register.x86Name.RAX))
-            )
-        )
+        builder.add(MOV(RegisterDest(Register.Abstract("_RV1")),
+                RegisterSrc(Register.x86(Register.x86Name.RAX))))
         if (n_returns >= 2) {
-            insns.add(
-                Instruction.MOV(
-                    Destination.RegisterDest(Register.Abstract("_RV2")),
-                    Source.RegisterSrc(Register.x86(Register.x86Name.RDX))
-                )
-            )
+            builder.add(MOV(RegisterDest(Register.Abstract("_RV2")),
+                    RegisterSrc(Register.x86(Register.x86Name.RDX))))
         }
         if (n_returns >= 3) {
             for (i in 3 .. n_returns.toInt()) {
-                insns.add(Instruction.POP(Register.Abstract("_RV$i")))
+                builder.add(POP(Register.Abstract("_RV$i")))
             }
         }
-        return Tile.Regular(insns, args.size)
+        return builder.build()
     }
 
     override fun findBestTile() {}
