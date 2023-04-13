@@ -21,7 +21,7 @@ class TypeChecker(topGamma: Context, val file: File) {
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {
-        throw SemanticError(node.terminal.line,node.terminal.column,msg,file);
+        throw SemanticError(node.terminal.line,node.terminal.column,msg,file)
     }
 
     fun typeCheck(n : Node) {
@@ -48,11 +48,11 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     if (!(currFunType.fromInterface)) {
                                         semanticError(defn, "Invalid function shadowing")
                                     } else {
-                                        var domainList = ArrayList<OrdinaryType>()
+                                        val domainList = ArrayList<OrdinaryType>()
                                         for (decl in defn.args) {
                                             domainList.add(translateType(decl.type))
                                         }
-                                        var codomainList = ArrayList<OrdinaryType>()
+                                        val codomainList = ArrayList<OrdinaryType>()
                                         for (t in defn.returnTypes) {
                                             codomainList.add(translateType(t))
                                         }
@@ -159,7 +159,7 @@ class TypeChecker(topGamma: Context, val file: File) {
     /** typeCheckAssignHelp(n, et, gammai) executes the judgement
      * Gamma, (Gamma :: gammai) |- n :: t -| (Gamma : gammai'), where gammai' is the
      * returned map from typeCheckAssignHelp */
-    fun typeCheckAssignHelp (n:AssignTarget, expectedType:EtaType?, gammai : HashMap<String, ContextType>) : HashMap<String, ContextType> {
+    private fun typeCheckAssignHelp (n:AssignTarget, expectedType:EtaType?, gammai : HashMap<String, ContextType>) : HashMap<String, ContextType> {
         if (expectedType == null) {
             semanticError(n, "unreachable, should have just created this type")
         }
@@ -221,7 +221,7 @@ class TypeChecker(topGamma: Context, val file: File) {
         throw Exception("not sure how this happened")
     }
 
-    fun typeCheckStmt(n:Statement) {
+    private fun typeCheckStmt(n:Statement) {
         when (n) {
             is Statement.Block -> {
                 if (n.stmts.isEmpty()) {
@@ -311,8 +311,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
                 else {
                     if (n.targets.size == 1) { // single assignment rules
-                        val target = n.targets.first()
-                        when (target) {
+                        when (val target = n.targets.first()) {
                             is AssignTarget.DeclAssign -> { // VarInit rule
                                 if (Gamma.contains(target.decl.id)) {
                                     semanticError(target.decl,"Identifier ${target.decl.id} already exists in scope")
@@ -503,13 +502,10 @@ class TypeChecker(topGamma: Context, val file: File) {
                     semanticError(n.guard,"While statement guard must be type boolean")
                 }
             }
-            else -> {
-                semanticError(n,"Unreachable, calling typeCheckStmt on Statement node that should not be type-checked explicitly")
-            }
         }
     }
 
-    fun typeCheckExpr(n:Expr) {
+    private fun typeCheckExpr(n:Expr) {
         when (n) {
             is Expr.ArrayAccess -> {
                 typeCheck(n.arr)

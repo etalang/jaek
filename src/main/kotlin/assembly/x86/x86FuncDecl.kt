@@ -2,7 +2,7 @@ package assembly.x86
 
 class x86FuncDecl(val name : String, val body : List<Instruction>) {
     override fun toString(): String {
-        var funcBlock = mutableListOf<String>(
+        val funcBlock = mutableListOf<String>(
             ".globl $name",
             ".type $name, @function",
             ".align 32",

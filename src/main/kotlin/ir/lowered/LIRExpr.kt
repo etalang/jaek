@@ -1,6 +1,6 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
+import assembly.Tile
 import assembly.x86.Destination
 import assembly.x86.Instruction
 import assembly.x86.Register
@@ -11,17 +11,17 @@ import edu.cornell.cs.cs4120.etac.ir.IRName as JIRName
 import edu.cornell.cs.cs4120.etac.ir.IRTemp as JIRTemp
 
 /** IRExpr represents an expression**/
-sealed class LIRExpr : LIRNode.TileableNode<BuiltTile.ExprTile>() {
-    override abstract val java: JIRExpr;
+sealed class LIRExpr : LIRNode.TileableNode<Tile.Expr>() {
+    abstract override val java: JIRExpr
 
     /** IRConst(value) represents an integer constant [value]**/
     class LIRConst(val value: Long) : LIRExpr() {
         override val java: JIRConst = factory.IRConst(value)
 
-        override val defaultTile: BuiltTile.ExprTile
+        override val defaultTile: Tile.Expr
             get() {
                 val temp = Register.Abstract.freshRegister()
-                return BuiltTile.ExprTile(
+                return Tile.Expr(
                     listOf(
                         Instruction.MOV(
                             Destination.RegisterDest(temp),
@@ -38,7 +38,7 @@ sealed class LIRExpr : LIRNode.TileableNode<BuiltTile.ExprTile>() {
     class LIRTemp(val name: String) : LIRExpr() {
         override val java: JIRTemp = factory.IRTemp(name)
 
-        override val defaultTile get() = BuiltTile.ExprTile(listOf(), 0, Register.Abstract(name))
+        override val defaultTile get() = Tile.Expr(listOf(), 0, Register.Abstract(name))
         override fun findBestTile() {}
     }
 

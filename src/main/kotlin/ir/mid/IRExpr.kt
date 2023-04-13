@@ -12,7 +12,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRTemp as JIRTemp
 
 /** IRExpr represents an expression**/
 sealed class IRExpr : IRNode() {
-    override abstract val java: JIRExpr;
+    abstract override val java: JIRExpr
 
     /** IRConst(value) represents an integer constant [value]**/
     class IRConst(val value: Long) : IRExpr() {

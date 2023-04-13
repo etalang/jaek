@@ -1,8 +1,8 @@
 package ir.lowered
 
 import assembly.RegisterAllocator
-import assembly.tile.BuiltTile
-import assembly.tile.TileBuilder
+import assembly.Tile
+import assembly.TileBuilder
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
@@ -10,7 +10,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRSeq
 class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     override val java: IRSeq get() = factory.IRSeq(block.map { it.java })
 
-    override val defaultTile: BuiltTile.RegularTile
+    override val defaultTile: Tile.Regular
         get() {
             // TODO!!!! WE SHOULD USE BUILDER HERE!!!!!!!!! @blu
 
@@ -21,7 +21,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             // TODO: add preamble (currently a full guess)
             val ra = RegisterAllocator()
             val insns = ra.allocateRegisters(builder.publicIns)
-            return BuiltTile.RegularTile(insns, builder.publicCost)
+            return Tile.Regular(insns, builder.publicCost)
 //            return builder.build()
         }
 

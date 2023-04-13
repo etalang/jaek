@@ -1,6 +1,6 @@
 package ir.lowered
 
-import assembly.tile.BuiltTile
+import assembly.Tile
 import assembly.x86.*
 import edu.cornell.cs.cs4120.etac.ir.IRCallStmt
 
@@ -8,7 +8,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
     LIRStmt.FlatStmt() {
     override val java: IRCallStmt = factory.IRCallStmt(target.java, n_returns, args.map { it.java })
 
-    override val defaultTile : BuiltTile.RegularTile
+    override val defaultTile : Tile.Regular
         get() {
         val insns = mutableListOf<Instruction>()
         val reglst = mutableListOf<Register>()
@@ -121,7 +121,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 insns.add(Instruction.POP(Register.Abstract("_RV$i")))
             }
         }
-        return BuiltTile.RegularTile(insns, args.size)
+        return Tile.Regular(insns, args.size)
     }
 
     override fun findBestTile() {}

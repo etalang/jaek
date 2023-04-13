@@ -1,8 +1,8 @@
 package ir.mid
 
-import edu.cornell.cs.cs4120.etac.ir.IRCall
 import ir.mid.IRExpr.IRName
 import edu.cornell.cs.cs4120.etac.ir.IRCJump as JIRCJump
+import edu.cornell.cs.cs4120.etac.ir.IRCallStmt as JIRCallStmt
 import edu.cornell.cs.cs4120.etac.ir.IRExp as JIRExp
 import edu.cornell.cs.cs4120.etac.ir.IRJump as JIRJump
 import edu.cornell.cs.cs4120.etac.ir.IRLabel as JIRLabel
@@ -10,11 +10,10 @@ import edu.cornell.cs.cs4120.etac.ir.IRMove as JIRMove
 import edu.cornell.cs.cs4120.etac.ir.IRReturn as JIRReturn
 import edu.cornell.cs.cs4120.etac.ir.IRSeq as JIRSeq
 import edu.cornell.cs.cs4120.etac.ir.IRStmt as JIRStmt
-import edu.cornell.cs.cs4120.etac.ir.IRCallStmt as JIRCallStmt
 
 /** IRStmt represents a statement **/
 sealed class IRStmt : IRNode() {
-    override abstract val java: JIRStmt;
+    abstract override val java: JIRStmt
 
     /** IRMove represents moving the result of an expression to a destination**/
     class IRMove(val dest: IRExpr, val expr: IRExpr) : IRStmt() {
@@ -51,7 +50,7 @@ sealed class IRStmt : IRNode() {
 
     /** IRCallStmt(address,args) represents a function call on a function code with address [address]
      * and arguments [args] that can return multiple values and must be part of a MultiAssign**/
-    class IRCallStmt(val address: IRName, val n_returns : Long, val args: List<IRExpr>) : IRStmt() {
+    class IRCallStmt(val address: IRName, val n_returns: Long, val args: List<IRExpr>) : IRStmt() {
         override val java: JIRCallStmt = factory.IRCallStmt(address.java, n_returns, args.map { it.java })
     }
 
