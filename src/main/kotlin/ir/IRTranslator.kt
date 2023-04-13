@@ -44,13 +44,12 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
         functions.forEach(){function ->
             bfs(function)
         }
-        println(functionCalls)
     }
     fun irgen(optimize: Boolean = false): LIRCompUnit { // TODO: LOOK HOW I CHANGED RETURN TYPE
         val mir = translateCompUnit(AST)
         getGlobalsTouched()
 
-        println(globalsByFunction)
+//        println(globalsByFunction)
         var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
         lir.reorderBlocks()
         lir = ConstantFolder().apply(lir)

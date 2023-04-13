@@ -9,7 +9,7 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
 
-class IRLowerer(val globals: List<String>, globalsByFunction : MutableMap<String, MutableSet<String>>) {
+class IRLowerer(val globals: List<String>, val globalsByFunction : MutableMap<String, MutableSet<String>>) {
     private var freshLowTempCount = 0
     private var opt = false
 
@@ -33,20 +33,19 @@ class IRLowerer(val globals: List<String>, globalsByFunction : MutableMap<String
         fun updateMemTempsUsed(node: FlatStmt) {
             when (node) {
                 is LIRCallStmt -> {
-                    //TODO Optionally track which variables are touched during a call
-                    unknownGlobalsUsed = true
-                    memUsed = true
+//                    unknownGlobalsUsed = true
+//                    memUsed = true
 
-                    print(node.target.l)
-
-//                    when (val calledfn = node.args.first()){
-//                        is LIRName -> {
-//                            globalsByFunction[calledfn.l]?.forEach { globalsUsed.add(it) }
-//                        } else -> {
-//                            unknownGlobalsUsed = true
-//                            memUsed = true
-//                        }
-//                    }
+                    when (val calledfn = node.args.first()){
+                        is LIRName -> {
+                            globalsUsed.union(globalsByFunction[calledfn.l]!!)
+                            //Think about when mem is used
+                            memUsed = true
+                        } else -> {
+                            unknownGlobalsUsed = true
+                            memUsed = true
+                        }
+                    }
                 }
 
                 is LIRLabel -> { }
