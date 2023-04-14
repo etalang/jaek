@@ -22,7 +22,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             // ensures arguments are still evaluated left to right
             val argTile = arg.optimalTile()
             reglst.add(argTile.outputRegister)
-            builder.add(argTile.instructions)
+            builder.consume(argTile)
         }
         builder.add(Logic.AND(RegisterDest(Register.x86(Register.x86Name.RSP)),
                 ConstSrc(-16)))
