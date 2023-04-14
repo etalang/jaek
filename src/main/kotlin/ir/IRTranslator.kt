@@ -24,9 +24,8 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
-    fun getGlobalsTouched() {
+    private fun getGlobalsTouched() {
         val functions : MutableSet<String> = globalsByFunction.keys
-
 
         fun bfs(startFunc : String) {
             val visited : MutableSet<String> = HashSet()
@@ -37,10 +36,8 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
                 globalsByFunction[startFunc]?.union(globalsByFunction[func] ?: emptySet())
                 functionCalls[func]?.forEach { visit(it) }
             }
-
             visit(startFunc)
         }
-
         functions.forEach(){function ->
             bfs(function)
         }
@@ -165,10 +162,9 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
 
     private fun getGlobalTargets(target: Expr, f: String){
         when (target){
-            is Expr.ArrayAccess -> {getGlobalTargets(target.arr, f)
-            }
+            is Expr.ArrayAccess -> { globalArrays.forEach() { globalsByFunction[f]?.add(it)} }
             // Difficult to track the arrays, so we treat them all as affected
-            is Expr.FunctionCall -> { globalArrays.forEach() { it -> globalsByFunction[f]?.add(it)} }
+            is Expr.FunctionCall -> { globalArrays.forEach() { globalsByFunction[f]?.add(it)} }
             is Expr.Identifier -> { globalsByFunction[f]?.add(target.name) }
             else -> {  throw Exception("Not a valid array assignment") }
         }
@@ -206,7 +202,7 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
                     val transl = translateAssignTarget(it, f)
 
                     when (it) {
-                        //TODO: possibly allow array assignments to different parts of arrays or check if same array
+                        //TODO: possibly actually deal with memory..or not
                         is AssignTarget.ArrayAssign -> {
                             getGlobalTargets(it.arrayAssign.arr, f)
                         }

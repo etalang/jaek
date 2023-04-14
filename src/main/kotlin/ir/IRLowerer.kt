@@ -9,7 +9,7 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.IRSeq
 
-class IRLowerer(val globals: List<String>, val globalsByFunction : MutableMap<String, MutableSet<String>>) {
+class IRLowerer(private val globals: List<String>, private val globalsByFunction : MutableMap<String, MutableSet<String>>) {
     private var freshLowTempCount = 0
     private var opt = false
 
@@ -35,19 +35,13 @@ class IRLowerer(val globals: List<String>, val globalsByFunction : MutableMap<St
                 is LIRCallStmt -> {
 //                    unknownGlobalsUsed = true
 //                    memUsed = true
-
-                    when (val calledfn = node.target){
-                        is LIRName -> {
-                            //I think if it isn't in globals by function then it's built in
-                            globalsUsed.union(globalsByFunction[calledfn.l] ?: emptySet())
-                            //Think about when mem is used
-                            memUsed = true
-                        } else -> {
-                            unknownGlobalsUsed = true
-                            memUsed = true
-                        }
-                    }
+                    val calledfn = node.target
+                    //I think if it isn't in globals by function then it's built in and doesn't touch globals
+                    globalsUsed.union(globalsByFunction[calledfn.l] ?: emptySet())
+                    //Think about when mem is used
+                    memUsed = true
                 }
+
 
                 is LIRLabel -> { }
                 is LIRMove -> {
