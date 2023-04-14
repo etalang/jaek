@@ -21,7 +21,7 @@ class LIRCompUnit(
         return "\$B$freshLabelCount"
     }
 
-    fun tile(): x86CompUnit {
+    fun abstractAssembly(): x86CompUnit {
         val assemblyFuncs: MutableList<x86FuncDecl> = ArrayList()
         functions.forEach { assemblyFuncs.add(it.tile) }
         val assemblyData: MutableList<x86Data> = ArrayList()

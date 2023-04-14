@@ -1,3 +1,4 @@
+import assembly.AssemblyGenerator
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
@@ -128,7 +129,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                         context.getFunctions()
                                     )
                                     val ir = translator.irgen(!disableOpt)
-                                    // TODO: CHECK -- ADDED INTERMEDIATE STEP
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
@@ -137,11 +137,10 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                         writer.close()
                                     }
 
-                                    // TODO: CHECK IF THE PIPELINING IS FINE HERE
                                     try {
-                                        val assembly = ir.tile()
+                                        val assemblyAssembler = AssemblyGenerator(ir,context.getFunctions())
                                         // print to file.s
-                                        assemblyFile.writeText(assembly.toString())
+                                        assemblyFile.writeText(assemblyAssembler.generate())
                                     } catch (e: Throwable) {
                                         assemblyFile.writeText("Failed to generate assembly for " + it.name)
                                         println("Failed to generate assembly for " + it.name)
