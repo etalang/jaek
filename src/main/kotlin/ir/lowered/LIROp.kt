@@ -132,49 +132,49 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
             IRBinOp.OpType.EQ -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETZ(eightByte))
                 builder.build()
             }
             IRBinOp.OpType.NEQ -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETNZ(eightByte))
                 builder.build()
             }
             IRBinOp.OpType.LT -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETL(eightByte))
                 builder.build()
             }
             IRBinOp.OpType.ULT -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETB(eightByte))
                 builder.build()
             }
             IRBinOp.OpType.GT -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETG(eightByte))
                 builder.build()
             }
             IRBinOp.OpType.LEQ -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETLE(eightByte))
                 builder.build()
             }
             IRBinOp.OpType.GEQ -> {
                 val outReg = Abstract.freshRegister()
                 val builder = TileBuilder.Expr(3, outReg,this)
-                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
                 builder.add(JumpSet.SETGE(eightByte))
                 builder.build()
             }
@@ -182,14 +182,14 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
     }
 
     private fun zeroAndCmp(builder : TileBuilder.Expr, leftTile : Tile.Expr, rightTile: Tile.Expr,
-                   outReg : Abstract) : Register {
+                   outRegName : String) : Register {
         builder.consume(leftTile)
         builder.consume(rightTile)
         builder.add(Logic.XOR(RegisterDest(builder.outputRegister),
             RegisterSrc(builder.outputRegister)))
         builder.add(CMP(leftTile.outputRegister,
             rightTile.outputRegister))
-        return Abstract(outReg.name, 8)
+        return Abstract(outRegName, 8)
     }
     override fun findBestTile() {  }
 }
