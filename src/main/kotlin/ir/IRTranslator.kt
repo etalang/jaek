@@ -46,7 +46,7 @@ class IRTranslator(val AST: Program, val name: String, functions: Map<String, Et
         }
     }
 
-    private fun mangleMethodName(name: String, type: EtaType?): String {
+    fun mangleMethodName(name: String, type: EtaType?): String {
         return when (type) {
             is EtaType.ContextType.FunType -> {
                 val retType = when (val s = type.codomain.lst.size) {

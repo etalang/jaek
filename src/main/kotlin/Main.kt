@@ -14,6 +14,7 @@ import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
+import typechecker.EtaType
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -138,7 +139,9 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     }
 
                                     try {
-                                        val assemblyAssembler = AssemblyGenerator(ir,context.getFunctions())
+                                        val funcMap : Map<String, EtaType.ContextType.FunType> =
+                                            context.getFunctions().mapKeys { (k, v) -> translator.mangleMethodName(k, v) }
+                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
                                         // print to file.s
                                         assemblyFile.writeText(assemblyAssembler.generate())
                                     } catch (e: Throwable) {
