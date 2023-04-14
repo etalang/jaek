@@ -19,7 +19,6 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
     private val globalsByFunction : MutableMap<String, MutableSet<String>> = HashMap()
     // Tracks function calls done by a function
     private val functionCalls : MutableMap<String, MutableSet<String>> = HashMap()
-    private val globalArrays : MutableSet<String> = HashSet()
 
     private var freshLabelCount = 0
     private var freshTempCount = 0
@@ -98,7 +97,6 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
         p.definitions.forEach {
             when (it) {
                 is GlobalDecl -> {
-                    if (it.type is Type.Array) globalArrays.add(it.id)
                     globals.add(translateData(it))
                 }
                 else -> { }
@@ -106,8 +104,6 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
         }
 
 //        globals.forEach { println(it.name) }
-//
-//        globalArrays.forEach { println(it) }
 
         p.definitions.forEach {
             when (it) {
@@ -160,16 +156,6 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
 
     }
 
-    private fun getGlobalTargets(target: Expr, f: String){
-        when (target){
-            is Expr.ArrayAccess -> { globalArrays.forEach() { globalsByFunction[f]?.add(it)} }
-            // Difficult to track the arrays, so we treat them all as affected
-            is Expr.FunctionCall -> { globalArrays.forEach() { globalsByFunction[f]?.add(it)} }
-            is Expr.Identifier -> { globalsByFunction[f]?.add(target.name) }
-            else -> {  throw Exception("Not a valid array assignment") }
-        }
-    }
-
     private fun translateStatement(n: Statement, f : String): IRStmt {
         return when (n) {
             is Statement.Block -> {
@@ -202,10 +188,6 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
                     val transl = translateAssignTarget(it, f)
 
                     when (it) {
-                        //TODO: possibly actually deal with memory..or not
-                        is AssignTarget.ArrayAssign -> {
-                            getGlobalTargets(it.arrayAssign.arr, f)
-                        }
                         is AssignTarget.IdAssign -> {
                             globals.forEach {global ->
                                 if (it.idAssign.name == global.name) {// if the LHS is a global
