@@ -80,10 +80,11 @@ class RegisterAllocator {
             }
         }
         // save registers to the stack
-        for (reg in calleeSave) {
-            returnedInsns.add(0, PUSH(reg))
-        }
+//        for (reg in calleeSave) {
+//            returnedInsns.add(PUSH(reg))
+//        }
         returnedInsns.add(0, ENTER(8L * (offsetMap.keys.size + calleeSave.size)))
+        // TODO: find every instance where we might return and put in pops
         return returnedInsns
     }
 

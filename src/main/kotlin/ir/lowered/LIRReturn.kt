@@ -17,20 +17,20 @@ class LIRReturn(val valList: List<LIRExpr>) : LIRStmt.EndBlock() {
             val builder = TileBuilder.Regular(1, this)
             if (valList.isNotEmpty()) { // single return
                 val firstReturnTile = valList.first().optimalTile()
-                builder.add(firstReturnTile.instructions)
+                builder.consume(firstReturnTile)
                 builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RAX)),
                         RegisterSrc(firstReturnTile.outputRegister)))
             }
             if (valList.size >= 2) { // multireturn
                 val secondReturnTile = valList.get(1).optimalTile()
-                builder.add(secondReturnTile.instructions)
+                builder.consume(secondReturnTile)
                 builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDX)),
                     RegisterSrc(secondReturnTile.outputRegister)))
             }
             if (valList.size > 2) { // begin da push
                 for (i in valList.size - 1 downTo 3) {
                     val returnTile = valList[i].optimalTile()
-                    builder.add(returnTile.instructions)
+                    builder.consume(returnTile)
                     builder.add(MOV(MemoryDest(Memory.RegisterMem(
                         Register.x86(Register.x86Name.RDI), null,
                                     offset = 8L * (i - 3L))),
