@@ -33,7 +33,17 @@ sealed class Instruction {
             }
         }
 
-        class DIV(dest : Destination, src : Source) : Arith(dest, src)
+        class IMULSingle(val factor : Register) : Instruction() {
+            override fun toString(): String {
+                return "imul $factor"
+            }
+        }
+
+        class DIV(val divisor : Register) : Instruction() {
+            override fun toString(): String {
+                return "idiv $divisor"
+            }
+        }
 
         class LEA(dest : Destination, src : Source) : Arith(dest, src)
 
@@ -80,12 +90,65 @@ sealed class Instruction {
 
     // TODO: fix the typing on these instructions to be correct (see manual)
     // the arity is correct, but the types are hella wrong below:
-    data class CMP(val reg1 : Register, val reg2 : Register) : Instruction()
+    data class CMP(val reg1 : Register, val reg2 : Register) : Instruction() {
+        override fun toString(): String {
+            return "cmp $reg1, $reg2"
+        }
+    }
 
     data class TEST(val reg1: Register, val reg2: Register) : Instruction() {
         override fun toString(): String {
             return "test $reg1, $reg2"
         }
+    }
+
+    /** sets the low 8 bits of register with 0 or 1 if the corresponding jump would be taken
+     * @param register where size must be 8 */
+    sealed class JumpSet(val reg : Register) : Instruction() {
+        class SETZ(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setz $reg"
+            }
+        }
+
+        class SETNZ(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setz $reg"
+            }
+        }
+
+        class SETL(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setl $reg"
+            }
+        }
+
+        class SETLE(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setle $reg"
+            }
+        }
+
+        /**
+         * Specifically for unsigned jump JB (below)
+         */
+        class SETB(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setb $reg"
+            }
+        }
+
+        class SETG(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setg $reg"
+            }
+        }
+        class SETGE(reg : Register) : JumpSet(reg) {
+            override fun toString(): String {
+                return "setge $reg"
+            }
+        }
+
     }
 
     sealed class Jump(val loc: Location) : Instruction() {
@@ -140,6 +203,12 @@ sealed class Instruction {
         }
     }
 
+    /** extends sign of argument in RAX into RDX. used in division */
+    class CQO : Instruction() {
+        override fun toString(): String {
+            return "cqo"
+        }
+    }
     data class PUSH(val arg : Register) : Instruction() {
         override fun toString(): String {
             return "push $arg"

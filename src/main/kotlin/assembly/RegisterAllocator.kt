@@ -13,11 +13,12 @@ class RegisterAllocator {
     /** default three registers used in trivial register allocation
      * ASSUME: we don't use these registers ANYWHERE in a nontrivial capacity before we allocate */
     private val defaults = listOf(x86(x86Name.R11), x86(x86Name.R12), x86(x86Name.R13))
+    private val calleeSave = listOf(x86(x86Name.RBP), x86(x86Name.RSP), x86(x86Name.RBX),
+        x86(x86Name.R12), x86(x86Name.R13), x86(x86Name.R14), x86(x86Name.R15))
 
     /** map for all temps encountered */
     private val offsetMap = mutableMapOf<String, Int>()
 
-    // TODO: allocate registers
     /* for each instruction:
            * detect the temps/registers in the instruction
            * -- if there are any new abstract ones, add them to our list of offsets we need to keep track of
@@ -78,7 +79,12 @@ class RegisterAllocator {
                 }
             }
         }
-        returnedInsns.add(0, ENTER(8L * offsetMap.keys.size))
+        // save registers to the stack
+//        for (reg in calleeSave) {
+//            returnedInsns.add(PUSH(reg))
+//        }
+        returnedInsns.add(0, ENTER(8L * (offsetMap.keys.size + calleeSave.size)))
+        // TODO: find every instance where we might return and put in pops
         return returnedInsns
     }
 
@@ -87,11 +93,6 @@ class RegisterAllocator {
             is Arith -> {
                 when (insn) {
                     is Arith.ADD -> Arith.ADD(
-                        replaceDestRegister(insn.dest, replaceMap),
-                        replaceSrcRegister(insn.src, replaceMap)
-                    )
-
-                    is Arith.DIV -> Arith.DIV(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
@@ -159,8 +160,22 @@ class RegisterAllocator {
                 reg1 = replaceRegister(insn.reg1, replaceMap),
                 reg2 = replaceRegister(insn.reg2, replaceMap)
             )
+            is JumpSet -> {
+                when (insn) { // need to indicate to replaceRegister that we need the 8 bit versions
+                    is JumpSet.SETB -> JumpSet.SETB(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETG -> JumpSet.SETG(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETGE -> JumpSet.SETGE(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETL -> JumpSet.SETL(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETLE -> JumpSet.SETLE(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETNZ -> JumpSet.SETNZ(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETZ -> JumpSet.SETZ(replaceRegister(insn.reg, replaceMap, 8))
+                }
+            }
 
-            else -> insn
+            is Arith.DIV -> Arith.DIV(replaceRegister(insn.divisor, replaceMap))
+            is Arith.IMULSingle -> Arith.IMULSingle(replaceRegister(insn.factor, replaceMap))
+
+            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> insn
         }
     }
 
@@ -190,15 +205,21 @@ class RegisterAllocator {
         }
     }
 
-    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>): x86 {
+    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size : Int = 64): x86 {
         return when (r) {
-            is Abstract -> defaults[replaceMap[r.name]!!]
+            is Abstract ->
+                if (size == 64)
+                    defaults[replaceMap[r.name]!!]
+                else {
+                    defaults[replaceMap[r.name]!!].copy(size = 8)
+                }
             is x86 -> r
         }
     }
 
     /** detectRegisters(insn) returns a pair of sets of registers, the first being the
-     * registers written to and the second being the registers read from */
+     * abstract registers written to and the second being the registers read from */
+    // TODO: for safety, might want to do a check to make sure that registers added are indeed abstract
     private fun detectRegisters(insn: Instruction): Pair<Set<Register>, Set<Register>> {
         return when (insn) {
             is Arith -> detectDestRegsWritten(insn.dest) to (detectDestRegsUsed(insn.dest) union detectSrcRegs(insn.src))
@@ -208,7 +229,10 @@ class RegisterAllocator {
             is POP -> setOf(insn.dest) to emptySet()
             is PUSH -> emptySet<Register>() to setOf(insn.arg)
             is TEST -> emptySet<Register>() to setOf(insn.reg1, insn.reg2)
-            else -> emptySet<Register>() to emptySet()
+            is JumpSet ->  emptySet<Register>() to setOf(insn.reg) // TODO: the register being written to is ALSO THE 64 BIT ONE
+            is Arith.DIV -> emptySet<Register>() to setOf(insn.divisor)
+            is Arith.IMULSingle -> emptySet<Register>() to setOf(insn.factor)
+            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> emptySet<Register>() to emptySet()
         }
     }
 
