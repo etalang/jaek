@@ -33,12 +33,8 @@ class IRLowerer(private val globals: List<String>, private val globalsByFunction
         fun updateMemTempsUsed(node: FlatStmt) {
             when (node) {
                 is LIRCallStmt -> {
-//                    unknownGlobalsUsed = true
-//                    memUsed = true
                     val calledfn = node.target
-                    //I think if it isn't in globals by function then it's built in and doesn't touch globals
                     globalsUsed.union(globalsByFunction[calledfn.l] ?: emptySet())
-                    //Think about when mem is used
                     memUsed = true
                 }
 
