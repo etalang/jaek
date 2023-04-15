@@ -44,12 +44,18 @@ void ETA_BUILTIN(out_of_bounds)(void) {
     abort();
 }
 
-#define CHECK_STACK_ALIGNMENT												  \
-    long double _stack_alignment_var;										  \
-    if (0 != (0xf & (intptr_t)&_stack_alignment_var)) {						  \
-        fprintf(stderr, "Stack pointer misaligned at call from user code\n"); \
-        abort();															  \
-    }
+void report_stack_error() {
+  fprintf(stderr, "Stack pointer misaligned at call from user code\n");
+  abort();
+}
+
+
+#define CHECK_STACK_ALIGNMENT                   \
+  asm("pushq %rbp");                              \
+  asm("andq $15, %rbp");                           \
+  asm("testq %rbp, %rbp");                         \
+  asm("jne report_stack_error");                 \
+  asm("popq %rbp");
 
 
 // Internal helper for making arrays
@@ -61,7 +67,7 @@ static void* mkArray(int bytes, int cells) {
 
 // Helper: C string to ETA string
 etastring mkString(const char* in) {
-    CHECK_STACK_ALIGNMENT;
+  //    CHECK_STACK_ALIGNMENT;
     int  c;
     int  len = strlen(in);
     etastring out = mkArray(len * sizeof(etaint), len);
