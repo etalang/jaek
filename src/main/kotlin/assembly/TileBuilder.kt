@@ -5,13 +5,14 @@ import assembly.x86.Register
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import ir.lowered.LIRNode
 import java.io.ByteArrayOutputStream
+import java.io.PrintWriter
 
 sealed class TileBuilder<TileType>(private val baseCost: Int, private val source: LIRNode) where TileType : Tile {
     protected val instructions: MutableList<Instruction>
 
     init {
         val baos = ByteArrayOutputStream()
-        val writer = CodeWriterSExpPrinter(baos)
+        val writer = CodeWriterSExpPrinter(PrintWriter(baos))
         source.java.printSExp(writer)
         writer.flush()
         writer.close()

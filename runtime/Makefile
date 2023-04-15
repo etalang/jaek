@@ -1,4 +1,4 @@
-CFLAGS=-g -Wall -O2 -m64 -fno-stack-protector
+CFLAGS=-g -Wall -O2 -m64 -fno-stack-protector -fno-omit-frame-pointer
 #CFLAGS=-g -Wall -O2 -fno-stack-protector
 CC=gcc
 

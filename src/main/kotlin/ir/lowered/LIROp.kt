@@ -3,9 +3,13 @@ package ir.lowered
 import assembly.Tile
 import assembly.TileBuilder
 import assembly.x86.Destination
+import assembly.x86.Destination.*
 import assembly.x86.Instruction
+import assembly.x86.Instruction.*
 import assembly.x86.Register
+import assembly.x86.Register.*
 import assembly.x86.Source
+import assembly.x86.Source.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 
 /** IROp(left,right) represents the evaluation of an arithmetic, logical, or relational
@@ -19,178 +23,173 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
         val rightTile = right.optimalTile()
         return when (op) {
             IRBinOp.OpType.ADD -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Arith.ADD(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(leftTile.outputRegister)))
+                builder.add(Arith.ADD(RegisterDest(builder.outputRegister), RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.SUB -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Arith.SUB(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(leftTile.outputRegister)))
+                builder.add(Arith.SUB(RegisterDest(builder.outputRegister), RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.MUL -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Arith.MUL(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(leftTile.outputRegister)))
+                builder.add(Arith.MUL(RegisterDest(builder.outputRegister), RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
-            IRBinOp.OpType.HMUL -> TODO()
-            IRBinOp.OpType.DIV -> TODO()
-            IRBinOp.OpType.MOD -> TODO()
+            IRBinOp.OpType.HMUL -> {
+                val builder = TileBuilder.Expr(3, Abstract.freshRegister(),this)
+                builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(rightTile.outputRegister)))
+                builder.add(Arith.IMULSingle(leftTile.outputRegister))
+                builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RDX))))
+                builder.build()
+            }
+            IRBinOp.OpType.DIV -> {
+                val builder = TileBuilder.Expr(4, Abstract.freshRegister(),this)
+                builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(leftTile.outputRegister)))
+                builder.add(CQO())
+                builder.add(Arith.DIV(rightTile.outputRegister))
+                builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RAX))))
+                builder.build()
+            }
+            IRBinOp.OpType.MOD -> {
+                val builder = TileBuilder.Expr(4, Abstract.freshRegister(),this)
+                builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(leftTile.outputRegister)))
+                builder.add(CQO())
+                builder.add(Arith.DIV(rightTile.outputRegister))
+                builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RDX))))
+                builder.build()
+            }
             IRBinOp.OpType.AND -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Logic.AND(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister),
+                    RegisterSrc(leftTile.outputRegister)))
+                builder.add(Logic.AND(RegisterDest(builder.outputRegister),
+                    RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.OR -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Logic.OR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister),
+                    RegisterSrc(leftTile.outputRegister)))
+                builder.add(Logic.OR(RegisterDest(builder.outputRegister),
+                    RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.XOR -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Logic.XOR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister),
+                    RegisterSrc(leftTile.outputRegister)))
+                builder.add(Logic.XOR(RegisterDest(builder.outputRegister),
+                    RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.LSHIFT -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Logic.SHL(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister),
+                    RegisterSrc(leftTile.outputRegister)))
+                builder.add(Logic.SHL(RegisterDest(builder.outputRegister),
+                    RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.RSHIFT -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Logic.SHR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister),
+                    RegisterSrc(leftTile.outputRegister)))
+                builder.add(Logic.SHR(RegisterDest(builder.outputRegister),
+                    RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
             IRBinOp.OpType.ARSHIFT -> {
-                val builder = TileBuilder.Expr(2, Register.Abstract.freshRegister(),this)
+                val builder = TileBuilder.Expr(2, Abstract.freshRegister(),this)
                 builder.consume(leftTile)
                 builder.consume(rightTile)
-                builder.add(
-                    Instruction.MOV(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(leftTile.outputRegister)
-                    )
-                )
-                builder.add(
-                    Instruction.Logic.SAR(
-                        Destination.RegisterDest(builder.outputRegister),
-                        Source.RegisterSrc(rightTile.outputRegister)
-                    )
-                )
+                builder.add(MOV(RegisterDest(builder.outputRegister),
+                        RegisterSrc(leftTile.outputRegister)))
+                builder.add(Logic.SAR(RegisterDest(builder.outputRegister),
+                    RegisterSrc(rightTile.outputRegister)))
                 builder.build()
             }
-            IRBinOp.OpType.EQ -> TODO()
-            IRBinOp.OpType.NEQ -> TODO()
-            IRBinOp.OpType.LT -> TODO()
-            IRBinOp.OpType.ULT -> TODO()
-            IRBinOp.OpType.GT -> TODO()
-            IRBinOp.OpType.LEQ -> TODO()
-            IRBinOp.OpType.GEQ -> TODO()
+            IRBinOp.OpType.EQ -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETZ(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.NEQ -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETNZ(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.LT -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETL(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.ULT -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETB(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.GT -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETG(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.LEQ -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETLE(eightByte))
+                builder.build()
+            }
+            IRBinOp.OpType.GEQ -> {
+                val outReg = Abstract.freshRegister()
+                val builder = TileBuilder.Expr(3, outReg,this)
+                val eightByte = zeroAndCmp(builder, leftTile, rightTile, outReg.name)
+                builder.add(JumpSet.SETGE(eightByte))
+                builder.build()
+            }
         }
+    }
+
+    private fun zeroAndCmp(builder : TileBuilder.Expr, leftTile : Tile.Expr, rightTile: Tile.Expr,
+                   outRegName : String) : Register {
+        builder.consume(leftTile)
+        builder.consume(rightTile)
+        builder.add(Logic.XOR(RegisterDest(builder.outputRegister),
+            RegisterSrc(builder.outputRegister)))
+        builder.add(CMP(leftTile.outputRegister,
+            rightTile.outputRegister))
+        return Abstract(outRegName, 8)
     }
     override fun findBestTile() {  }
 }

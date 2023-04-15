@@ -12,16 +12,16 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
     override val defaultTile: Tile.Regular
         get() {
-            // TODO!!!! WE SHOULD USE BUILDER HERE!!!!!!!!! @blu
 
             val builder = TileBuilder.Regular(0, this)
             for (stmt in block) builder.consume(stmt.optimalTile())
 
             // TODO: do register allocation here
             // TODO: add preamble (currently a full guess)
-            val ra = RegisterAllocator()
-            val insns = ra.allocateRegisters(builder.publicIns)
-            return Tile.Regular(insns, builder.publicCost)
+            return builder.build()
+//            val ra = RegisterAllocator()
+//            val insns = ra.allocateRegisters(builder.publicIns)
+//            return Tile.Regular(insns, builder.publicCost)
 //            return builder.build()
         }
 
@@ -147,11 +147,8 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 )
 
                 is LIRJump -> {
-                    if (end.address is LIRExpr.LIRName) {
-                        Node.Unconditional(ArrayList(it.ordinary), it.label, end.address.l)
-                    } else {
-                        Node.None(ArrayList(it.ordinary.plus(end)), it.label)
-                    }
+                    Node.Unconditional(ArrayList(it.ordinary), it.label, end.address.l)
+                    // former else branch: Node.None(ArrayList(it.ordinary.plus(end)), it.label)
                 }
 
                 is LIRReturn -> Node.None(ArrayList(it.ordinary.plus(end)), it.label)

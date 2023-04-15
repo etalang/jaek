@@ -1,3 +1,4 @@
+import assembly.AssemblyGenerator
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
@@ -13,6 +14,7 @@ import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
+import typechecker.EtaType
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -128,7 +130,6 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                         context.getFunctions()
                                     )
                                     val ir = translator.irgen(!disableOpt)
-                                    // TODO: CHECK -- ADDED INTERMEDIATE STEP
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
@@ -137,11 +138,12 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                         writer.close()
                                     }
 
-                                    // TODO: CHECK IF THE PIPELINING IS FINE HERE
                                     try {
-                                        val assembly = ir.tile()
+                                        val funcMap : Map<String, EtaType.ContextType.FunType> =
+                                            context.getFunctions().mapKeys { (k, v) -> translator.mangleMethodName(k, v) }
+                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
                                         // print to file.s
-                                        assemblyFile.writeText(assembly.toString())
+                                        assemblyFile.writeText(assemblyAssembler.generate())
                                     } catch (e: Throwable) {
                                         assemblyFile.writeText("Failed to generate assembly for " + it.name)
                                         println("Failed to generate assembly for " + it.name)

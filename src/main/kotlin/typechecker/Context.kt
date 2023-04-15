@@ -34,7 +34,7 @@ class Context {
         return (lookup(id) != null)
     }
 
-    fun getFunctions() : MutableMap<String, ContextType.FunType> {
+    fun getFunctions() : Map<String, ContextType.FunType> {
         val contextFunctions : MutableMap<String, ContextType.FunType> = mutableMapOf()
         for (k in stack[0].keys) {
             val v = stack[0][k]
