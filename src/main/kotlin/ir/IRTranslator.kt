@@ -12,24 +12,37 @@ import ir.mid.IRStmt.*
 import ir.optimize.ConstantFolder
 import typechecker.EtaType
 
-class IRTranslator(val AST: Program, val name: String, val functions: Map<String, EtaType.ContextType.FunType>) {
-    private var functionMap = functions.mapValues { mangleMethodName(it.key, it.value) }
+class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String, EtaType.ContextType.FunType>) {
+    private var mangledFunctionNames = functionTypes.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
-    // Tracks globals changed by a function call
-    private val globalsByFunction : MutableMap<String, MutableSet<String>> = HashMap()
-    // Tracks function calls done by a function
-    private val functionCalls : MutableMap<String, MutableSet<String>> = HashMap()
+
+    /** Tracks globals changed by a function call **/
+    private val globalsByFunction: MutableMap<String, MutableSet<String>> = HashMap()
+
+    /** Tracks function calls done by a function **/
+    private val functionCalls: MutableMap<String, MutableSet<String>> = HashMap()
 
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
+    /** WHERE IT HAPPENS **/
+    fun irgen(optimize: Boolean = false): LIRCompUnit {
+        val mir = translateCompUnit(AST)
+        getGlobalsTouched()
+
+        var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
+        lir.reorderBlocks()
+        lir = ConstantFolder().apply(lir)
+        return lir
+    }
+
     private fun getGlobalsTouched() {
-        val functions : MutableSet<String> = globalsByFunction.keys
+        val functions: MutableSet<String> = globalsByFunction.keys
 
-        fun bfs(startFunc : String) {
-            val visited : MutableSet<String> = HashSet()
+        fun bfs(startFunc: String) {
+            val visited: MutableSet<String> = HashSet()
 
-            fun visit(func : String) {
+            fun visit(func: String) {
                 if (func in visited) return
                 visited.add(func)
                 globalsByFunction[startFunc]?.union(globalsByFunction[func] ?: emptySet())
@@ -37,19 +50,9 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
             }
             visit(startFunc)
         }
-        functions.forEach(){function ->
+        functions.forEach() { function ->
             bfs(function)
         }
-    }
-    fun irgen(optimize: Boolean = false): LIRCompUnit { // TODO: LOOK HOW I CHANGED RETURN TYPE
-        val mir = translateCompUnit(AST)
-        getGlobalsTouched()
-
-//        println(globalsByFunction)
-        var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
-        lir.reorderBlocks()
-        lir = ConstantFolder().apply(lir)
-        return lir
     }
 
     private fun freshLabel(): IRLabel {
@@ -99,7 +102,8 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
                 is GlobalDecl -> {
                     globals.add(translateData(it))
                 }
-                else -> { }
+
+                else -> {}
             }
         }
 
@@ -108,7 +112,7 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
         p.definitions.forEach {
             when (it) {
                 is Method -> if (it.body != null) functions.add(translateFuncDecl(it))
-                else -> { }
+                else -> {}
             }
         }
         return IRCompUnit(name, functions, globals)
@@ -134,19 +138,19 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
             funcMoves.add(IRMove(IRTemp(n.args[i].id), IRTemp("_ARG${i + 1}")))
         }
 
-        globalsByFunction[functionMap[n.id]!!] = mutableSetOf()
-        functionCalls[functionMap[n.id]!!] = mutableSetOf()
+        globalsByFunction[mangledFunctionNames[n.id]!!] = mutableSetOf()
+        functionCalls[mangledFunctionNames[n.id]!!] = mutableSetOf()
 
-        funcMoves.add(translateStatement(n.body!!, functionMap[n.id]!!))
+        funcMoves.add(translateStatement(n.body!!, mangledFunctionNames[n.id]!!))
         if (n.returnTypes.size != 0) {
-            return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
+            return IRFuncDecl(mangledFunctionNames[n.id]!!, IRSeq(funcMoves))
         } else { // if the method is a proc, add empty return
             funcMoves.add(IRReturn(listOf()))
-            return IRFuncDecl(functionMap[n.id]!!, IRSeq(funcMoves))
+            return IRFuncDecl(mangledFunctionNames[n.id]!!, IRSeq(funcMoves))
         }
     }
 
-    private fun translateAssignTarget(n: AssignTarget, sourceFn : String): IRExpr {
+    private fun translateAssignTarget(n: AssignTarget, sourceFn: String): IRExpr {
         return when (n) {
             is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, sourceFn)
             is AssignTarget.DeclAssign -> IRTemp(n.decl.id)
@@ -156,7 +160,7 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
 
     }
 
-    private fun translateStatement(n: Statement, sourceFn : String): IRStmt {
+    private fun translateStatement(n: Statement, sourceFn: String): IRStmt {
         return when (n) {
             is Statement.Block -> {
                 IRSeq(n.stmts.map { translateStatement(it, sourceFn) })
@@ -189,13 +193,14 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
 
                     when (it) {
                         is AssignTarget.IdAssign -> {
-                            globals.forEach {global ->
+                            globals.forEach { global ->
                                 if (it.idAssign.name == global.name) {// if the LHS is a global
                                     globalsByFunction[sourceFn]?.add(it.idAssign.name)
                                 }
                             }
                         }
-                        else -> { }
+
+                        else -> {}
                     }
 
                     if (transl is IRESeq) { // this fixes order of eval
@@ -212,11 +217,11 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
                     // DO THE CALL IN HERE DO NOT PASS IT DOWN
                     // assuming that the number of returns must match the number of targets, checked in typecheck
 
-                    functionCalls[sourceFn]?.add(functionMap[first.fn]!!)
+                    functionCalls[sourceFn]?.add(mangledFunctionNames[first.fn]!!)
 
                     stmts.add(
                         IRCallStmt(IRName(
-                            functionMap[first.fn]!!
+                            mangledFunctionNames[first.fn]!!
                         ),
                             n.targets.size.toLong(),
                             first.args.map { translateExpr(it, sourceFn) }
@@ -243,8 +248,8 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
             }
 
             is Statement.Procedure -> {
-                functionCalls[sourceFn]?.add(functionMap[n.id]!!)
-                IRCallStmt(IRName(functionMap[n.id]!!), 0, n.args.map { translateExpr(it, sourceFn) })
+                functionCalls[sourceFn]?.add(mangledFunctionNames[n.id]!!)
+                IRCallStmt(IRName(mangledFunctionNames[n.id]!!), 0, n.args.map { translateExpr(it, sourceFn) })
             }
 
             is Statement.Return -> {
@@ -380,7 +385,7 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
     }
 
 
-    private fun translateExpr(n: Expr, sourceFn : String): IRExpr {
+    private fun translateExpr(n: Expr, sourceFn: String): IRExpr {
         return when (n) {
             is Expr.ArrayAccess -> {
                 val tempA = freshTemp()
@@ -541,9 +546,10 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
             }
 
             is Expr.FunctionCall -> {
-                functionCalls[sourceFn]?.add(functionMap[n.fn]!!)
-                IRCall(IRName(functionMap[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
+                functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
+                IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
             }
+
             is Expr.Identifier -> {
                 var foundGlobal = false
                 globals.forEach {
@@ -635,7 +641,7 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
         return moves
     }
 
-    private fun translateControl(n: Expr, trueLabel: IRLabel, falseLabel: IRLabel, sourceFn : String): IRStmt {
+    private fun translateControl(n: Expr, trueLabel: IRLabel, falseLabel: IRLabel, sourceFn: String): IRStmt {
         return when (n) {
             is Literal.BoolLit -> if (n.bool) IRJump(IRName(trueLabel.l)) else IRJump(IRName(falseLabel.l))
             is UnaryOp -> {
