@@ -146,9 +146,9 @@ class IRTranslator(val AST: Program, val name: String, val functions: Map<String
         }
     }
 
-    private fun translateAssignTarget(n: AssignTarget, f : String): IRExpr {
+    private fun translateAssignTarget(n: AssignTarget, sourceFn : String): IRExpr {
         return when (n) {
-            is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, f)
+            is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, sourceFn)
             is AssignTarget.DeclAssign -> IRTemp(n.decl.id)
             is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
             is AssignTarget.Underscore -> freshTemp()
