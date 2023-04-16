@@ -12,6 +12,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRReturn
 class LIRReturn(val valList: List<LIRExpr>) : LIRStmt.EndBlock() {
     override val java: IRReturn = factory.IRReturn(valList.map { it.java })
 
+    // we always have a return. return does LEAVE to destroy the stack (epilogue)
     override val defaultTile: Tile.Regular
         get() {
             val builder = TileBuilder.Regular(1, this)

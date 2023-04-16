@@ -38,7 +38,16 @@ sealed class LIRExpr : LIRNode.TileableNode<Tile.Expr>() {
     class LIRTemp(val name: String) : LIRExpr() {
         override val java: JIRTemp = factory.IRTemp(name)
 
-        override val defaultTile get() = Tile.Expr(listOf(), 0, Register.Abstract(name))
+        override val defaultTile
+            get() =
+                Tile.Expr(
+                    listOf(), 0, (
+                            if (name.startsWith("_ARG")) Register.Argument(
+                                name.removePrefix("_ARG").toInt()
+                            ) else Register.Abstract(name)
+                            )
+                )
+
         override fun findBestTile() {}
     }
 

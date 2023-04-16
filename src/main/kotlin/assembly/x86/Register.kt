@@ -15,7 +15,13 @@ sealed class Register {
         }
     }
 
-    /** x86Name represents the register being used to store the information (may not be the whole register) */
+    data class Argument(val index: Int, val size : Int = 64) : Register() {
+        override fun toString(): String {
+            return "_ARG${index}"
+        }
+    }
+
+        /** x86Name represents the register being used to store the information (may not be the whole register) */
     enum class x86Name {
         RAX, RBX, RCX, RDX, RSP, RBP, RDI, RSI, R8, R9, R10, R11, R12, R13, R14, R15
     }
