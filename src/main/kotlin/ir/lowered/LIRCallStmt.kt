@@ -13,7 +13,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
     LIRStmt.FlatStmt() {
     override val java: IRCallStmt = factory.IRCallStmt(target.java, n_returns, args.map { it.java })
 
-    override val defaultTile : Tile.Regular =
+    override val defaultTile : Tile.Regular
         get() {
             val builder = TileBuilder.Regular(1, this)
             val cc = ConventionalCaller(args.size, n_returns.toInt())
