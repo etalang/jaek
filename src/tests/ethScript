@@ -216,3 +216,7 @@ etac ("Test --irgen") ["ir-fix-tests"] "-libpath $(testpath) --irgen" {
     localdecl14.eta;
     medley.eta;
 }
+
+etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
+    helloworld.eta;
+}
