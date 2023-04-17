@@ -5,7 +5,7 @@ sealed class Memory {
 
     data class RegisterMem(
         val base: Register,
-        val index: Register?,
+        val index: Register? = null,
         val offset: Long = 0,
         val shift: Shift = Shift.ONE
     ) : Memory() {

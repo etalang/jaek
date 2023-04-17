@@ -8,9 +8,9 @@ import assembly.x86.Memory.LabelMem
 import assembly.x86.Memory.RegisterMem
 import assembly.x86.Register.*
 import assembly.x86.Source.*
-import typechecker.EtaType
+import typechecker.EtaFunc
 
-class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaType.ContextType.FunType>) {
+class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
     /** default three registers used in trivial register allocation
      * ASSUME: we don't use these registers ANYWHERE in a nontrivial capacity before we allocate */
     private val defaults = listOf(x86(x86Name.R11), x86(x86Name.R12), x86(x86Name.R13))
@@ -24,9 +24,15 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
-        // TODO: DO! @kaet
-
-        val populateArguments: List<Instruction> = listOf()
+        val funcType = functionTypes[n.name]!!
+        val cc = ConventionalCaller(funcType)
+        val populateArguments: MutableList<Instruction> = mutableListOf()
+        for (i in 1..funcType.argCount) populateArguments.add(
+            MOV(
+                RegisterDest(Abstract("_ARG$i")),
+                cc.getArg(i)
+            )
+        )
         return x86FuncDecl(n.name, allocateRegisters(populateArguments.plus(n.body)))
     }
 
