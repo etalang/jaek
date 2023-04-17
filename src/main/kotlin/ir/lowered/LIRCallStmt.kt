@@ -24,8 +24,8 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             reglst.add(argTile.outputRegister)
             builder.consume(argTile)
         }
-        builder.add(Logic.AND(RegisterDest(Register.x86(Register.x86Name.RSP)),
-                ConstSrc(-16)))
+//        builder.add(Logic.AND(RegisterDest(Register.x86(Register.x86Name.RSP)),
+//                ConstSrc(-16)))
         if (n_returns >= 3) {
             argOffset = 1
             builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)),

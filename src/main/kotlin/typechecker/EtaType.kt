@@ -135,3 +135,5 @@ sealed class EtaType {
 
 
 }
+
+typealias EtaFunc = EtaType.ContextType.FunType
