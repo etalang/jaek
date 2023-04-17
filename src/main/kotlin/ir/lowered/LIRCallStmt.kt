@@ -37,6 +37,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             //alignment
             val didWePad: Boolean
             val returnsThatRequiresUsToFuckWithRSP = (n_returns.toInt() - 2).coerceAtLeast(0)
+            // we have pushed one more arg if we have large returns
             val pushedArgs = (args.size - 6).coerceAtLeast(0) + (if (n_returns.toInt() > 2) 1 else 0)
             val shitStacked = (returnsThatRequiresUsToFuckWithRSP + pushedArgs)
             if (shitStacked % 2 > 0) {
@@ -67,7 +68,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             }
 
-            for (i in 1 until n_returns.toInt()) {
+            for (i in 1 .. n_returns.toInt()) {
                 builder.add(cc.getReturn(i))
             }
 

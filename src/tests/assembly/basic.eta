@@ -1,30 +1,39 @@
 use io
 use conv
 
-f() : int {
-    c : bool = true
-    if (c) {
-        a : int = 5555555
-        b : int = a + 1
-//        print(unparseInt(b))
-        return b
-    }
-
+f(arg:int,arg1: int, arg2: int,arg3: int, arg4:int,arg5: int, arg6: int, arg7:int) : int {
+    print(unparseInt(arg))
+    print(unparseInt(arg1))
+    print(unparseInt(arg2))
+    print(unparseInt(arg3))
+    print(unparseInt(arg4))
+    print(unparseInt(arg5))
+    print(unparseInt(arg6))
+    print(unparseInt(arg7))
     return 17
+//    c : bool = true
+//    if (c) {
+//        a : int = 5555555
+//        b : int = a + 1
+////        print(unparseInt(b))
+//        return b
+//    }
+//
+//    return 17
 }
 
 main(args : int[][]) {
 //    arr : int[2]
 //    a : int = 5
 //    x : int = a + 1
-    print("hello")
-//    str : int[] = {1,2,3,4,5,6}
-    intarr : int[] = unparseInt(5)
+//    print("hello")
+////    str : int[] = {1,2,3,4,5,6}
+//    intarr : int[] = unparseInt(5)
 //    x : int[] = unparseInt(intarr)
-    print(unparseInt(f()))
-    if (f() < 100) {
-        print("teeny")
-    } else {
-        print("bigg")
-    }
+    print(unparseInt(f(6,7,8,9,10,11,12,13)))
+//    if (f(5) < 100) {
+//        print("teeny")
+//    } else {
+//        print("bigg")
+//    }
 }
