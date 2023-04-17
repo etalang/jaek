@@ -4,8 +4,8 @@ import assembly.ConventionalCaller
 import assembly.Tile
 import assembly.TileBuilder
 import assembly.x86.*
-import assembly.x86.Instruction.*
 import assembly.x86.Destination.*
+import assembly.x86.Instruction.*
 import assembly.x86.Source.*
 import edu.cornell.cs.cs4120.etac.ir.IRCallStmt
 
@@ -17,52 +17,29 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
         get() {
             val builder = TileBuilder.Regular(1, this)
             val cc = ConventionalCaller(args.size, n_returns.toInt())
-        val reglst = mutableListOf<Register>()
-        val argNumber = args.size
-//        var argOffset = 0
-//        for (arg in args) {
-//            // ensures arguments are still evaluated left to right
-//            val argTile = arg.optimalTile()
-//            reglst.add(argTile.outputRegister)
-//            builder.consume(argTile)
-//        }
 
-//  KEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEP
-        if (n_returns>=3) {
-            builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)),
-                    ConstSrc(8L * (n_returns - 2L))))
-            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDI)),
-                    RegisterSrc(Register.x86(Register.x86Name.RSP))))
-        }
-//  END KEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEP
-
-
-
-        if (argNumber > 6 - argOffset) {
-            for (i in args.size - 1 downTo 6 - argOffset) {
-                builder.add(PUSH(reglst[i]))
+            //first make the space for extra returns :)
+            if (n_returns>=3) {
+                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)),
+                        ConstSrc(8L * (n_returns - 2L))))
+                builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDI)),
+                        RegisterSrc(Register.x86(Register.x86Name.RSP))))
             }
-        }
-        if (argNumber > 5 - argOffset) {
-            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.R9)),
-                RegisterSrc(reglst[5 - argOffset])))
-        }
-        if (argNumber > 4 - argOffset) {
-            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.R8)),
-                    RegisterSrc(reglst[4 - argOffset])))
-        }
-        if (argNumber > 3 - argOffset) {
-            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RCX)),
-                    RegisterSrc(reglst[3 - argOffset])))
-        }
-        if (argNumber > 2 - argOffset) {
-            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDX)),
-                RegisterSrc(reglst[2 - argOffset])))
-        }
-        if (argNumber > 1 - argOffset) {
-            builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RSI)),
-                RegisterSrc(reglst[1 - argOffset])))
-        }
+
+            //alignment
+            val returnthatrequireustofuckwiththeRsp = Math.max(0, n_returns - 2)
+            val pushedArgs = 0.coerceAtLeast(args.size - 6)
+            if (args.size > 6 && args.size % 2 == 0) {
+                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)),ConstSrc(8L)))
+            }
+
+            for (i in args.size - 1 downTo 0) {
+                val argNum = i+1
+                val tile = args[i].optimalTile()
+                builder.consume(tile)
+                builder.add(cc.putArg(argNum,tile.outputRegister))
+            }
+
         if (n_returns < 3 && argNumber > 0) {
             builder.add(MOV(RegisterDest(Register.x86(Register.x86Name.RDI)),
                     RegisterSrc(reglst.first())))
