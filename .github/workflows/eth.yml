@@ -14,15 +14,23 @@ jobs:
       volumes:
         - /docker-data:/home/student/shared
       options: --user root
-      
+
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      
+
       - uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 7.6
-          
+
+      - name: Update runtime
+        working-directory: /home/student/runtime
+        run: ./update
+
+      - name: Update eth
+        working-directory: /home/student/eth
+        run: ./update
+
       - name: Package source code
         run: |
           make
@@ -32,7 +40,7 @@ jobs:
       - name: Run vm tests
         working-directory: /home/student/
         run: eth /home/student/eth/tests/pa4/ethScript -ec -noout -compilerpath /home/student/shared/production/
-        
+
       - name: Run custom tests
         working-directory: /home/student/
         run: eth /home/student/shared/production/src/tests/ethScript -ec -noout -compilerpath /home/student/shared/production/

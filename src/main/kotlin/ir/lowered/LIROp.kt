@@ -2,13 +2,10 @@ package ir.lowered
 
 import assembly.Tile
 import assembly.TileBuilder
-import assembly.x86.Destination
 import assembly.x86.Destination.*
-import assembly.x86.Instruction
 import assembly.x86.Instruction.*
 import assembly.x86.Register
 import assembly.x86.Register.*
-import assembly.x86.Source
 import assembly.x86.Source.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 
@@ -49,7 +46,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
             IRBinOp.OpType.HMUL -> {
                 val builder = TileBuilder.Expr(3, Abstract.freshRegister(),this)
                 builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(rightTile.outputRegister)))
-                builder.add(Arith.IMULSingle(leftTile.outputRegister))
+                builder.add(IMULSingle(leftTile.outputRegister))
                 builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RDX))))
                 builder.build()
             }
@@ -57,7 +54,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 val builder = TileBuilder.Expr(4, Abstract.freshRegister(),this)
                 builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(leftTile.outputRegister)))
                 builder.add(CQO())
-                builder.add(Arith.DIV(rightTile.outputRegister))
+                builder.add(DIV(rightTile.outputRegister))
                 builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RAX))))
                 builder.build()
             }
@@ -65,7 +62,7 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
                 val builder = TileBuilder.Expr(4, Abstract.freshRegister(),this)
                 builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(leftTile.outputRegister)))
                 builder.add(CQO())
-                builder.add(Arith.DIV(rightTile.outputRegister))
+                builder.add(DIV(rightTile.outputRegister))
                 builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RDX))))
                 builder.build()
             }
@@ -187,8 +184,8 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
         builder.consume(rightTile)
         builder.add(Logic.XOR(RegisterDest(builder.outputRegister),
             RegisterSrc(builder.outputRegister)))
-        builder.add(CMP(leftTile.outputRegister,
-            rightTile.outputRegister))
+        builder.add(CMP(RegisterDest(leftTile.outputRegister),
+            RegisterSrc(rightTile.outputRegister)))
         return Abstract(outRegName, 8)
     }
     override fun findBestTile() {  }

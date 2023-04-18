@@ -7,6 +7,7 @@ import errors.LexicalError
 import errors.ParseError
 import errors.SemanticError
 import typechecker.Context
+import typechecker.EtaFunc
 import typechecker.EtaType
 import java.io.File
 
@@ -54,7 +55,7 @@ class Kompiler {
             for (t in method.returnTypes) {
                 codomainList.add(EtaType.translateType(t))
             }
-            val currFunType = EtaType.ContextType.FunType(
+            val currFunType = EtaFunc(
                 EtaType.ExpandedType(domainList),
                 EtaType.ExpandedType(codomainList),
                 true

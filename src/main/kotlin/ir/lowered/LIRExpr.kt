@@ -24,8 +24,7 @@ sealed class LIRExpr : LIRNode.TileableNode<Tile.Expr>() {
                 return Tile.Expr(
                     listOf(
                         Instruction.MOV(
-                            Destination.RegisterDest(temp),
-                            Source.ConstSrc(value)
+                            Destination.RegisterDest(temp), Source.ConstSrc(value)
                         )
                     ), 1, temp
                 )
@@ -38,7 +37,9 @@ sealed class LIRExpr : LIRNode.TileableNode<Tile.Expr>() {
     class LIRTemp(val name: String) : LIRExpr() {
         override val java: JIRTemp = factory.IRTemp(name)
 
-        override val defaultTile get() = Tile.Expr(listOf(), 0, Register.Abstract(name))
+        override val defaultTile
+            get() = Tile.Expr(listOf(), 0, Register.Abstract(name))
+
         override fun findBestTile() {}
     }
 

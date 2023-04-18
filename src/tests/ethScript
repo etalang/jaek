@@ -216,3 +216,11 @@ etac ("Test --irgen") ["ir-fix-tests"] "-libpath $(testpath) --irgen" {
     localdecl14.eta;
     medley.eta;
 }
+
+etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
+    boolcheck.eta;
+    fibonacci.eta;
+    helloworld.eta;
+    recursive.eta;
+    twoiszero.eta;
+}

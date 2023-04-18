@@ -10,9 +10,10 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
 import ir.optimize.ConstantFolder
+import typechecker.EtaFunc
 import typechecker.EtaType
 
-class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String, EtaType.ContextType.FunType>) {
+class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String, EtaFunc>) {
     private var mangledFunctionNames = functionTypes.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
 
@@ -32,7 +33,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
 
         var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
         lir.reorderBlocks()
-        lir = ConstantFolder().apply(lir)
+        if (optimize) lir = ConstantFolder().apply(lir)
         return lir
     }
 
@@ -76,8 +77,8 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
 
     fun mangleMethodName(name: String, type: EtaType?): String {
         return when (type) {
-            is EtaType.ContextType.FunType -> {
-                val retType = when (val s = type.codomain.lst.size) {
+            is EtaFunc -> {
+                val retType = when (val s = type.retCount) {
                     0 -> "p"
                     1 -> mangleType(type.codomain.lst.first())
                     else -> "t" + s.toString() + type.codomain.lst.fold("") { acc, e -> acc + mangleType(e) }

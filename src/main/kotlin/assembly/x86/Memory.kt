@@ -2,10 +2,18 @@ package assembly.x86
 
 /** we should never instantiate this with both index and base null (or if both are null, offset needs to be non-negative) */
 sealed class Memory {
-    data class RegisterMem(val base: Register?, val index: Register?, val offset: Long = 0, val shift: Shift = Shift.ONE) : Memory() {
+    abstract val involved: Set<Register>
+
+    data class RegisterMem(
+        val base: Register?,
+        val index: Register? = null,
+        val offset: Long = 0,
+        val shift: Shift = Shift.ONE
+    ) : Memory() {
         init {
             require((base != null || index != null) || (offset >= 0))
         }
+
         enum class Shift {
             ONE {
                 override fun toString(): String {
@@ -29,6 +37,8 @@ sealed class Memory {
             }
         }
 
+        override val involved = setOfNotNull(base, index)
+
         @Override
         override fun toString(): String {
             var rep = "QWORD PTR ["
@@ -44,8 +54,7 @@ sealed class Memory {
             if (offset != 0L) {
                 if (offset < 0) {
                     rep += " - ${-offset}"
-                }
-                else {
+                } else {
                     rep += " + $offset"
                 }
             }
@@ -55,6 +64,8 @@ sealed class Memory {
     }
 
     data class LabelMem(val label: Label) : Memory() {
+        override val involved: Set<Register> = emptySet()
+
         override fun toString(): String {
             return "[$label]"
         }

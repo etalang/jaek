@@ -1,31 +1,38 @@
 use io
 use conv
 
-f(inp : int) : int {
-    c : bool = true
-    print("input" + unparseInt(inp))
-    if (c) {
-        a : int = 5555555
-        b : int = a + 1
-//        print(unparseInt(b))
-        return b
-    }
-
-    return 17
+fmanyarg(arg1:int,arg2: int, arg3: int,arg4: int, arg5:int,arg6: int, arg7: int, arg8:int) : int {
+    println(unparseInt(arg1))
+    println(unparseInt(arg2))
+    println(unparseInt(arg3))
+    println(unparseInt(arg4))
+    println(unparseInt(arg5))
+    println(unparseInt(arg6))
+    println(unparseInt(arg7))
+    println(unparseInt(arg8))
+//    c : bool = true
+//    if (c) {
+//        a : int = 5555555
+//        b : int = a + 1
+////        print(unparseInt(b))
+//        return b
+//    }
+//
+//    return 17
 }
 
 main(args : int[][]) {
 //    arr : int[2]
 //    a : int = 5
 //    x : int = a + 1
-    print("hello")
-//    str : int[] = {1,2,3,4,5,6}
-    intarr : int[] = unparseInt(5)
+//    print("hello")
+////    str : int[] = {1,2,3,4,5,6}
+//    intarr : int[] = unparseInt(5)
 //    x : int[] = unparseInt(intarr)
-    print(unparseInt(f(8)))
-    if (f(4) < 100) {
-        print("teeny")
-    } else {
-        print("bigg")
-    }
+    print("return is " + unparseInt(fmanyarg(6,7,8,9,10,11,12,13)))
+//    if (f(5) < 100) {
+//        print("teeny")
+//    } else {
+//        print("bigg")
+//    }
 }
