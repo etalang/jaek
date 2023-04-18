@@ -6,6 +6,12 @@ sealed class Register {
             return name
         }
 
+        override fun equals(other: Any?): Boolean {
+            return if (other is Abstract){
+                other.name == this.name
+            } else false
+        }
+
         companion object {
             private var freshRegisterCount = 0
             fun freshRegister(): Abstract {
@@ -67,6 +73,12 @@ sealed class Register {
     data class x86(val name: x86Name, val size : Int = 64) : Register() {
         override fun toString(): String {
             return if (size == 64) x86NametoString(name) else x86NametoLow8BitString(name)
+        }
+
+        override fun equals(other: Any?): Boolean {
+            return if (other is x86){
+                other.name == this.name
+            } else false
         }
     }
 

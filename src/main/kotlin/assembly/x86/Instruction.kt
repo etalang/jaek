@@ -116,8 +116,8 @@ sealed class Instruction {
     /** sets the low 8 bits of register with 0 or 1 if the corresponding jump would be taken
      * @param register where size must be 8 */
     sealed class JumpSet(val reg: Register) : Instruction() {
-        override val written: Set<Register> = setOf()
-        override val read: Set<Register> = setOf(reg)
+        override val written: Set<Register> = setOf(reg)
+        override val read: Set<Register> = setOf()
 
         class SETZ(reg: Register) : JumpSet(reg) {
             override fun toString(): String {
@@ -127,7 +127,7 @@ sealed class Instruction {
 
         class SETNZ(reg: Register) : JumpSet(reg) {
             override fun toString(): String {
-                return "setz $reg"
+                return "setnz $reg"
             }
         }
 
