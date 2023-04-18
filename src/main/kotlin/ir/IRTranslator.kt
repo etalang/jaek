@@ -32,7 +32,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
 
         var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
         lir.reorderBlocks()
-        lir = ConstantFolder().apply(lir)
+        if (optimize) lir = ConstantFolder().apply(lir)
         return lir
     }
 
