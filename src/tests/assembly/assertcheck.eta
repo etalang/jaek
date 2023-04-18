@@ -1,0 +1,9 @@
+use io
+use conv
+use assert
+
+main(args : int[][]) {
+    aarg : int = 6
+    a : bool = aarg == 7
+    assert(a)
+}

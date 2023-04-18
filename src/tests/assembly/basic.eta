@@ -10,7 +10,6 @@ fmanyarg(arg1:int,arg2: int, arg3: int,arg4: int, arg5:int,arg6: int, arg7: int,
     println(unparseInt(arg6))
     println(unparseInt(arg7))
     println(unparseInt(arg8))
-    return 17
 //    c : bool = true
 //    if (c) {
 //        a : int = 5555555

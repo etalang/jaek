@@ -1,0 +1,12 @@
+use io
+use conv
+
+main(args : int[][]) {
+    six : int = 6 // to prevent constant folding
+    boolcheck(six == 7, "equality")
+    boolcheck(six < 7, "less than")
+}
+
+boolcheck(cond : bool, str : int[]) {
+    if (cond) println(str + " true") else println(str + " false")
+}
