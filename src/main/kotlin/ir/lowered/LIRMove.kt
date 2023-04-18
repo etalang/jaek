@@ -102,10 +102,26 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
         }
         return null
     }
+    // already have MOVE(TEMP(t1), MEM(e)) if e is memory-friendly
+
+    private fun addressHack() : Tile.Regular? {
+        if (dest is LIRExpr.LIRTemp) {
+            val builder = TileBuilder.Regular(1, this)
+            val smartAccess = detectMemoryFriendly(expr)
+            if (smartAccess != null) {
+                builder.add(Instruction.Arith.LEA(Destination.RegisterDest(Register.Abstract(dest.name)),
+                    Source.MemorySrc(smartAccess)))
+                return builder.build()
+            }
+            return null
+        }
+        return null
+    }
 
     override fun findBestTile() {
         attempt(zeroTile())
         attempt(incOrDec())
+        attempt(addressHack())
     }
 
 }
