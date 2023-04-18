@@ -32,5 +32,14 @@ class LIRMem(val address: LIRExpr) : LIRExpr() {
             return builder.build()
         }
 
+    val arrAccessTile: Tile.Expr
+        get() {
+            val builder = TileBuilder.Expr(1, Register.Abstract.freshRegister(), this)
+            if (address is LIROp) {
+            }
+
+            return builder.build()
+        }
+
     override fun findBestTile() {}
 }
