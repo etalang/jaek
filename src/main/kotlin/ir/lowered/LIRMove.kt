@@ -104,11 +104,8 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
     }
 
     override fun findBestTile() {
-        attempt(coolTiling())
-    }
-
-    private fun coolTiling(): Tile.Regular? {
-        return null
+        attempt(zeroTile())
+        attempt(incOrDec())
     }
 
 }

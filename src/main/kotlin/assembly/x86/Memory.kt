@@ -1,7 +1,11 @@
 package assembly.x86
 
+/** we should never instantiate this with both index and base null (or if both are null, offset needs to be non-negative) */
 sealed class Memory {
-    data class RegisterMem(val base: Register, val index: Register?, val offset: Long = 0, val shift: Shift = Shift.ONE) : Memory() {
+    data class RegisterMem(val base: Register?, val index: Register?, val offset: Long = 0, val shift: Shift = Shift.ONE) : Memory() {
+        init {
+            require((base != null || index != null) || (offset >= 0))
+        }
         enum class Shift {
             ONE {
                 override fun toString(): String {
@@ -27,7 +31,10 @@ sealed class Memory {
 
         @Override
         override fun toString(): String {
-            var rep = "QWORD PTR [$base"
+            var rep = "QWORD PTR ["
+            if (base != null) {
+                rep += "$base"
+            }
             if (index != null) {
                 rep += " + $index"
                 if (shift != Shift.ONE) {

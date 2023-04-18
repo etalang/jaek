@@ -106,7 +106,7 @@ sealed class Instruction {
 
     // TODO: fix the typing on these instructions to be correct (see manual)
     // the arity is correct, but the types are hella wrong below:
-    data class CMP(val reg1 : Register, val reg2 : Register) : Instruction() {
+    data class CMP(val reg1 : Destination, val reg2 : Source) : Instruction() {
         override fun toString(): String {
             return "cmp $reg1, $reg2"
         }
@@ -204,6 +204,12 @@ sealed class Instruction {
         class JGE(loc: Location) : Jump(loc) {
             override fun toString(): String {
                 return "jge $loc"
+            }
+        }
+
+        class JB(loc:Location) : Jump(loc) {
+            override fun toString(): String {
+                return "jb $loc"
             }
         }
 
