@@ -1,6 +1,7 @@
 package assembly
 
 import assembly.x86.*
+import assembly.x86.Register.x86Name.*
 import assembly.x86.Destination.MemoryDest
 import assembly.x86.Destination.RegisterDest
 import assembly.x86.Instruction.*
@@ -13,7 +14,8 @@ import typechecker.EtaFunc
 class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
     /** default three registers used in trivial register allocation
      * ASSUME: we don't use these registers ANYWHERE in a nontrivial capacity before we allocate */
-    private val defaults = listOf(x86(x86Name.R11), x86(x86Name.R12), x86(x86Name.R13))
+    private val defaults = listOf(x86(R12), x86(R13), x86(R14))
+
 
     fun allocate(): x86CompUnit {
         return allocateCompUnit(assembly)
@@ -52,6 +54,10 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             ENTER(8L * (if (temps % 2 == 0) temps else temps + 1))
         )
 
+        //callee/caller saved regs
+        returnedInsns.addAll(defaults.map { PUSH(it) })
+
+
         for (insn in insns) {
             if (insn !is COMMENT) returnedInsns.add(COMMENT("[AA] $insn"))
             /** holds whether each abstract register mentioned should be assigned 0, 1, or 2 **/
@@ -59,6 +65,9 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             val encountered = insn.abstractEncountered
             assert(encountered.size <= 3)
             encountered.forEachIndexed { index, register -> replaced[register.name] = index }
+            if (insn is LEAVE) { //saved regs pop back off in reverse order
+                returnedInsns.addAll(defaults.reversed().map { POP(it) })
+            }
 
             for (ru in insn.abstractRead) {
                 replaced[ru.name]?.let { idx ->
@@ -66,7 +75,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
                         returnedInsns.add(
                             MOV(
                                 RegisterDest(defaults[idx]),
-                                MemorySrc(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift))
+                                MemorySrc(RegisterMem(x86(RBP), null, offset = -8L * shift))
                             )
                         )
                     }
@@ -78,7 +87,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
                     offsetMap[rw.name]?.let { shift ->
                         returnedInsns.add(
                             MOV(
-                                MemoryDest(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift)),
+                                MemoryDest(RegisterMem(x86(RBP), null, offset = -8L * shift)),
                                 RegisterSrc(defaults[idx])
                             )
                         )
