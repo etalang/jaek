@@ -45,7 +45,23 @@ sealed class Instruction {
             }
         }
 
-        class LEA(dest : Destination, src : Source) : Arith(dest, src)
+        class LEA(dest : Destination, src : Source) : Arith(dest, src) {
+
+
+        }
+
+        class INC(val dest : Destination) : Instruction() {
+            override fun toString(): String {
+                return "inc $dest"
+            }
+        }
+
+        class DEC(val dest : Destination) : Instruction() {
+            override fun toString(): String {
+                return "dec $dest"
+            }
+        }
+
 
     }
 
