@@ -15,6 +15,7 @@ isprime(n:int):bool {
     i:int = 2
     while (i*i <= n) {
         if (gcd(i, n) != 1) {
+            println(unparseInt(n) + " is divisible by " + unparseInt(i))
             return false
         }
         i = i+1

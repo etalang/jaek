@@ -14,7 +14,7 @@ sealed class Destination {
 
     data class RegisterDest(val r: Register) : Destination() {
         override val written: Set<Register> = setOf(r)
-        override val read: Set<Register> = setOf(r)
+        override val read: Set<Register> = setOf()
 
         override fun toString(): String {
             return r.toString()

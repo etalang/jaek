@@ -79,7 +79,7 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
             // rbp - 16 - (adjIdx - 6 - 1) * 8
 
             // adjIdx - 6 - 1 is the 0 indexed 
-            Source.MemorySrc( Memory.RegisterMem(Register.x86(RBP), offset = -16L - (adjIdx - 7)*8))
+            Source.MemorySrc( Memory.RegisterMem(Register.x86(RBP), offset = 16L + (adjIdx - 7)*8))
         }
     }
 
