@@ -134,8 +134,8 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             }
 
             is CMP -> insn.copy(
-                reg1 = replaceRegister(insn.reg1, replaceMap),
-                reg2 = replaceRegister(insn.reg2, replaceMap)
+                reg1 = replaceDestRegister(insn.reg1, replaceMap),
+                reg2 = replaceSrcRegister(insn.reg2, replaceMap)
             )
 
             is Logic -> {
@@ -196,6 +196,10 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             is IMULSingle -> IMULSingle(replaceRegister(insn.factor, replaceMap))
 
             is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> insn
+            is Arith.DEC -> Arith.DEC(replaceDestRegister(insn.dest, replaceMap))
+            is Arith.DIV -> Arith.DIV(replaceRegister(insn.divisor, replaceMap))
+            is Arith.IMULSingle -> Arith.IMULSingle(replaceRegister(insn.factor, replaceMap))
+            is Arith.INC -> Arith.INC(replaceDestRegister(insn.dest, replaceMap))
         }
     }
 
@@ -218,7 +222,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
         return when (m) {
             is LabelMem -> m
             is RegisterMem -> RegisterMem(
-                replaceRegister(m.base, replaceMap),
+                if (m.base == null) null else replaceRegister(m.base, replaceMap),
                 if (m.index == null) null else replaceRegister(m.index, replaceMap),
                 shift = m.shift, offset = m.offset
             )
