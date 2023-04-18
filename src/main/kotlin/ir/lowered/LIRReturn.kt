@@ -12,6 +12,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRReturn
 class LIRReturn(val valList: List<LIRExpr>) : LIRStmt.EndBlock() {
     override val java: IRReturn = factory.IRReturn(valList.map { it.java })
 
+    // we always have a return. return does LEAVE to destroy the stack (epilogue)
     override val defaultTile: Tile.Regular
         get() {
             val builder = TileBuilder.Regular(1, this)
@@ -28,12 +29,12 @@ class LIRReturn(val valList: List<LIRExpr>) : LIRStmt.EndBlock() {
                     RegisterSrc(secondReturnTile.outputRegister)))
             }
             if (valList.size > 2) { // begin da push
-                for (i in valList.size - 1 downTo 3) {
+                for (i in valList.size - 1 downTo 2) { // we have consumed 0 and 1 so far
                     val returnTile = valList[i].optimalTile()
                     builder.consume(returnTile)
                     builder.add(MOV(MemoryDest(Memory.RegisterMem(
                         Register.x86(Register.x86Name.RDI), null,
-                                    offset = 8L * (i - 3L))),
+                                    offset = 8L * (i - 2L))),
                             RegisterSrc(returnTile.outputRegister)))
                 }
             }

@@ -1,6 +1,7 @@
 src/main/java/JFlexLexer.java
 src/main/java/JFlexLexer.java~
 src/main/java/parser.java
+src/tests/assembly/*.txt
 
 *.parsed
 *.lexed

@@ -1,6 +1,7 @@
 package assembly
 
 import assembly.x86.*
+import assembly.x86.Register.x86Name.*
 import assembly.x86.Destination.MemoryDest
 import assembly.x86.Destination.RegisterDest
 import assembly.x86.Instruction.*
@@ -8,26 +9,33 @@ import assembly.x86.Memory.LabelMem
 import assembly.x86.Memory.RegisterMem
 import assembly.x86.Register.*
 import assembly.x86.Source.*
-import typechecker.EtaType
+import typechecker.EtaFunc
 
-class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<String, EtaType.ContextType.FunType>) {
+class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
     /** default three registers used in trivial register allocation
      * ASSUME: we don't use these registers ANYWHERE in a nontrivial capacity before we allocate */
-    private val defaults = listOf(x86(x86Name.R11), x86(x86Name.R12), x86(x86Name.R13))
+    private val defaults = listOf(x86(R12), x86(R13), x86(R14))
 
-    /** map for all temps encountered */
-    private val offsetMap = mutableMapOf<String, Int>()
 
-    fun allocate() : x86CompUnit {
+    fun allocate(): x86CompUnit {
         return allocateCompUnit(assembly)
     }
 
-    private fun allocateCompUnit(n : x86CompUnit) : x86CompUnit {
+    private fun allocateCompUnit(n: x86CompUnit): x86CompUnit {
         return x86CompUnit(n.name, n.functions.map { allocateFunction(it) }, n.globals)
     }
 
-    private fun allocateFunction(n : x86FuncDecl) : x86FuncDecl {
-        return x86FuncDecl(n.name, allocateRegisters(n.body))
+    private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
+        val funcType = functionTypes[n.name]!!
+        val cc = ConventionalCaller(funcType)
+        val populateArguments: MutableList<Instruction> = mutableListOf()
+        for (i in 1..funcType.argCount) populateArguments.add(
+            MOV(
+                RegisterDest(Abstract("_ARG$i")),
+                cc.getArg(i)
+            )
+        )
+        return x86FuncDecl(n.name, allocateRegisters(populateArguments.plus(n.body)))
     }
 
     /* for each instruction:
@@ -39,50 +47,47 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<Strin
            * put in the instruction with all abstract registers replaced
            * if there are any written to, write them into memory
            * */
-    private fun allocateRegisters(insns: List<Instruction>): MutableList<Instruction> {
-        val returnedInsns = mutableListOf<Instruction>()
+    private fun allocateRegisters(insns: List<Instruction>): List<Instruction> {
+        val offsetMap: Map<String, Int> = populateMap(insns)
+        val temps = offsetMap.keys.size
+        val returnedInsns = mutableListOf<Instruction>(
+            ENTER(8L * (if (temps % 2 == 0) temps else temps + 1))
+        )
+
+        //callee/caller saved regs
+        returnedInsns.addAll(defaults.map { PUSH(it) })
+
+
         for (insn in insns) {
             if (insn !is COMMENT) returnedInsns.add(COMMENT("[AA] $insn"))
-            val (written, used) = detectRegisters(insn)
-            val mentioned = written union used
-            // holds whether each abstract register mentioned should be assigned 0, 1, or 2
+            /** holds whether each abstract register mentioned should be assigned 0, 1, or 2 **/
             val replaced = mutableMapOf<String, Int>()
-            val abstractWritten = mutableSetOf<Abstract>()
-            val abstractUsed = mutableSetOf<Abstract>()
-            for (r in mentioned) {
-                if (r is Abstract) {
-                    replaced[r.name] = replaced.keys.size
-                    if (r.name !in offsetMap.keys) {
-                        offsetMap[r.name] = offsetMap.keys.size + 1
-                    }
-                    if (r in written) {
-                        abstractWritten.add(r)
-                    }
-                    if (r in used) {
-                        abstractUsed.add(r)
-                    }
-                }
+            val encountered = insn.abstractEncountered
+            assert(encountered.size <= 3)
+            encountered.forEachIndexed { index, register -> replaced[register.name] = index }
+            if (insn is LEAVE) { //saved regs pop back off in reverse order
+                returnedInsns.addAll(defaults.reversed().map { POP(it) })
             }
 
-            for (ru in abstractUsed) {
+            for (ru in insn.abstractRead) {
                 replaced[ru.name]?.let { idx ->
                     offsetMap[ru.name]?.let { shift ->
                         returnedInsns.add(
                             MOV(
                                 RegisterDest(defaults[idx]),
-                                MemorySrc(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift))
+                                MemorySrc(RegisterMem(x86(RBP), null, offset = -8L * shift))
                             )
                         )
                     }
                 }
             }
             returnedInsns.add(replaceInsnRegisters(insn, replaced))
-            for (rw in abstractWritten) {
+            for (rw in insn.abstractWritten) {
                 replaced[rw.name]?.let { idx ->
                     offsetMap[rw.name]?.let { shift ->
                         returnedInsns.add(
                             MOV(
-                                MemoryDest(RegisterMem(x86(x86Name.RBP), null, offset = -8L * shift)),
+                                MemoryDest(RegisterMem(x86(RBP), null, offset = -8L * shift)),
                                 RegisterSrc(defaults[idx])
                             )
                         )
@@ -90,34 +95,16 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<Strin
                 }
             }
         }
-        val finalInsns = mutableListOf<Instruction>()
-        for (insn in returnedInsns) {
-            if (insn is CALL) {
-                val functionName = insn.label.name
-                val type = functionTypes[functionName]
-                val argNum = if (type != null) type.domain.lst.size else -1
-                val retNum = if (type != null) type.codomain.lst.size else -1
-                var alignShift = offsetMap.keys.size
-                if (retNum >= 3) {
-                    alignShift += retNum - 3
-                    if (argNum >= 5) {
-                        alignShift += argNum - 5
-                    }
-                }
-                else {
-                    if (argNum >= 6) {
-                        alignShift += argNum - 6
-                    }
-                }
-                if (alignShift % 2 == 1) {
-                    finalInsns.add(Logic.AND(RegisterDest(x86(x86Name.RSP)), ConstSrc(-16)))
-                }
-            }
-            finalInsns.add(insn)
+        return returnedInsns
+    }
+
+    private fun populateMap(insns: List<Instruction>): Map<String, Int> {
+        val encountered = insns.flatMap { it.abstractEncountered }.toSet().toList()
+        val map = mutableMapOf<String, Int>()
+        encountered.forEachIndexed { index, t ->
+            map[t.name] = index + 1
         }
-        // TODO: find every instance where we might return and put in pops
-        finalInsns.add(0, ENTER(8L * offsetMap.keys.size))
-        return finalInsns
+        return map
     }
 
     private fun replaceInsnRegisters(insn: Instruction, replaceMap: Map<String, Int>): Instruction {
@@ -192,6 +179,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<Strin
                 reg1 = replaceRegister(insn.reg1, replaceMap),
                 reg2 = replaceRegister(insn.reg2, replaceMap)
             )
+
             is JumpSet -> {
                 when (insn) { // need to indicate to replaceRegister that we need the 8 bit versions
                     is JumpSet.SETB -> JumpSet.SETB(replaceRegister(insn.reg, replaceMap, 8))
@@ -204,8 +192,8 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<Strin
                 }
             }
 
-            is Arith.DIV -> Arith.DIV(replaceRegister(insn.divisor, replaceMap))
-            is Arith.IMULSingle -> Arith.IMULSingle(replaceRegister(insn.factor, replaceMap))
+            is DIV -> DIV(replaceRegister(insn.divisor, replaceMap))
+            is IMULSingle -> IMULSingle(replaceRegister(insn.factor, replaceMap))
 
             is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> insn
         }
@@ -237,7 +225,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<Strin
         }
     }
 
-    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size : Int = 64): x86 {
+    private fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int = 64): x86 {
         return when (r) {
             is Abstract ->
                 if (size == 64)
@@ -245,63 +233,8 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes : Map<Strin
                 else {
                     defaults[replaceMap[r.name]!!].copy(size = 8)
                 }
+
             is x86 -> r
-        }
-    }
-
-    /** detectRegisters(insn) returns a pair of sets of registers, the first being the
-     * registers written to and the second being the registers read from */
-    // TODO: for safety, might want to do a check to make sure that registers added are indeed abstract
-    private fun detectRegisters(insn: Instruction): Pair<Set<Register>, Set<Register>> {
-        return when (insn) {
-            is Arith -> detectDestRegsWritten(insn.dest) to (detectDestRegsUsed(insn.dest) union detectSrcRegs(insn.src))
-            is CMP -> emptySet<Register>() to setOf(insn.reg1, insn.reg2)
-            is Logic -> detectDestRegsWritten(insn.dest) to (detectDestRegsUsed(insn.dest) union detectSrcRegs(insn.src))
-            is MOV -> detectDestRegsWritten(insn.dest) to (detectDestRegsUsed(insn.dest) union detectSrcRegs(insn.src))
-            is POP -> setOf(insn.dest) to emptySet()
-            is PUSH -> emptySet<Register>() to setOf(insn.arg)
-            is TEST -> emptySet<Register>() to setOf(insn.reg1, insn.reg2)
-            is JumpSet ->  emptySet<Register>() to setOf(insn.reg) // TODO: the register being written to is ALSO THE 64 BIT ONE
-            is Arith.DIV -> setOf(x86(x86Name.RAX), x86(x86Name.RDX)) to setOf(insn.divisor)
-            is Arith.IMULSingle -> setOf(x86(x86Name.RAX), x86(x86Name.RDX)) to setOf(insn.factor)
-            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> emptySet<Register>() to emptySet()
-        }
-    }
-
-    /** detects the registers written to by the destination */
-    private fun detectDestRegsUsed(dest: Destination): Set<Register> {
-        return when (dest) {
-            is MemoryDest -> detectMemoryRegisters(dest.m)
-            is RegisterDest -> setOf(dest.r)
-        }
-    }
-
-    /** detects the registers used to by the instruction */
-    private fun detectDestRegsWritten(dest: Destination): Set<Register> {
-        return when (dest) {
-            is MemoryDest -> emptySet()
-            is RegisterDest -> setOf(dest.r)
-        }
-    }
-
-    /** detects the registers used in the source */
-    private fun detectSrcRegs(src: Source): Set<Register> {
-        return when (src) {
-            is ConstSrc -> emptySet()
-            is MemorySrc -> detectMemoryRegisters(src.m)
-            is RegisterSrc -> setOf(src.r)
-        }
-    }
-
-    private fun detectMemoryRegisters(mem: Memory): Set<Register> {
-        return when (mem) {
-            is LabelMem -> emptySet()
-            is RegisterMem -> {
-                val returnedSet = mutableSetOf(mem.base)
-                if (mem.index != null)
-                    returnedSet.add(mem.index)
-                returnedSet
-            }
         }
     }
 }
