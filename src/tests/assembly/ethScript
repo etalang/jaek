@@ -2,6 +2,7 @@ build
 
 etac ("Test assembly") "-libpath $(testpath) -target linux" {
     boolcheck.eta;
+    fibonacci.eta;
     helloworld.eta;
     recursive.eta;
     twoiszero.eta;
