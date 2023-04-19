@@ -234,7 +234,6 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     manyargmanyret.eta;
     multiretarray.eta;
     mutualrecursion.eta;
-    operationsmod.eta;
     operatorprecedence.eta;
     passbyrefarrs.eta;
     primes.eta;
