@@ -33,7 +33,7 @@ jobs:
         run: |
           make
           mv submission.zip /home/student/shared
-          unzip /home/student/shared/submission.zip -d /home/student/shared/production
+          unzip -qq /home/student/shared/submission.zip -d /home/student/shared/production
 
       - name: Run vm tests
         working-directory: /home/student/
