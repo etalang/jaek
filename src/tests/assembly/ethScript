@@ -28,7 +28,7 @@ etac ("Test assembly") "-libpath $(testpath) -target linux" {
     recursive.eta;
     returnfncall.eta;
     ratadduse.eta;
-    returnfncall.eta
+    returnfncall.eta;
     returnstr.eta;
     shortcircuit.eta;
     swap.eta;
