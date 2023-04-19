@@ -31,18 +31,19 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             val builder = TileBuilder.Regular(1, this)
             val cc = ConventionalCaller(args.size, n_returns.toInt())
             //push caller saved registers
-            callerSavedRegs.forEach { builder.add(PUSH(it)) }
+            callerSavedRegs.forEach { builder.add(PUSH(it)) } //ODD but + callee = EVEN
 
             //alignment before arguments get pushed on the stack
-            val didWePad : Boolean;
             val pushedReturns = (n_returns.toInt() - 2).coerceAtLeast(0)
             // we have pushed one more arg if we have large returns
-            val pushedArgs = (args.size - 6).coerceAtLeast(0) + (if (n_returns.toInt() > 2) 1 else 0)
-            val shitStacked = (pushedReturns + pushedArgs)
-            if (shitStacked % 2 > 0) {
+            val maxArgsInRegister = (if (n_returns.toInt() > 2) 5 else 6)
+            val pushedArgs = (args.size - maxArgsInRegister).coerceAtLeast(0)
+
+            val didWePad: Boolean;
+            if ((pushedReturns + pushedArgs) % 2 > 0) {
                 didWePad = true
                 builder.add(COMMENT("THIS IS FOR PADDING"))
-                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
+                builder.add(PAD())
             } else {
                 didWePad = false
             }
@@ -70,21 +71,17 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 builder.add(cc.putArg(argNum, tile.outputRegister))
             }
 
+            //THE CALL
             builder.add(CALL(Label(target.l, false)))
 
             //remove arguments from stack
             if (pushedArgs > 0) {
-                builder.add(
-                    listOf(
-                        COMMENT("THIS REMOVES THE EXTRA ARGS FROM THE STACK"), Arith.ADD(
-                            RegisterDest(Register.x86(Register.x86Name.RSP)),
-                            ConstSrc(8L * pushedArgs)
-                        )
-                    )
-                )
+                builder.add(COMMENT("THIS REMOVES THE EXTRA ARGS FROM THE STACK"))
+                builder.add(Arith.ADD(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L * pushedArgs)))
             }
 
-            for (i in 1 .. n_returns.toInt()) {
+            //get returns
+            for (i in 1..n_returns.toInt()) {
                 builder.add(cc.getReturn(i))
             }
 
