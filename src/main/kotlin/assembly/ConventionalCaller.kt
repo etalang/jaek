@@ -59,7 +59,7 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
      *
      * the idea is that we will do MOV( _ARGx, getArg(x) ) to populate the _ARG temp
      * **/
-    fun getArg(index: Int): Source {
+    fun getArg(index: Int, numTemps : Int): Source {
         val adjIdx = if (numReturns > 2) index + 1 else index // bump everything down one to keep space for ret ptr
 
         return if (adjIdx <= 6) { // domesticated args
@@ -78,8 +78,14 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
             // if rbp - 16 is where our first arg is
             // rbp - 16 - (adjIdx - 6 - 1) * 8
 
-            // adjIdx - 6 - 1 is the 0 indexed 
-            Source.MemorySrc( Memory.RegisterMem(Register.x86(RBP), offset = 16L + (adjIdx - 7)*8))
+            // adjIdx - 6 - 1 is the 0 indexed
+            val returnsThatRequiresUsToFuckWithRSP = (numReturns - 2).coerceAtLeast(0)
+            val pushedArgs = (numArgs - 6).coerceAtLeast(0) + (if (numReturns > 2) 1 else 0)
+            val shitStacked = returnsThatRequiresUsToFuckWithRSP + pushedArgs + numTemps
+            val didWePad = shitStacked % 2 > 0
+            Source.MemorySrc(Memory.RegisterMem(Register.x86(RBP),
+                offset = 8L //rip
+                        + (adjIdx - 5 + (if (didWePad) 1 else 0))*8))
         }
     }
 

@@ -26,16 +26,16 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
-        val funcType = functionTypes[n.name]!!
-        val cc = ConventionalCaller(funcType)
-        val populateArguments: MutableList<Instruction> = mutableListOf()
-        for (i in 1..funcType.argCount) populateArguments.add(
-            MOV(
-                RegisterDest(Abstract("_ARG$i")),
-                cc.getArg(i)
-            )
-        )
-        return x86FuncDecl(n.name, allocateRegisters(populateArguments.plus(n.body)))
+//        val funcType = functionTypes[n.name]!!
+//        val cc = ConventionalCaller(funcType)
+//        val populateArguments: MutableList<Instruction> = mutableListOf()
+//        for (i in 1..funcType.argCount) populateArguments.add(
+//            MOV(
+//                RegisterDest(Abstract("_ARG$i")),
+//                cc.getArg(i)
+//            )
+//        )
+        return x86FuncDecl(n.name, allocateRegisters(n.body, n.name))
     }
 
     /* for each instruction:
@@ -47,18 +47,29 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
            * put in the instruction with all abstract registers replaced
            * if there are any written to, write them into memory
            * */
-    private fun allocateRegisters(insns: List<Instruction>): List<Instruction> {
+    private fun allocateRegisters(insns: List<Instruction>, name: String): List<Instruction> {
         val offsetMap: Map<String, Int> = populateMap(insns)
-        val temps = offsetMap.keys.size
+        val numTemps = offsetMap.keys.size
         val returnedInsns = mutableListOf<Instruction>(
-            ENTER(8L * (if (temps % 2 == 0) temps else temps + 1))
+            ENTER(8L * numTemps)
         )
 
-        //callee/caller saved regs
+        //callee saved regs
         returnedInsns.addAll(defaults.map { PUSH(it) })
 
+        val funcType = functionTypes[name]!!
+        val cc = ConventionalCaller(funcType)
+        val populateArguments: MutableList<Instruction> = mutableListOf()
+        for (i in 1..funcType.argCount) populateArguments.add(
+            MOV(
+                RegisterDest(Abstract("_ARG$i")),
+                cc.getArg(i, numTemps)
+            )
+        )
+        val allocatedInsns = populateArguments + insns
 
-        for (insn in insns) {
+
+        for (insn in allocatedInsns) {
             if (insn !is COMMENT) returnedInsns.add(COMMENT("[AA] $insn"))
             /** holds whether each abstract register mentioned should be assigned 0, 1, or 2 **/
             val replaced = mutableMapOf<String, Int>()
@@ -95,7 +106,46 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
                 }
             }
         }
-        return returnedInsns
+
+//        val paddedCalls = insertCallPadding(returnedInsns, numTemps)
+//        val funcType = functionTypes[name]!!
+//        val cc = ConventionalCaller(funcType)
+//        val populateArguments: MutableList<Instruction> = mutableListOf()
+//        for (i in 1..funcType.argCount) populateArguments.add(
+//            MOV(
+//                RegisterDest(Abstract("_ARG$i")),
+//                cc.getArg(i, numTemps)
+//            )
+//        )
+//        paddedCalls.addAll(1+defaults.size, populateArguments) // populate AFTER ENTER
+        return insertCallPadding(returnedInsns, numTemps)
+    }
+
+    private fun insertCallPadding(firstPass : MutableList<Instruction>, numTemps : Int) : MutableList<Instruction> {
+        val callPadded = mutableListOf<Instruction>()
+        for (insn in firstPass) {
+            if (insn is CALL) {
+                val fnType = functionTypes[insn.label.name]!!
+                val numReturns = fnType.codomain.lst.size
+                val numArgs = fnType.domain.lst.size
+                val returnsThatRequiresUsToFuckWithRSP = (numReturns - 2).coerceAtLeast(0)
+                val pushedArgs = (numArgs - 6).coerceAtLeast(0) + (if (numReturns > 2) 1 else 0)
+                val shitStacked = returnsThatRequiresUsToFuckWithRSP + pushedArgs + numTemps
+                val didWePad = shitStacked % 2 > 0
+                if (didWePad) {
+                    callPadded.add(COMMENT("THIS IS FOR PADDING"))
+                    callPadded.add(Arith.SUB(RegisterDest(x86(RSP)), ConstSrc(8L)))
+                }
+                callPadded.add(insn)
+                if (didWePad) {
+                    callPadded.add(Arith.ADD(RegisterDest(x86(RSP)), ConstSrc(8L)))
+                }
+            }
+            else {
+                callPadded.add(insn)
+            }
+        }
+        return callPadded
     }
 
     private fun populateMap(insns: List<Instruction>): Map<String, Int> {

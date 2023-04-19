@@ -16,6 +16,9 @@ import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.EtaFunc
 import typechecker.EtaType
+import typechecker.EtaType.ContextType.*
+import typechecker.EtaType.OrdinaryType.*
+import typechecker.EtaType.ExpandedType
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -140,9 +143,10 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     }
 
                                     try {
-                                        val funcMap : Map<String, EtaFunc> =
-                                            context.getFunctions().mapKeys { (k, v) -> translator.mangleMethodName(k, v) }
-                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
+                                        val funcMap : MutableMap<String, EtaFunc> =
+                                            context.getFunctions().mapKeys { (k, v) -> translator.mangleMethodName(k, v) }.toMutableMap()
+                                    funcMap["_eta_alloc"] = FunType(ExpandedType(arrayListOf(IntType())), ExpandedType(arrayListOf(IntType())), true)
+                                    val assemblyAssembler = AssemblyGenerator(ir, funcMap)
                                         // print to file.s
                                         assemblyFile.writeText(assemblyAssembler.generate())
                                     } catch (e: Throwable) {

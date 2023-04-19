@@ -47,18 +47,18 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             }
 
             //alignment
-            val didWePad: Boolean
-            val returnsThatRequiresUsToFuckWithRSP = (n_returns.toInt() - 2).coerceAtLeast(0)
-            // we have pushed one more arg if we have large returns
+//            val didWePad: Boolean
+//            val returnsThatRequiresUsToFuckWithRSP = (n_returns.toInt() - 2).coerceAtLeast(0)
+//            // we have pushed one more arg if we have large returns
             val pushedArgs = (args.size - 6).coerceAtLeast(0) + (if (n_returns.toInt() > 2) 1 else 0)
-            val shitStacked = (returnsThatRequiresUsToFuckWithRSP + pushedArgs)
-            if (shitStacked % 2 > 0) {
-                didWePad = true
-                builder.add(COMMENT("THIS IS FOR PADDING"))
-                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
-            } else {
-                didWePad = false
-            }
+//            val shitStacked = (returnsThatRequiresUsToFuckWithRSP + pushedArgs)
+//            if (shitStacked % 2 > 0) {
+//                didWePad = true
+//                builder.add(COMMENT("THIS IS FOR PADDING"))
+//                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
+//            } else {
+//                didWePad = false
+//            }
 
             for (i in args.size - 1 downTo 0) {
                 val argNum = i + 1
@@ -66,15 +66,15 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 builder.consume(tile)
                 builder.add(cc.putArg(argNum, tile.outputRegister))
             }
-
+            //reg allocator adds padding if needed here
             builder.add(CALL(Label(target.l, false)))
-
-            if (pushedArgs > 0 || didWePad) {
+            //reg allocator removes padding if needed
+            if (pushedArgs > 0) {
                 builder.add(
                     listOf(
-                        COMMENT("THIS REMOVES THE PADDING AND DESTROYS THE STACK"), Arith.ADD(
+                        COMMENT("THIS REMOVES THE EXTRA ARGS FROM THE STACK"), Arith.ADD(
                             RegisterDest(Register.x86(Register.x86Name.RSP)),
-                            ConstSrc(8L * (pushedArgs + (if (didWePad) 1 else 0)))
+                            ConstSrc(8L * pushedArgs)
                         )
                     )
                 )
