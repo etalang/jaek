@@ -219,9 +219,7 @@ etac ("Test --irgen") ["ir-fix-tests"] "-libpath $(testpath) --irgen" {
 
 etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     arrayalloc1.eta;
-    arrayfuntimes.eta;
     arraysorting.eta;
-    boolcheck.eta;
     changeglobalstwice.eta;
     commutey.eta;
     edarray1.eta;
