@@ -218,9 +218,27 @@ etac ("Test --irgen") ["ir-fix-tests"] "-libpath $(testpath) --irgen" {
 }
 
 etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
-    boolcheck.eta;
+    arrayalloc1.eta;
+    arraysorting.eta;
+    changeglobalstwice.eta;
+    commutey.eta;
+    edarray1.eta;
+    euclid.eta;
     fibonacci.eta;
+    globalstr1.eta;
     helloworld.eta;
+    idxarrconcat.eta;
+    idxfnret.eta;
+    insertion.eta;
+    manyargs.eta;
+    manyargmanyret.eta;
+    multiretarray.eta;
+    mutualrecursion.eta;
+    operatorprecedence.eta;
+    passbyrefarrs.eta;
+    primes.eta;
     recursive.eta;
+    shortcircuit.eta;
+    swap.eta;
     twoiszero.eta;
 }

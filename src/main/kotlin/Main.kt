@@ -15,7 +15,6 @@ import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
 import typechecker.EtaFunc
-import typechecker.EtaType
 import typechecker.EtaType.ContextType.*
 import typechecker.EtaType.OrdinaryType.*
 import typechecker.EtaType.ExpandedType
@@ -30,7 +29,7 @@ import kotlin.io.path.Path
  * constructed from the program arguments and then dispatches commands based on that
  * initialization.
  */
-class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
+class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
     private val files: List<File> by argument(
         help = "Input files to compiler.", name = "<source files>"
@@ -110,13 +109,17 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
             //the only files accepts must exist at sourcepath & be eta/eti files
             if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
                 // TODO: pull out it, absDisgnosticPath
-                val lexedFile: File? = if (outputLex) getOutFileName(it, absDiagnosticPath, ".lexed") else null
-                val parsedFile: File? = if (outputParse) getOutFileName(it, absDiagnosticPath, ".parsed") else null
-                val typedFile: File? = if (outputTyping) getOutFileName(it, absDiagnosticPath, ".typed") else null
-                val irFile: File? = if (outputIR) getOutFileName(it, absDiagnosticPath, ".ir") else null
+                val lexedFile: File? =
+                    if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
+                val parsedFile: File? =
+                    if (outputParse && !disableOutput) getOutFileName(it, absDiagnosticPath, ".parsed") else null
+                val typedFile: File? =
+                    if (outputTyping && !disableOutput) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                val irFile: File? =
+                    if (outputIR && !disableOutput) getOutFileName(it, absDiagnosticPath, ".ir") else null
                 // adding assembly file -- might be unsafe LOL
                 // TODO: test output assembly file to new -d path
-                val assemblyFile: File = getOutFileName(it, absAssemPath, ".s")
+                val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, ".s") else null
 
                 val ast: Node?
                 try {
@@ -148,10 +151,11 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                                     funcMap["_eta_alloc"] = FunType(ExpandedType(arrayListOf(IntType())), ExpandedType(arrayListOf(IntType())), true)
                                     val assemblyAssembler = AssemblyGenerator(ir, funcMap)
                                         // print to file.s
-                                        assemblyFile.writeText(assemblyAssembler.generate())
+                                        val assembly = assemblyAssembler.generate()
+                                        assemblyFile?.writeText(assembly)
                                     } catch (e: Throwable) {
-                                        assemblyFile.writeText("Failed to generate assembly for " + it.name)
-                                        println("Failed to generate assembly for " + it.name)
+                                        assemblyFile?.writeText("Failed to generate assembly for " + it.name)
+                                        if (!disableOutput) println("Failed to generate assembly for " + it.name)
                                     }
 
                                 }
@@ -165,15 +169,15 @@ class Etac : CliktCommand(printHelpOnEmptyArgs = true) {
                             // we are sticking with the class IR rep, and do not implement irrun
                             if (runIR) throw ProgramResult(2)
                         } catch (e: CompilerError) {
-                            println(e.log)
+                            if (!disableOutput) println(e.log)
                         }
                     } catch (e: ParseError) {
-                        println(e.log)
+                        if (!disableOutput) println(e.log)
                         parsedFile?.appendText(e.mini)
                         typedFile?.appendText(e.mini)
                     }
                 } catch (e: LexicalError) {
-                    println(e.log)
+                    if (!disableOutput) println(e.log)
                     parsedFile?.appendText(e.mini)
                     typedFile?.appendText(e.mini)
                 }

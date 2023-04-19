@@ -1,0 +1,8 @@
+use io
+use conv
+main(args:int[][]) {
+    arr:int[5]
+    arr = "abcdefg"
+    print(arr + "\n")
+    print(unparseInt(length(arr)))
+}

@@ -184,8 +184,8 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
         builder.consume(rightTile)
         builder.add(Logic.XOR(RegisterDest(builder.outputRegister),
             RegisterSrc(builder.outputRegister)))
-        builder.add(CMP(leftTile.outputRegister,
-            rightTile.outputRegister))
+        builder.add(CMP(RegisterDest(leftTile.outputRegister),
+            RegisterSrc(rightTile.outputRegister)))
         return Abstract(outRegName, 8)
     }
     override fun findBestTile() {  }

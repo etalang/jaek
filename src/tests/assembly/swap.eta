@@ -1,0 +1,12 @@
+use io
+use conv
+
+main(args:int[][]){
+    x : int = 5
+    y : int = 6
+
+    x, y = y, x
+
+    println(unparseInt(x))
+    println(unparseInt(y))
+}
