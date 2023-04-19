@@ -46,19 +46,20 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             }
 
+            TODO("ENFORCE EVENNESS BY INSERTING PADDING BEFORE!!!!")
             //alignment
-//            val didWePad: Boolean
-//            val returnsThatRequiresUsToFuckWithRSP = (n_returns.toInt() - 2).coerceAtLeast(0)
-//            // we have pushed one more arg if we have large returns
-            val pushedArgs = (args.size - 6).coerceAtLeast(0) + (if (n_returns.toInt() > 2) 1 else 0)
-//            val shitStacked = (returnsThatRequiresUsToFuckWithRSP + pushedArgs)
-//            if (shitStacked % 2 > 0) {
-//                didWePad = true
-//                builder.add(COMMENT("THIS IS FOR PADDING"))
-//                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
-//            } else {
-//                didWePad = false
-//            }
+////            val didWePad: Boolean
+////            val returnsThatRequiresUsToFuckWithRSP = (n_returns.toInt() - 2).coerceAtLeast(0)
+////            // we have pushed one more arg if we have large returns
+//            val pushedArgs = (args.size - 6).coerceAtLeast(0) + (if (n_returns.toInt() > 2) 1 else 0)
+////            val shitStacked = (returnsThatRequiresUsToFuckWithRSP + pushedArgs)
+////            if (shitStacked % 2 > 0) {
+////                didWePad = true
+////                builder.add(COMMENT("THIS IS FOR PADDING"))
+////                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
+////            } else {
+////                didWePad = false
+////            }
 
             for (i in args.size - 1 downTo 0) {
                 val argNum = i + 1

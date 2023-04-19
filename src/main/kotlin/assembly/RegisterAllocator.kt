@@ -29,15 +29,6 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
-//        val funcType = functionTypes[n.name]!!
-//        val cc = ConventionalCaller(funcType)
-//        val populateArguments: MutableList<Instruction> = mutableListOf()
-//        for (i in 1..funcType.argCount) populateArguments.add(
-//            MOV(
-//                RegisterDest(Abstract("_ARG$i")),
-//                cc.getArg(i)
-//            )
-//        )
         return x86FuncDecl(n.name, allocateRegisters(n.body, n.name))
     }
 
@@ -108,47 +99,9 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
                     }
                 }
             }
-        }
 
-//        val paddedCalls = insertCallPadding(returnedInsns, numTemps)
-//        val funcType = functionTypes[name]!!
-//        val cc = ConventionalCaller(funcType)
-//        val populateArguments: MutableList<Instruction> = mutableListOf()
-//        for (i in 1..funcType.argCount) populateArguments.add(
-//            MOV(
-//                RegisterDest(Abstract("_ARG$i")),
-//                cc.getArg(i, numTemps)
-//            )
-//        )
-//        paddedCalls.addAll(1+defaults.size, populateArguments) // populate AFTER ENTER
-        return insertCallPadding(returnedInsns, numTemps)
-    }
-
-    private fun insertCallPadding(firstPass : MutableList<Instruction>, numTemps : Int) : MutableList<Instruction> {
-        val callPadded = mutableListOf<Instruction>()
-        for (insn in firstPass) {
-            if (insn is CALL) {
-                val fnType = functionTypes[insn.label.name]!!
-                val numReturns = fnType.codomain.lst.size
-                val numArgs = fnType.domain.lst.size
-                val returnsThatRequiresUsToFuckWithRSP = (numReturns - 2).coerceAtLeast(0)
-                val pushedArgs = (numArgs - 6).coerceAtLeast(0) + (if (numReturns > 2) 1 else 0)
-                val shitStacked = returnsThatRequiresUsToFuckWithRSP + pushedArgs + numTemps
-                val didWePad = shitStacked % 2 > 0
-                if (didWePad) {
-                    callPadded.add(COMMENT("THIS IS FOR PADDING"))
-                    callPadded.add(Arith.SUB(RegisterDest(x86(RSP)), ConstSrc(8L)))
-                }
-                callPadded.add(insn)
-                if (didWePad) {
-                    callPadded.add(Arith.ADD(RegisterDest(x86(RSP)), ConstSrc(8L)))
-                }
-            }
-            else {
-                callPadded.add(insn)
-            }
         }
-        return callPadded
+            return returnedInsns
     }
 
     private fun populateMap(insns: List<Instruction>): Map<String, Int> {
@@ -251,7 +204,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             is DIV -> DIV(replaceRegister(insn.divisor, replaceMap))
             is IMULSingle -> IMULSingle(replaceRegister(insn.factor, replaceMap))
 
-            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> insn
+            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump, is PAD -> insn
 
             is Arith.DEC -> Arith.DEC(replaceDestRegister(insn.dest, replaceMap))
             is Arith.INC -> Arith.INC(replaceDestRegister(insn.dest, replaceMap))
