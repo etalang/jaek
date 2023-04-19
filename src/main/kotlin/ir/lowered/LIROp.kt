@@ -45,6 +45,8 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
             }
             IRBinOp.OpType.HMUL -> {
                 val builder = TileBuilder.Expr(3, Abstract.freshRegister(),this)
+                builder.consume(leftTile)
+                builder.consume(rightTile)
                 builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(rightTile.outputRegister)))
                 builder.add(IMULSingle(leftTile.outputRegister))
                 builder.add(MOV(RegisterDest(builder.outputRegister), RegisterSrc(x86(x86Name.RDX))))
@@ -52,6 +54,8 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
             }
             IRBinOp.OpType.DIV -> {
                 val builder = TileBuilder.Expr(4, Abstract.freshRegister(),this)
+                builder.consume(leftTile)
+                builder.consume(rightTile)
                 builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(leftTile.outputRegister)))
                 builder.add(CQO())
                 builder.add(DIV(rightTile.outputRegister))
@@ -60,6 +64,8 @@ class LIROp(val op: IRBinOp.OpType, val left: LIRExpr, val right: LIRExpr) : LIR
             }
             IRBinOp.OpType.MOD -> {
                 val builder = TileBuilder.Expr(4, Abstract.freshRegister(),this)
+                builder.consume(leftTile)
+                builder.consume(rightTile)
                 builder.add(MOV(RegisterDest(x86(x86Name.RAX)), RegisterSrc(leftTile.outputRegister)))
                 builder.add(CQO())
                 builder.add(DIV(rightTile.outputRegister))
