@@ -223,4 +223,5 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     helloworld.eta;
     recursive.eta;
     twoiszero.eta;
+    primes.eta;
 }

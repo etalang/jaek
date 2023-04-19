@@ -8,15 +8,19 @@ package assembly.x86
  * - PF = 1 <=> sum of bits is even
  */
 sealed class Instruction {
+    @Deprecated("incorrect")
     abstract val written: Set<Register>
+    @Deprecated("incorrect")
     abstract val read: Set<Register>
     val abstractEncountered: List<Register.Abstract> get() = (written union read).filterIsInstance<Register.Abstract>()
     val abstractWritten: List<Register.Abstract> get() = written.filterIsInstance<Register.Abstract>()
     val abstractRead: List<Register.Abstract> get() = read.filterIsInstance<Register.Abstract>()
+    abstract val involved: Set<Register.Abstract>
 
     data class COMMENT(val str: String) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "# $str"
@@ -33,6 +37,7 @@ sealed class Instruction {
     data class MOV(val dest: Destination, val src: Source) : Instruction() {
         override val written: Set<Register> = dest.written
         override val read: Set<Register> = dest.read union src.read
+        override val involved: Set<Register.Abstract> = dest.involved union src.involved
 
         override fun toString(): String {
             return "mov $dest, $src" // this might require like a "QWORD PTR" somewhere
@@ -42,6 +47,7 @@ sealed class Instruction {
     sealed class Arith(val dest: Destination, val src: Source) : Instruction() {
         override val written: Set<Register> = dest.written
         override val read: Set<Register> = dest.read union src.read
+        override val involved: Set<Register.Abstract> = dest.involved union src.involved
 
         /**
          * [dest] := [dest] + [src]
@@ -97,6 +103,7 @@ sealed class Instruction {
     sealed class Logic(var dest: Destination, var src: Source) : Instruction() {
         override val written: Set<Register> = dest.written
         override val read: Set<Register> = dest.read union src.read
+        override val involved: Set<Register.Abstract> = dest.involved union src.involved
 
         /**
          * [dest] := [dest] AND [src]
@@ -183,6 +190,7 @@ sealed class Instruction {
     data class CMP(val reg1: Register, val reg2: Register) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf(reg1, reg2)
+        override val involved: Set<Register.Abstract> = listOf(reg1, reg2).filterIsInstance<Register.Abstract>().toSet()
 
         override fun toString(): String {
             return "cmp $reg1, $reg2"
@@ -198,6 +206,7 @@ sealed class Instruction {
     data class TEST(val reg1: Register, val reg2: Register) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf(reg1, reg2)
+        override val involved: Set<Register.Abstract> = listOf(reg1, reg2).filterIsInstance<Register.Abstract>().toSet()
 
         override fun toString(): String {
             return "test $reg1, $reg2"
@@ -212,6 +221,7 @@ sealed class Instruction {
     sealed class JumpSet(val reg: Register) : Instruction() {
         override val written: Set<Register> = setOf(reg)
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = listOf(reg).filterIsInstance<Register.Abstract>().toSet()
 
         class SETZ(reg: Register) : JumpSet(reg) {
             override fun toString(): String {
@@ -261,6 +271,7 @@ sealed class Instruction {
     sealed class Jump(val loc: Location) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         /** Transfers program control to instruction at [loc] */
         class JMP(loc: Location) : Jump(loc) {
@@ -330,6 +341,7 @@ sealed class Instruction {
     class CQO : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "cqo"
@@ -340,6 +352,7 @@ sealed class Instruction {
     data class PUSH(val arg: Register) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf(arg)
+        override val involved: Set<Register.Abstract> = listOf(arg).filterIsInstance<Register.Abstract>().toSet()
 
         override fun toString(): String {
             return "push $arg"
@@ -354,6 +367,7 @@ sealed class Instruction {
     data class POP(val dest: Register) : Instruction() {
         override val written: Set<Register> = setOf(dest)
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = listOf(dest).filterIsInstance<Register.Abstract>().toSet()
 
         override fun toString(): String {
             return "pop $dest"
@@ -369,6 +383,7 @@ sealed class Instruction {
     class CALL(val label: Label) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "call $label"
@@ -386,6 +401,7 @@ sealed class Instruction {
     class ENTER(val bytes: Long) : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "enter $bytes, 0"
@@ -402,6 +418,7 @@ sealed class Instruction {
     class LEAVE : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "leave"
@@ -415,6 +432,7 @@ sealed class Instruction {
     class RET : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "ret"
@@ -425,6 +443,7 @@ sealed class Instruction {
     class NOP : Instruction() {
         override val written: Set<Register> = setOf()
         override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {
             return "nop"
@@ -437,6 +456,7 @@ sealed class Instruction {
             Register.x86(Register.x86Name.RAX), Register.x86(Register.x86Name.RDX)
         )
         override val read: Set<Register> = setOf(factor)
+        override val involved: Set<Register.Abstract> = listOf(factor).filterIsInstance<Register.Abstract>().toSet()
 
         override fun toString(): String {
             return "imul $factor"
@@ -449,6 +469,7 @@ sealed class Instruction {
             Register.x86(Register.x86Name.RAX), Register.x86(Register.x86Name.RDX)
         )
         override val read: Set<Register> = setOf(divisor)
+        override val involved: Set<Register.Abstract> = listOf(divisor).filterIsInstance<Register.Abstract>().toSet()
 
         override fun toString(): String {
             return "idiv $divisor"

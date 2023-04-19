@@ -4,6 +4,7 @@ package assembly.x86
 class Label(val name: String, val isTopLevel: Boolean) : Instruction() {
     override val written: Set<Register> = setOf()
     override val read: Set<Register> = setOf()
+    override val involved: Set<Register.Abstract> = setOf()
 
     override fun toString(): String {
         return if (isTopLevel) "$name:"
