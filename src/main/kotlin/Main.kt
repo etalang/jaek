@@ -148,8 +148,9 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     try {
                                         val funcMap : MutableMap<String, EtaFunc> =
                                             context.getFunctions().mapKeys { (k, v) -> translator.mangleMethodName(k, v) }.toMutableMap()
-                                    funcMap["_eta_alloc"] = FunType(ExpandedType(arrayListOf(IntType())), ExpandedType(arrayListOf(IntType())), true)
-                                    val assemblyAssembler = AssemblyGenerator(ir, funcMap)
+                                        funcMap["_eta_alloc"] = FunType(ExpandedType(arrayListOf(IntType())), ExpandedType(arrayListOf(IntType())), true)
+                                        funcMap["_eta_out_of_bounds"] = FunType(ExpandedType(arrayListOf()), ExpandedType(arrayListOf()), true)
+                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
                                         // print to file.s
                                         val assembly = assemblyAssembler.generate()
                                         assemblyFile?.writeText(assembly)
