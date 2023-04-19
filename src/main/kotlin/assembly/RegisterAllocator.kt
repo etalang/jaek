@@ -102,7 +102,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun populateMap(insns: List<Instruction>): Map<String, Int> {
-        val encountered = insns.flatMap { it.abstractEncountered }.toSet().toList()
+        val encountered = insns.flatMap { it.involved }.toSet().toList()
         val map = mutableMapOf<String, Int>()
         encountered.forEachIndexed { index, t ->
             map[t.name] = index + 1
@@ -140,8 +140,8 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             }
 
             is CMP -> insn.copy(
-                reg1 = replaceRegister(insn.reg1, replaceMap),
-                reg2 = replaceRegister(insn.reg2, replaceMap)
+                dest = replaceDestRegister(insn.dest, replaceMap),
+                src = replaceSrcRegister(insn.src, replaceMap)
             )
 
             is Logic -> {
@@ -202,6 +202,9 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             is IMULSingle -> IMULSingle(replaceRegister(insn.factor, replaceMap))
 
             is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> insn
+
+            is Arith.DEC -> Arith.DEC(replaceDestRegister(insn.dest, replaceMap))
+            is Arith.INC -> Arith.INC(replaceDestRegister(insn.dest, replaceMap))
         }
     }
 
@@ -224,7 +227,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
         return when (m) {
             is LabelMem -> m
             is RegisterMem -> RegisterMem(
-                replaceRegister(m.base, replaceMap),
+                if (m.base == null) null else replaceRegister(m.base, replaceMap),
                 if (m.index == null) null else replaceRegister(m.index, replaceMap),
                 shift = m.shift, offset = m.offset
             )
