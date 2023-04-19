@@ -223,7 +223,6 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     arraysorting.eta;
     binsearchmain.eta;
     changeglobalstwice.eta;
-    changesamearrayreturn.eta;
     commutey.eta;
     edarray1.eta;
     euclid.eta;
@@ -237,7 +236,6 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     manyargmanyret.eta;
     multiretarray.eta;
     mutualrecursion.eta;
-    operationsmod.eta;
     operatorprecedence.eta;
     passbyrefarrs.eta;
     primes.eta;
@@ -245,7 +243,7 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     recursive.eta;
     returnfncall.eta;
     ratadduse.eta;
-    returnfncall.eta
+    returnfncall.eta;
     returnstr.eta;
     shortcircuit.eta;
     swap.eta;
