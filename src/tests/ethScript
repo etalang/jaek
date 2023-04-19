@@ -227,6 +227,7 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     changesamearrayreturn.eta;
     commutey.eta;
     edarray1.eta;
+    enigma.eta;
     euclid.eta;
     fibonacci.eta;
     globalstr1.eta;
