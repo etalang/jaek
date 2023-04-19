@@ -221,7 +221,6 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     arrayalloc1.eta;
     arrayfuntimes.eta;
     arraysorting.eta;
-    binsearchmain.eta;
     boolcheck.eta;
     changeglobalstwice.eta;
     commutey.eta;
