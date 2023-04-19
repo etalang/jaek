@@ -55,7 +55,7 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
 
     /* Tiles moves in the form of MOVE(TEMP(t),CONST(0))) to XOR(TEMP(t),TEMP(t)) */
     private fun zeroTile() : Tile.Regular? {
-        if (dest is LIRExpr.LIRTemp && expr is LIRExpr.LIRConst && expr.value.toInt() == 0) {
+        if (dest is LIRExpr.LIRTemp && expr is LIRExpr.LIRConst && expr.value == 0L) {
             val builder = TileBuilder.Regular(1, this)
             builder.add(
                 Instruction.Logic.XOR(
@@ -70,10 +70,10 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
 
     // Takes the leaves of the LIROp and checks if they are dest and CONST(1)
     private fun isIncOrDec(left : LIRExpr, right : LIRExpr) : Boolean {
-        if (left is LIRExpr.LIRConst && left.value.toInt() == 1 && right == dest) {
+        if (left is LIRExpr.LIRConst && left.value == 1L && right == dest) {
             return true
         }
-        if (right is LIRExpr.LIRConst && right.value.toInt() == 1 && left == dest) {
+        if (right is LIRExpr.LIRConst && right.value == 1L && left == dest) {
             return true
         }
         return false
