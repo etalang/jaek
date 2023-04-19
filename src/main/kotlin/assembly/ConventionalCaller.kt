@@ -74,19 +74,7 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
             }
             Source.RegisterSrc(Register.x86(reg))
         } else { // hunt wild args {woof, woof!}
-
-//            // if rbp - 16 is where our first arg is
-//            // rbp - 16 - (adjIdx - 6 - 1) * 8
-//
-//            // adjIdx - 6 - 1 is the 0 indexed
-//            val returnsThatRequiresUsToFuckWithRSP = (numReturns - 2).coerceAtLeast(0)
-//            val pushedArgs = (numArgs - 6).coerceAtLeast(0) + (if (numReturns > 2) 1 else 0)
-//            val shitStacked = returnsThatRequiresUsToFuckWithRSP + pushedArgs + numTemps
-//            val didWePad = shitStacked % 2 > 0
-//            Source.MemorySrc(Memory.RegisterMem(Register.x86(RBP),
-//                offset = 8L //rip
-//                        + (adjIdx - 5 + (if (didWePad) 1 else 0))*8))
-            TODO("GET FROM RIGHTTTT ABOVE IN PREVIOUS STACK and consider +/-")
+            Source.MemorySrc(Memory.RegisterMem(Register.x86(RBP), offset = 16L + (adjIdx - 7) * 8))
         }
     }
 

@@ -44,8 +44,9 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     private fun allocateRegisters(insns: List<Instruction>, name: String): List<Instruction> {
         val offsetMap: Map<String, Int> = populateMap(insns)
         val numTemps = offsetMap.keys.size
+        val padTemps = if (numTemps % 2 == 1) 1 else 0
         val returnedInsns = mutableListOf<Instruction>(
-            ENTER(8L * numTemps)
+            ENTER(8L * (numTemps + padTemps))
         )
 
         //callee saved regs
