@@ -21,7 +21,7 @@ fun main() {
                 val str = it.substring(4, 4 + max(it.indexOf(".eta"), it.indexOf(".eti")))
                 Etac(disableOutput = true).main(
                     listOf(
-                        "-libpath", "src/tests/${directory}", "--irgen", "--parse", "--lex", "src/tests/${directory}/${str}"
+                        "-libpath", "src/tests/${directory}", "-O", "--irgen", "--parse", "--lex", "src/tests/${directory}/${str}"
                     )
                 )
             }
