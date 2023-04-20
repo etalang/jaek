@@ -44,7 +44,6 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 didWePad = true
                 builder.add(COMMENT("adding padding"))
                 builder.add(PAD())
-                println("WE ADDED PADDING!")
             } else {
                 didWePad = false
             }
