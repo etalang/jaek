@@ -54,7 +54,7 @@ Field = ({Identifier}".")+{Identifier}
 Integer = "0"|[1-9]{Digit}*
 Character = [^"\\""'"]|"\\"("\\"|"\""|"'"|"n"|"t"|"r")|{Unicode}
 Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
-Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"|"break"|"null"
+Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"|"break"|"null"|"record"
 CharLiteral = "'"({Character}|"\"")"'"
 MinInteger = "-"([ \t])*"9223372036854775808"
 
