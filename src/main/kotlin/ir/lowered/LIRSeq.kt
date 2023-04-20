@@ -176,7 +176,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         //TODO: more intelligent selection
         fun head(): Node? {
             for (n in unmarked) if (predecessors[n]?.isEmpty() == true) return n
-            return unmarked.firstOrNull()
+            return unmarked.randomOrNull()
         }
 
         val order: MutableList<Node> = ArrayList()
@@ -186,7 +186,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 order.add(head)
                 unmarked.remove(head)
                 //TODO: more intelligent choice of next node
-                head = head.edges.filter { unmarked.contains(labelToNode[it]) }.map { labelToNode[it] }.firstOrNull()
+                head = head.edges.filter { unmarked.contains(labelToNode[it]) }.map { labelToNode[it] }.randomOrNull()
             }
         }
         assert(order.containsAll(nodes))
