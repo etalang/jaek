@@ -217,7 +217,7 @@ etac ("Test --irgen") ["ir-fix-tests"] "-libpath $(testpath) --irgen" {
     medley.eta;
 }
 
-etac ("Test assembly") ["assembly"] -libpath $(testpath) -O -target linux" {
+etac ("Test assembly") ["assembly"] "-libpath $(testpath) -O -target linux" {
     arrayalloc1.eta;
     arrayfuntimes.eta;
     arraysorting.eta;
