@@ -389,6 +389,18 @@ sealed class Instruction {
         }
     }
 
+    /** Decrements the stack pointer and then stores 204 on the top of the stack. */
+    class PAD() : Instruction() {
+        @Deprecated("") override val written: Set<Register> = setOf()
+        @Deprecated("") override val read: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
+
+        override fun toString(): String {
+            return "push 204"
+        }
+    }
+
+
     /**
      * Loads the value from the top of the stack to [dest] and then increments the stack pointer.
      *

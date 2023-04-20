@@ -59,7 +59,7 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
      *
      * the idea is that we will do MOV( _ARGx, getArg(x) ) to populate the _ARG temp
      * **/
-    fun getArg(index: Int): Source {
+    fun getArg(index: Int, numTemps : Int): Source {
         val adjIdx = if (numReturns > 2) index + 1 else index // bump everything down one to keep space for ret ptr
 
         return if (adjIdx <= 6) { // domesticated args
@@ -74,12 +74,7 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
             }
             Source.RegisterSrc(Register.x86(reg))
         } else { // hunt wild args {woof, woof!}
-
-            // if rbp - 16 is where our first arg is
-            // rbp - 16 - (adjIdx - 6 - 1) * 8
-
-            // adjIdx - 6 - 1 is the 0 indexed 
-            Source.MemorySrc( Memory.RegisterMem(Register.x86(RBP), offset = 16L + (adjIdx - 7)*8))
+            Source.MemorySrc(Memory.RegisterMem(Register.x86(RBP), offset = 16L + (adjIdx - 7) * 8))
         }
     }
 

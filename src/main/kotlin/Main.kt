@@ -14,7 +14,8 @@ import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
 import ir.IRTranslator
 import java_cup.runtime.Symbol
-import typechecker.EtaFunc
+import typechecker.EtaType.ContextType.*
+import typechecker.EtaType.OrdinaryType.*
 import typechecker.TypeChecker
 import java.io.File
 import java.io.PrintWriter
@@ -131,7 +132,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     val translator = IRTranslator(
                                         ast,
                                         it.nameWithoutExtension,
-                                        context.getFunctions()
+                                        context.functionMap()
                                     )
                                     val ir = translator.irgen(!disableOpt)
                                     val irFileGen = ir.java
@@ -143,9 +144,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     }
 
                                     try {
-                                        val funcMap: Map<String, EtaFunc> =
-                                            context.getFunctions()
-                                                .mapKeys { (k, v) -> translator.mangleMethodName(k, v) }
+                                        val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
                                         val assemblyAssembler = AssemblyGenerator(ir, funcMap)
                                         // print to file.s
                                         val assembly = assemblyAssembler.generate()

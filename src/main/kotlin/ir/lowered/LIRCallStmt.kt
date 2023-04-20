@@ -30,7 +30,24 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
         get() {
             val builder = TileBuilder.Regular(1, this)
             val cc = ConventionalCaller(args.size, n_returns.toInt())
-            callerSavedRegs.forEach { builder.add(PUSH(it)) }
+            //push caller saved registers
+            callerSavedRegs.forEach { builder.add(PUSH(it)) } //ODD but + callee = EVEN
+
+            //alignment before arguments get pushed on the stack
+            val pushedReturns = (n_returns.toInt() - 2).coerceAtLeast(0)
+            // we have pushed one more arg if we have large returns
+            val maxArgsInRegister = (if (n_returns.toInt() > 2) 5 else 6)
+            val pushedArgs = (args.size - maxArgsInRegister).coerceAtLeast(0)
+
+            val didWePad: Boolean;
+            if ((pushedReturns + pushedArgs) % 2 > 0) {
+                didWePad = true
+                builder.add(COMMENT("THIS IS FOR PADDING"))
+                builder.add(PAD())
+            } else {
+                didWePad = false
+            }
+
             //first make the space for extra returns :)
             if (n_returns >= 3) {
                 builder.add(
@@ -46,19 +63,6 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             }
 
-            //alignment
-            val didWePad: Boolean
-            val returnsThatRequiresUsToFuckWithRSP = (n_returns.toInt() - 2).coerceAtLeast(0)
-            // we have pushed one more arg if we have large returns
-            val pushedArgs = (args.size - 6).coerceAtLeast(0) + (if (n_returns.toInt() > 2) 1 else 0)
-            val shitStacked = (returnsThatRequiresUsToFuckWithRSP + pushedArgs)
-            if (shitStacked % 2 > 0) {
-                didWePad = true
-                builder.add(COMMENT("THIS IS FOR PADDING"))
-                builder.add(Arith.SUB(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
-            } else {
-                didWePad = false
-            }
 
             for (i in args.size - 1 downTo 0) {
                 val argNum = i + 1
@@ -67,21 +71,24 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 builder.add(cc.putArg(argNum, tile.outputRegister))
             }
 
+            //THE CALL
             builder.add(CALL(Label(target.l, false)))
 
-            if (pushedArgs > 0 || didWePad) {
-                builder.add(
-                    listOf(
-                        COMMENT("THIS REMOVES THE PADDING AND DESTROYS THE STACK"), Arith.ADD(
-                            RegisterDest(Register.x86(Register.x86Name.RSP)),
-                            ConstSrc(8L * (pushedArgs + (if (didWePad) 1 else 0)))
-                        )
-                    )
-                )
+            //remove arguments from stack
+            if (pushedArgs > 0) {
+                builder.add(COMMENT("THIS REMOVES THE EXTRA ARGS FROM THE STACK"))
+                builder.add(Arith.ADD(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L * pushedArgs)))
             }
 
-            for (i in 1 .. n_returns.toInt()) {
+            //get returns
+            for (i in 1..n_returns.toInt()) {
                 builder.add(cc.getReturn(i))
+            }
+
+            //remove padding
+            if (didWePad) {
+                builder.add(COMMENT("THIS REMOVES THE PADDING"))
+                builder.add(Arith.ADD(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
             }
 
             //after everything is done, restore caller saved

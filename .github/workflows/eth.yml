@@ -39,6 +39,14 @@ jobs:
         working-directory: /home/student/
         run: eth /home/student/eth/tests/pa5/ethScript -ec -noout -compilerpath /home/student/shared/production/
 
-      - name: Run custom tests
+#      - name: Run custom tests
+#        working-directory: /home/student/
+#        run: eth /home/student/shared/production/src/tests/ethScript -ec -compilerpath /home/student/shared/production/
+#
+#      - name: Run vm tests
+#        working-directory: /home/student/
+#        run: eth /home/student/eth/tests/pa5/ethScript -ec -noout -compilerpath /home/student/shared/production/
+
+      - name: Run assembly tests
         working-directory: /home/student/
-        run: eth /home/student/shared/production/src/tests/ethScript -ec -noout -compilerpath /home/student/shared/production/
+        run: eth /home/student/shared/production/src/tests/assembly/ethScript -ec -compilerpath /home/student/shared/production/

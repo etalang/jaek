@@ -19,6 +19,8 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
      */
     private val defaults = listOf(x86(R12), x86(R13), x86(R14))
 
+    /** In the current calling conventions, the callee-save registers are rbp, rsp, rbx, and r12–r15. */
+    private val calleeSavedRegs = listOf(x86(RBX), x86(R12), x86(R13), x86(R14), x86(R15))
 
     fun allocate(): x86CompUnit {
         return allocateCompUnit(assembly)
@@ -29,16 +31,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
-        val funcType = functionTypes[n.name]!!
-        val cc = ConventionalCaller(funcType)
-        val populateArguments: MutableList<Instruction> = mutableListOf()
-        for (i in 1..funcType.argCount) populateArguments.add(
-            MOV(
-                RegisterDest(Abstract("_ARG$i")),
-                cc.getArg(i)
-            )
-        )
-        return x86FuncDecl(n.name, allocateRegisters(populateArguments.plus(n.body)))
+        return x86FuncDecl(n.name, allocateRegisters(n.body, n.name))
     }
 
     /* for each instruction:
@@ -50,18 +43,30 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
            * put in the instruction with all abstract registers replaced
            * if there are any written to, write them into memory
            * */
-    private fun allocateRegisters(insns: List<Instruction>): List<Instruction> {
+    private fun allocateRegisters(insns: List<Instruction>, name: String): List<Instruction> {
         val offsetMap: Map<String, Int> = populateMap(insns)
-        val temps = offsetMap.keys.size
+        val numTemps = offsetMap.keys.size
+        val padTemps = if (numTemps % 2 == 1) 1 else 0
         val returnedInsns = mutableListOf<Instruction>(
-            ENTER(8L * (if (temps % 2 == 0) temps else temps + 1))
+            ENTER(8L * (numTemps + padTemps))
         )
 
-        //callee/caller saved regs
-        returnedInsns.addAll(defaults.map { PUSH(it) })
+        //callee saved regs
+        returnedInsns.addAll(calleeSavedRegs.map { PUSH(it) })
+
+        val funcType = functionTypes[name]!!
+        val cc = ConventionalCaller(funcType)
+        val populateArguments: MutableList<Instruction> = mutableListOf()
+        for (i in 1..funcType.argCount) populateArguments.add(
+            MOV(
+                RegisterDest(Abstract("_ARG$i")),
+                cc.getArg(i, numTemps)
+            )
+        )
+        val allocatedInsns = populateArguments + insns
 
 
-        for (insn in insns) {
+        for (insn in allocatedInsns) {
             if (insn !is COMMENT) returnedInsns.add(COMMENT("[AA] $insn"))
             /** holds whether each abstract register mentioned should be assigned 0, 1, or 2 * */
             val replaced = mutableMapOf<String, Int>()
@@ -69,7 +74,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             assert(encountered.size <= 3)
             encountered.forEachIndexed { index, register -> replaced[register.name] = index }
             if (insn is LEAVE) { //saved regs pop back off in reverse order
-                returnedInsns.addAll(defaults.reversed().map { POP(it) })
+                returnedInsns.addAll(calleeSavedRegs.reversed().map { POP(it) })
             }
 
             for (ru in encountered) {
@@ -97,15 +102,16 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
                     }
                 }
             }
+
         }
         return returnedInsns
     }
 
     private fun populateMap(insns: List<Instruction>): Map<String, Int> {
-        val encountered = insns.flatMap { it.involved }.toSet().toList()
+        val encountered = insns.flatMap { it.involved }.map { it.name }.toSet().toList()
         val map = mutableMapOf<String, Int>()
         encountered.forEachIndexed { index, t ->
-            map[t.name] = index + 1
+            map[t] = index + 1
         }
         return map
     }
@@ -201,7 +207,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             is DIV -> DIV(replaceRegister(insn.divisor, replaceMap))
             is IMULSingle -> IMULSingle(replaceRegister(insn.factor, replaceMap))
 
-            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump -> insn
+            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump, is PAD -> insn
 
             is Arith.DEC -> Arith.DEC(replaceDestRegister(insn.dest, replaceMap))
             is Arith.INC -> Arith.INC(replaceDestRegister(insn.dest, replaceMap))
