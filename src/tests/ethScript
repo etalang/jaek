@@ -38,6 +38,12 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     passbyrefarrs.eta;
     primes.eta;
     raggedarrays.eta;
+    raggedarrays.eta;
+    raggedarrays.eta;
+    raggedarrays.eta;
+    raggedarrays.eta;
+    raggedarrays.eta;
+    raggedarrays.eta;
     recursive.eta;
     returnfncall.eta;
     ratadduse.eta;
