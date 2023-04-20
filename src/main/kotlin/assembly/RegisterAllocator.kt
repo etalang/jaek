@@ -108,11 +108,13 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun populateMap(insns: List<Instruction>): Map<String, Int> {
-        val encountered = insns.flatMap { it.involved }.toSet().toList()
+        val encountered = insns.flatMap { it.involved }.map { it.name }.toSet().toList()
         val map = mutableMapOf<String, Int>()
         encountered.forEachIndexed { index, t ->
-            map[t.name] = index + 1
+            println(index+1)
+            map[t] = index + 1
         }
+        println("AND WE GOT: ${map.size}")
         return map
     }
 

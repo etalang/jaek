@@ -23,6 +23,8 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     enigma.eta;
     enigma.eta;
     enigma.eta;
+    enigma.eta;
+    enigma.eta;
     euclid.eta;
     fibonacci.eta;
     globalstr1.eta;
@@ -37,12 +39,6 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     operatorprecedence.eta;
     passbyrefarrs.eta;
     primes.eta;
-    raggedarrays.eta;
-    raggedarrays.eta;
-    raggedarrays.eta;
-    raggedarrays.eta;
-    raggedarrays.eta;
-    raggedarrays.eta;
     raggedarrays.eta;
     recursive.eta;
     returnfncall.eta;
