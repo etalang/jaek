@@ -4,3 +4,7 @@ less than or equal to true
 greater than false
 not equal true
 greater than or equal to false
+true anded with false false
+true anded with true true
+true ored with false true
+false ored with false false
