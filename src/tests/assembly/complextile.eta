@@ -21,5 +21,9 @@ main(args : int[][]){
     i = c + 1
     println(unparseInt(i))
 
+    d : int = 5
+    d = 1 - d
+    println(unparseInt(d))
+
 
 }

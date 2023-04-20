@@ -68,8 +68,16 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
         return null
     }
 
-    // Takes the leaves of the LIROp and checks if they are dest and CONST(1)
-    private fun isIncOrDec(left : LIRExpr, right : LIRExpr) : Boolean {
+    // Takes the leaves of the LIROp and checks if they are dest and CONST(1) in that order
+    private fun isDec(left : LIRExpr, right : LIRExpr) : Boolean {
+        if (right is LIRExpr.LIRConst && right.value == 1L && left == dest) {
+            return true
+        }
+        return false
+    }
+
+    // Takes the leaves of the LIROp and checks if they are dest and CONST(1) in any order
+    private fun isInc(left : LIRExpr, right : LIRExpr) : Boolean {
         if (left is LIRExpr.LIRConst && left.value == 1L && right == dest) {
             return true
         }
@@ -82,15 +90,14 @@ class LIRMove(val dest: LIRExpr, val expr: LIRExpr) : LIRStmt.FlatStmt() {
     /* Tiles moves in the form of MOVE(Temp(t), ADD/SUB(Temp(t), CONST(1))) to INC/DEC(Temp(t)) */
     private fun incOrDec() : Tile.Regular? {
         if (dest is LIRExpr.LIRTemp && expr is LIROp) {
-
-            if (expr.op == IRBinOp.OpType.ADD && isIncOrDec(expr.left, expr.right)) {
+            if (expr.op == IRBinOp.OpType.ADD && isInc(expr.left, expr.right)) {
                 val builder = TileBuilder.Regular(1, this)
                 builder.add(
                     Instruction.Arith.INC(
                         Destination.RegisterDest(Register.Abstract(dest.name))
                     )
                 )
-            } else if (expr.op == IRBinOp.OpType.SUB && isIncOrDec(expr.left, expr.right)) {
+            } else if (expr.op == IRBinOp.OpType.SUB && isDec(expr.left, expr.right)) {
                 val builder = TileBuilder.Regular(1, this)
                 builder.add(
                     Instruction.Arith.DEC(
