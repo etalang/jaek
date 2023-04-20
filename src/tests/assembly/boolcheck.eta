@@ -5,6 +5,10 @@ main(args : int[][]) {
     six : int = 6 // to prevent constant folding
     boolcheck(six == 7, "equality")
     boolcheck(six < 7, "less than")
+    boolcheck(six <= 7, "less than or equal to")
+    boolcheck(six > 7, "greater than")
+    boolcheck(six != 7, "not equal")
+    boolcheck(six >= 7, "greater than or equal to")
 }
 
 boolcheck(cond : bool, str : int[]) {

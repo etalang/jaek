@@ -1,2 +1,6 @@
 equality false
 less than true
+less than or equal to true
+greater than false
+not equal true
+greater than or equal to false
