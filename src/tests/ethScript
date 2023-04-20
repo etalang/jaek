@@ -1,29 +1,231 @@
 build
 
+etac ("Test --lex") ["lexer"] "--lex" {
+    charstringedgecase.eta;
+    comments.eta;
+    emotetest.eta (Lexical, "Unmatched \"'\"");
+    invalidcharacter1.eta (Lexical, "Unmatched \"'\"");
+    invalidcharacter2.eta (Lexical, "Unmatched \"'\"");
+    invalidcharacter3.eta (Lexical, "Unmatched \"'\"");
+    invalidcharacter4.eta (Lexical, "Unmatched \"'\"");
+    largeintegerneg.eta (Lexical, "Not a valid integer");
+    largeintegerpos.eta (Lexical, "Not a valid integer");
+    manysinglequotes.eta;
+    multilinestring.eta (Lexical, "Multiline string");
+    nonterminatingstring1.eta (Lexical, "Multiline string");
+    nonterminatingstring2.eta (Lexical, "Non-terminating string");
+    nonterminatingstring3.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter1.eta (Lexical, "Unmatched \"'\"");
+    unexpectedcharacter2.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter3.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter4.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter5.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter6.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter7.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter8.eta (Lexical, "Unmatched \"'\"");
+    unexpectedcharacter9.eta (Lexical, "Unmatched \"'\"");
+    unexpectedcharacter10.eta (Lexical, "Unmatched \"'\"");
+    unexpectedcharacter11.eta (Lexical, "Unmatched \"'\"");
+    unexpectedcharacter12.eta (Lexical, "Unmatched \"'\"");
+    unexpectedcharacter13.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter14.eta (Lexical, "Non-terminating string");
+    unexpectedcharacter15.eta (Lexical, "Non-terminating string");
+    unicodechars.eta;
+    variabledeclarations.eta;
+}
+
+etac ("Test lexer fixes") ["lexer-fix-tests"] "--lex" {
+    doublebackslash.eta;
+    errorline.eta (Lexical, "Invalid character constant");
+    integers.eta;
+    manyquotes.eta (Lexical, "Non-terminating string or multiline string");
+    medley01.eta (Lexical, "Invalid character constant");
+    noendstring.eta (Lexical, "Non-terminating string or multiline string");
+    questionmark.eta (Lexical, "Not a valid identifier");
+    quoteinquote.eta;
+    singlequote.eta (Lexical, "Unmatched \"'\"");
+    tab.eta;
+    toolargeint.eta (Lexical, "Not a valid integer");
+    unicode.eta;
+}
+
+etac ("Test --parse") ["parser"] "--parse" {
+    arrayblankbetween.eta;
+    arrayfunctioncalladd.eta;
+    arrayliteralaccess.eta;
+    arrayliteralaccessadd.eta;
+    blocksinblocks.eta;
+    blocksthenblocks.eta;
+    blockscomplex.eta;
+    booleanprecedence.eta;
+    earlyreturn.eta (Syntax, "a");
+    exampleprogram.eta;
+    functioncalls.eta;
+    globaldeclarations.eta;
+    globalmultass1.eta (Syntax, "multiple assignment disallowed in global");
+    globalmultass2.eta (Syntax, "multiple assignment disallowed in global");
+    globalmultass3.eta (Syntax, "multiple assignment disallowed in global");
+    globalmultass4.eta (Syntax, "multiple assignment disallowed in global");
+    globalnegs.eta (Syntax, "no double negative in global");
+    invalidarrayinit1.eta (Syntax, "cannot initialize size of global arrays");
+    invalidarrayinit2.eta (Syntax, "cannot assign to array in global");
+    invalidarrayinit3.eta (Syntax, "cannot initialize size and declare values");
+    invalidarrayinit4.eta (Syntax, "Unexpected index 3");
+    invalideti1.eti (Syntax, "unexpected character {, interface function cannot have block");
+    invalideti2.eti (Syntax, "unexpected token :, declaration cannot occur in eti file");
+    invalidlargeint.eta (Syntax, "-9223372036854775808");
+    invalidsinglereturn.eta (Syntax, "return");
+    invalidsubtraction.eta (Syntax, "-9223372036854775808");
+    largeint.eta;
+    largeintfail.eta (Syntax, "this number too big");
+    length.eta;
+    lengthwithtrailingcommas.eta;
+    manyassignments.eta;
+    manyfunctions.eta;
+    manynegative.eta;
+    multiassignment.eta;
+    multiassignmentwitharrayinit.eta (Syntax, "Unexpected token 3");
+    multideclaration.eta (Syntax, "Unexpected token ]");
+    mutuallyrecursive.eta;
+    nestedifstatements.eta;
+    nomethodbody.eta (Syntax, "<<EOF>>");
+    operatorprecedence.eta;
+    trailingcomma.eta;
+    variabledeclarations.eta;
+    whilenoblock.eta;
+}
+
+etac ("Test --parse") ["parser-fix-tests"] "--parse" {
+    arraylit.eta;
+    blanketa.eta (Syntax, "<<EOF>>");
+    blanketi.eti (Syntax, "<<EOF>>");
+    function.eta (Syntax, "int");;
+    minint.eta;
+    multassignprint.eta;
+    unfinishedfunction.eta (Syntax, "<<EOF>>");
+    useeta.eta (Syntax, "<<EOF>>");
+    useeti.eti  (Syntax, "use");
+}
+
+etac ("Test --typecheck") ["typing"] "-libpath $(testpath) --typecheck" {
+    arrayassign1.eta;
+    arrayassign2.eta;
+    arrayassign3.eta;
+    arrayassign4.eta;
+    arrayassign5.eta;
+    arrayassign6.eta;
+    arrayindex1.eta;
+    arrayindex2.eta;
+    arrayindex3.eta;
+    arrayindex4.eta;
+    arrayindexfail.eta (Semantic, "Expression not indexable");
+    arrayinits.eta;
+    badarray1.eta;
+    badarray2.eta;
+    badarray3.eta;
+    badeti.eti (Semantic, "Mismatch in type of function f among interfaces/programs");
+    badetiparse.eti (Syntax, "use");
+    badetiparseuse.eta (Syntax, "use");
+    badetiuse.eta (Semantic, "Mismatch in type of function f among interfaces/programs");
+    badprocedurecalls.eta (Semantic, "Procedures may not return any values");
+    booleanprecedence.eta;
+    concatarray.eta;
+    eti1.eti;
+    eti2.eti;
+    eti3.eti;
+    exampleprogram.eta;
+    fun1.eta (Semantic, "Invalid function shadowing");
+    guardif.eta;
+    guardwhile.eta;
+    implementalleti.eta;
+    indexfunctionbad.eta;
+    int1.eti;
+    invalidarrayassign.eta (Semantic, "Type mismatch on array assignment");
+    length.eta;
+    multiassign1.eta;
+    multiassign2.eta;
+    multiassign3.eta;
+    multiassign4.eta;
+    multiassignfail1.eta (Semantic, "Number of assignment targets mismatch from function");
+    multiassignfail2.eta (Semantic, "Number of assignment targets does not match number of assignments");
+    multiassignfail3.eta (Semantic, "Shadowing old variable x in multiassignment");
+    multiassigntwicescope.eta;
+    multipletypesinarray.eta (Semantic, "Array elements must be consistent type");
+    multipletypesinarray2.eta (Semantic, "Array elements must be consistent type");
+    mutuallyrecursive.eta;
+    noimplementalleti.eta;
+    procedurecalls.eta;
+    recursivefunctions.eta;
+    samefunction.eti;
+    shadow1.eta (Semantic, "Cannot assign to non-assignable of type function");
+    shadow2.eta (Semantic, "Invalid function shadowing");
+    unaryoperations.eta;
+    unaryoperationsfail1.eta (Semantic, "Not must be applied to boolean");
+    unaryoperationsfail2.eta (Semantic, "Negative must be applied to integer");
+    unboundvariable.eta (Semantic, "Cannot assign to non-assignable of type null");
+    usecompatibleetis.eta;
+    useincompatibleetis.eta (Semantic, "incompatible types in interface (not a real error message)");
+    validarrayassign.eta;
+    variableassign.eta (Semantic, "Cannot assign type bool to variable of type int");
+    variableshadowing.eta (Semantic, "function parameter n shadows variable in global scope");
+    wrongargument1.eta (Semantic, "type mismatch as argument to function");
+    wrongargument2.eta (Semantic, "type mismatch as argument to function");
+    wrongfunctionoutput.eta (Semantic, "Assigned expression type does not match expected type bool");
+    wrongtypeinarrayassign.eta (Semantic, "Assigned expression type does not match expected type ast.Primitive$INT@527e5409");
+}
+
+etac ("Test --irgen") ["ir"] "-libpath $(testpath) --irgen" {
+    arrayalloc1.eta;
+    arrayfuntimes.eta;
+    arraysorting.eta;
+    binsearchmain.eta;
+    changeglobalstwice.eta;
+    changesamearrayreturn.eta;
+    commutey.eta;
+    edarray1.eta;
+    fibonacci.eta;
+    globalstr1.eta;
+    idxarrconcat.eta;
+    idxfnret.eta;
+    insertion.eta;
+    multiretarray.eta;
+    mutualrecursion.eta;
+    operationsmod.eta;
+    operatorprecedence.eta;
+    passbyrefarrs.eta;
+    raggedarrays.eta;
+    returnfncall.eta;
+    ratadduse.eta;
+    returnfncall.eta
+    returnstr.eta;
+    shortcircuit.eta;
+    swap.eta;
+    swaparr.eta;
+    euclid.eta;
+}
+
+etac ("Test --irgen") ["ir-fix-tests"] "-libpath $(testpath) --irgen" {
+    arracc04.eta;
+    assign06ir.eta;
+    assign07ir.eta;
+    assign08ir.eta;
+    assign09ir.eta;
+    assign10ir.eta;
+    binary10.eta;
+    localdecl13.eta;
+    localdecl14.eta;
+    medley.eta;
+}
+
 etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     arrayalloc1.eta;
     arrayfuntimes.eta;
     arraysorting.eta;
     binsearchmain.eta;
     boolcheck.eta;
-    boolcheck.eta;
-    boolcheck.eta;
-    boolcheck.eta;
-    boolcheck.eta;
-    boolcheck.eta;
     changeglobalstwice.eta;
     commutey.eta;
     edarray1.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
-    enigma.eta;
     enigma.eta;
     euclid.eta;
     fibonacci.eta;
