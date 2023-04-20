@@ -20,7 +20,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     private val defaults = listOf(x86(R12), x86(R13), x86(R14))
 
     /** In the current calling conventions, the callee-save registers are rbp, rsp, rbx, and r12–r15. */
-    private val calleeSavedRegs = listOf(x86(RBP), x86(RSP), x86(RBX), x86(R12), x86(R13), x86(R14), x86(R15))
+    private val calleeSavedRegs = listOf(x86(RBP), x86(RBX), x86(R12), x86(R13), x86(R14))
 
     fun allocate(): x86CompUnit {
         return allocateCompUnit(assembly)
