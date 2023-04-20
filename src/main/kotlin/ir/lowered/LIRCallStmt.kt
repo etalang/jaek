@@ -42,8 +42,9 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             val didWePad: Boolean;
             if ((pushedReturns + pushedArgs) % 2 > 0) {
                 didWePad = true
-                builder.add(COMMENT("THIS IS FOR PADDING"))
+                builder.add(COMMENT("adding padding"))
                 builder.add(PAD())
+                println("WE ADDED PADDING!")
             } else {
                 didWePad = false
             }
@@ -87,7 +88,7 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
 
             //remove padding
             if (didWePad) {
-                builder.add(COMMENT("THIS REMOVES THE PADDING"))
+                builder.add(COMMENT("removing padding"))
                 builder.add(Arith.ADD(RegisterDest(Register.x86(Register.x86Name.RSP)), ConstSrc(8L)))
             }
 

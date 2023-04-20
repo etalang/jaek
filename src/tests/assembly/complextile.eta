@@ -1,0 +1,25 @@
+use io
+use conv
+
+a : int = 2
+main(args : int[][]){
+    i : int = 1
+    i = i + 1
+    a = 1 + a
+    println(unparseInt(i))
+    println(unparseInt(a))
+
+    b : int = a
+    b = b - 1
+    println(unparseInt(b))
+    println(unparseInt(a))
+
+    c : int = 0
+
+    println(unparseInt(c))
+
+    i = c + 1
+    println(unparseInt(i))
+
+
+}
