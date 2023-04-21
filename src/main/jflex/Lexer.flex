@@ -50,10 +50,9 @@ Letter = [a-zA-Z]
 Digit = [0-9]
 Unicode = "\\x{"({Digit}|[a-f]|[A-F]){1,6}"}"
 Identifier = {Letter}({Digit}|{Letter}|_|')*
-Field = ({Identifier}".")+{Identifier}
 Integer = "0"|[1-9]{Digit}*
 Character = [^"\\""'"]|"\\"("\\"|"\""|"'"|"n"|"t"|"r")|{Unicode}
-Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
+Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"|"."
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"|"break"|"null"|"record"
 CharLiteral = "'"({Character}|"\"")"'"
 MinInteger = "-"([ \t])*"9223372036854775808"
@@ -67,7 +66,6 @@ MinInteger = "-"([ \t])*"9223372036854775808"
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
-    {Field}           { return new Token.IdToken(yytext(), lineNumber(), column()); }
     {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column(),file);}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
     {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column(),file); }
