@@ -4,10 +4,9 @@ import java.io.FileReader
 import kotlin.math.max
 
 /**
- *  Some of the worst code you can find in this repository.
- *  This code relies on absurd, arbitrary style choices of how we format our ethScript file.
- *  This should not be used for anything besides quickly generating a coverage report when
- *  the project is due within 24 hours. Thank you.
+ * Some of the worst code you can find in this repository. This code relies on absurd, arbitrary style choices of how we
+ * format our ethScript file. This should not be used for anything besides quickly generating a coverage report when the
+ * project is due within 24 hours. Thank you.
  */
 fun main() {
     val reader = BufferedReader(FileReader(File("src/tests/ethScript")))
@@ -19,11 +18,18 @@ fun main() {
                 println("Testing $directory")
             } else if (it.startsWith("    ") && it.endsWith(";")) {
                 val str = it.substring(4, 4 + max(it.indexOf(".eta"), it.indexOf(".eti")))
-                Etac(disableOutput = true).main(
-                    listOf(
-                        "-libpath", "src/tests/${directory}", "-O", "--irgen", "--parse", "--lex", "src/tests/${directory}/${str}"
+                for (opt in listOf(null, "-O"))
+                    Etac(disableOutput = true).main(
+                        listOfNotNull(
+                            "-libpath",
+                            "src/tests/${directory}",
+                            opt,
+                            "--irgen",
+                            "--parse",
+                            "--lex",
+                            "src/tests/${directory}/${str}"
+                        )
                     )
-                )
             }
         }
     }
