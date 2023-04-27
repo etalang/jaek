@@ -93,6 +93,8 @@ public class LexUtil {
             case "use": return SymbolTable.USE;
             case "while": return SymbolTable.WHILE;
             case "length": return SymbolTable.LENGTH;
+            case "break": return SymbolTable.BREAK;
+            case "null": return SymbolTable.NULL;
             case "int": return SymbolTable.INT;
             case "bool": return SymbolTable.BOOL;
             case "true": return SymbolTable.TRUE;
@@ -123,6 +125,7 @@ public class LexUtil {
             case "}": return SymbolTable.CLOSE_BRACE;
             case ":": return SymbolTable.COLON;
             case ";": return SymbolTable.SEMICOLON;
+            case ".": return SymbolTable.PERIOD;
             default:
                 return 1;
         }
