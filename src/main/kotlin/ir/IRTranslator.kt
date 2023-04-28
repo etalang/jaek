@@ -10,6 +10,7 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
 import ir.optimize.ConstantFolder
+import optimize.IROptimizer
 import typechecker.EtaFunc
 import typechecker.EtaType
 
@@ -33,7 +34,10 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
 
         var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
         lir.reorderBlocks()
-        if (optimize) lir = ConstantFolder().apply(lir)
+        if (optimize) {
+            lir = ConstantFolder().apply(lir)
+            lir.functions.forEach{IROptimizer(it)}
+        }
         return lir
     }
 
