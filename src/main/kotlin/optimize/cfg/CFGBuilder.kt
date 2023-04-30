@@ -32,16 +32,16 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 is LIRStmt.LIRCJump -> throw Exception("honestly shout out to charles for somehow sneaking a CJUMP in this far after block reordering")
 
                 is LIRStmt.LIRJump -> {
-                    CFGNode.Cricket(Edge(targets, currStmt.address.l))
+                    CFGNode.Cricket(Edge.Lazy(targets, currStmt.address.l))
                 }
 
                 is LIRReturn -> {
                     pointingTo = null
-                    CFGNode.Return(currStmt.valList.map { translateExpr(it) }, Edge(targets, null))
+                    CFGNode.Return(currStmt.valList.map { translateExpr(it) }, Edge.Lazy(targets, null))
                 }
 
                 is LIRStmt.LIRTrueJump -> CFGNode.If(
-                    translateExpr(currStmt.guard), Edge(targets, currStmt.trueBranch.l), pointToNext()
+                    translateExpr(currStmt.guard), Edge.Lazy(targets, currStmt.trueBranch.l), pointToNext()
                 )
 
                 is LIRCallStmt -> {
@@ -76,17 +76,19 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 }
             }
 
-            if (next !is CFGNode.Cricket) nodes.add(next)
+            nodes.add(next)
             labels.forEach {
                 val target = targets[it]
                 if (target == null) targets[it] = next;
             }
         }
+
+        nodes.forEach { it.resolveEdges() }
     }
 
     fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
-        nodes.forEachIndexed { index, t -> map[t] = "n$index" }
+        nodes.filter { it !is CFGNode.Cricket }.forEachIndexed { index, t -> map[t] = "n$index" }
         return buildString {
             appendLine("digraph ${lir.name} {")
             appendLine("\trankdir=\"TB\"")
@@ -96,16 +98,22 @@ class CFGBuilder(val lir: LIRFuncDecl) {
 
             map.forEach { appendLine("\t${it.value} [shape=rectangle; label=\"${it.key.pretty}\";];") }
             map.forEach { (from, graphKey) ->
-                when (from) {
-                    is CFGNode.If -> {
-                        if (from.to.node != null) appendLine("\t$graphKey -> ${map[from.to.node]} [label=\"T\"];")
-                        if (from.take.node != null) appendLine("\t$graphKey -> ${map[from.take.node]} [label=\"F\"];")
-                    }
-
-                    is CFGNode.Cricket, is CFGNode.Funcking, is CFGNode.Gets, is CFGNode.Mem, is CFGNode.Return, is CFGNode.Start -> {
-                        if (from.to.node != null) appendLine("\t$graphKey -> ${map[from.to.node]};")
-                    }
+                for (edge in from.edges) {
+                    appendLine("\t$graphKey -> ${map[edge.node]} ${if (edge.jump) "[label=\"jump\"]" else ""};")
                 }
+//                when (from) {
+//                    is CFGNode.If -> {
+//                        if (from.to != null) appendLine("\t$graphKey -> ${map[from.to?.node]} [label=\"T\"];")
+//                        if (from.take?.node != null) appendLine("\t$graphKey -> ${map[from.take?.node]} [label=\"F\"];")
+//                    }
+//
+//                    is CFGNode.Cricket, is CFGNode.Funcking, is CFGNode.Gets, is CFGNode.Mem, is CFGNode.Return, is CFGNode.Start -> {
+//
+//
+//
+//                        if (from.to?.node != null) appendLine("\t$graphKey -> ${map[from.to?.node]};")
+//                    }
+//                }
             }
             appendLine("}")
         }
@@ -122,10 +130,10 @@ class CFGBuilder(val lir: LIRFuncDecl) {
     }
 
     private var freshLabelCount = 0
-    private fun pointToNext(): Edge {
+    private fun pointToNext(): Edge.Lazy {
         freshLabelCount++
         pointingTo = "\$G$freshLabelCount"
-        return Edge(targets, pointingTo)
+        return Edge.Lazy(targets, pointingTo)
     }
 
 }
