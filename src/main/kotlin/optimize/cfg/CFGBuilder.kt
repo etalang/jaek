@@ -79,7 +79,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
             if (next !is CFGNode.Cricket) nodes.add(next)
             labels.forEach {
                 val target = targets[it]
-                if (target != null) targets[it] = next;
+                if (target == null) targets[it] = next;
             }
         }
     }
