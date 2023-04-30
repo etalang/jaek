@@ -84,6 +84,8 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
      * preprocessed into vars above.
      */
     override fun run() {
+//        File("cfg.dot").createNewFile()
+
         // the irrun flag should also generate the IR, just like irgen
         val outputIR = if (runIR) true else initOutputIR
         if (target != "linux") {

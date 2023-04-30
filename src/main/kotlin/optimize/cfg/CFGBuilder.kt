@@ -4,19 +4,21 @@ import ir.lowered.*
 import java.util.*
 
 class CFGBuilder(val lir: LIRFuncDecl) {
-    private val targets: MutableMap<String, CFGNode> = mutableMapOf()
-    val start = CFGNode.Start(lir.name, pointToNext())
-    private val nodes: MutableList<CFGNode> = mutableListOf(start)
-    private var pointingTo = ""
+    val targets: MutableMap<String, CFGNode> = mutableMapOf()
+    private val nodes: MutableList<CFGNode>
+    private var pointingTo: String? = null;
+    val start: CFGNode.Start
 
     init {
+        start = CFGNode.Start(lir.name, pointToNext())
+        nodes = mutableListOf(start)
+
         val statements: MutableList<LIRStmt.FlatStmt> = LinkedList(lir.body.block)
-//        val x = mutableListOf<String>()
         while (statements.isNotEmpty()) {
             var currStmt = statements.first()
 
             //handle labels
-            val labels = mutableListOf(pointingTo)
+            val labels = (listOfNotNull(pointingTo).toMutableList())
             while (currStmt is LIRStmt.LIRLabel) {
                 labels.add(currStmt.l)
                 statements.removeFirst()
@@ -30,15 +32,16 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 is LIRStmt.LIRCJump -> throw Exception("honestly shout out to charles for somehow sneaking a CJUMP in this far after block reordering")
 
                 is LIRStmt.LIRJump -> {
-                    CFGNode.Cricket(Target.Lazy(targets, currStmt.address.l))
+                    CFGNode.Cricket(Edge(targets, currStmt.address.l))
                 }
 
-                is LIRReturn -> CFGNode.Return(currStmt.valList.map { translateExpr(it) }, Target.None())
+                is LIRReturn -> {
+                    pointingTo = null
+                    CFGNode.Return(currStmt.valList.map { translateExpr(it) }, Edge(targets, null))
+                }
 
                 is LIRStmt.LIRTrueJump -> CFGNode.If(
-                    translateExpr(currStmt.guard),
-                    Target.Lazy(targets, currStmt.trueBranch.l),
-                    pointToNext()
+                    translateExpr(currStmt.guard), Edge(targets, currStmt.trueBranch.l), pointToNext()
                 )
 
                 is LIRCallStmt -> {
@@ -55,10 +58,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                         }
                     }
                     CFGNode.Funcking(
-                        currStmt.target.l,
-                        returnMoves,
-                        currStmt.args.map { translateExpr(it) },
-                        pointToNext()
+                        currStmt.target.l, returnMoves, currStmt.args.map { translateExpr(it) }, pointToNext()
                     )
                 }
 
@@ -76,8 +76,11 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 }
             }
 
-            nodes.add(next)
-            labels.forEach { targets[it] = next }
+            if (next !is CFGNode.Cricket) nodes.add(next)
+            labels.forEach {
+                val target = targets[it]
+                if (target != null) targets[it] = next;
+            }
         }
     }
 
@@ -119,10 +122,10 @@ class CFGBuilder(val lir: LIRFuncDecl) {
     }
 
     private var freshLabelCount = 0
-    private fun pointToNext(): Target.Lazy {
+    private fun pointToNext(): Edge {
         freshLabelCount++
         pointingTo = "\$G$freshLabelCount"
-        return Target.Lazy(targets, pointingTo)
+        return Edge(targets, pointingTo)
     }
 
 }
