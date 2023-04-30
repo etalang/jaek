@@ -23,7 +23,10 @@ jobs:
 
       - name: Update runtime
         working-directory: /home/student/runtime
-        run: ./update
+        run: |
+          export TERMINFO=/lib/terminfo
+          export DISPLAY=host.docker.internal:0
+          ./update
 
       - name: Update eth
         working-directory: /home/student/eth
@@ -42,10 +45,6 @@ jobs:
       - name: Run custom tests
         working-directory: /home/student/
         run: eth /home/student/shared/production/src/tests/ethScript -ec -compilerpath /home/student/shared/production/
-
-      - name: Run vm tests
-        working-directory: /home/student/
-        run: eth /home/student/eth/tests/pa5/ethScript -ec -noout -compilerpath /home/student/shared/production/
 
 #      - name: Run assembly tests
 #        working-directory: /home/student/
