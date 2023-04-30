@@ -9,8 +9,7 @@ import java.io.File
 class IROptimizer(val lir : LIRFuncDecl) {
     init {
         val builder = CFGBuilder(lir)
-        var cfg : CFGNode = builder.build()
-        val map = builder.targets
+        var cfg : CFGNode = builder.start
         File("cfg.dot").writeText(builder.graphViz())
     }
 

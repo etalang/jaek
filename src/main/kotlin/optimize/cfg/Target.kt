@@ -11,4 +11,8 @@ sealed class Target {
         override val node: CFGNode? get() = map[str]
     }
 
+    class None() : Target() {
+        override val node: CFGNode? = null
+    }
+
 }

@@ -1,61 +1,75 @@
 package optimize.cfg
 
 import ir.lowered.*
+import java.util.*
 
 class CFGBuilder(val lir: LIRFuncDecl) {
-    val targets: MutableMap<String, CFGNode> = mutableMapOf()
-    val head = CFGNode.Start(lir.name, null)
-    val nodes: MutableList<CFGNode> = mutableListOf(head)
-    fun build(): CFGNode {
-        var prev: CFGNode = head
-        var next: CFGNode
-        var remaining = lir.body.block
-        while (remaining.isNotEmpty()) {
-            val labels = mutableListOf<String>()
-            var first: LIRStmt.FlatStmt = remaining.first()
-            while (first is LIRStmt.LIRLabel) {
-                labels.add(first.l)
-                remaining = remaining.drop(1)
-                first = remaining.first()
+    private val targets: MutableMap<String, CFGNode> = mutableMapOf()
+    val start = CFGNode.Start(lir.name, pointToNext())
+    private val nodes: MutableList<CFGNode> = mutableListOf(start)
+    private var pointingTo = ""
+
+    init {
+        val statements: MutableList<LIRStmt.FlatStmt> = LinkedList(lir.body.block)
+//        val x = mutableListOf<String>()
+        while (statements.isNotEmpty()) {
+            var currStmt = statements.first()
+
+            //handle labels
+            val labels = mutableListOf(pointingTo)
+            while (currStmt is LIRStmt.LIRLabel) {
+                labels.add(currStmt.l)
+                statements.removeFirst()
+                currStmt = statements.first()
             }
 
-            next = when (first) {
+            currStmt = statements.removeFirst()
+
+            //create nodes
+            val next = when (currStmt) {
                 is LIRStmt.LIRCJump -> throw Exception("honestly shout out to charles for somehow sneaking a CJUMP in this far after block reordering")
-                is LIRStmt.LIRJump -> CFGNode.Cricket(Target.Lazy(targets, first.address.l))
-                is LIRReturn -> CFGNode.Return(first.valList.map { translateExpr(it) }, Target.Real(null))
+
+                is LIRStmt.LIRJump -> {
+                    CFGNode.Cricket(Target.Lazy(targets, currStmt.address.l))
+                }
+
+                is LIRReturn -> CFGNode.Return(currStmt.valList.map { translateExpr(it) }, Target.None())
+
                 is LIRStmt.LIRTrueJump -> CFGNode.If(
-                    translateExpr(first.guard),
-                    Target.Lazy(targets, first.trueBranch.l),
-                    null
+                    translateExpr(currStmt.guard),
+                    Target.Lazy(targets, currStmt.trueBranch.l),
+                    pointToNext()
                 )
 
                 is LIRCallStmt -> {
-                    // TODO: whole fuckin thing
-                    val mooooves = mutableListOf<String>()
-                    for (i in 1..first.n_returns.toInt()) {
-                        when (val hopefullyMov = remaining.get(i)) {
+                    val returnMoves = mutableListOf<String>()
+                    for (i in 0 until currStmt.n_returns.toInt()) {
+                        when (val movLIR = statements.removeFirst()) {
                             is LIRMove -> {
-                                val dest = hopefullyMov.dest
-                                if (dest is LIRExpr.LIRTemp) mooooves.add(dest.name)
+                                val dest = movLIR.dest
+                                if (dest is LIRExpr.LIRTemp) returnMoves.add(dest.name)
                                 else throw Exception("mooooooving into non-temp")
                             }
 
                             else -> throw Exception("charles was really hoping this would be a move, and we were too :(")
                         }
                     }
-                    //really not sureee if this is ok because it technically drops the lircallstmt and n-1
-                    remaining = remaining.drop(first.n_returns.toInt())
-                    CFGNode.Funcking(first.target.l, mooooves, first.args.map { translateExpr(it) }, null)
+                    CFGNode.Funcking(
+                        currStmt.target.l,
+                        returnMoves,
+                        currStmt.args.map { translateExpr(it) },
+                        pointToNext()
+                    )
                 }
 
                 is LIRStmt.LIRLabel -> throw Exception("charles snuck more labels in")
-                is LIRMove -> when (val dest = first.dest) {
+                is LIRMove -> when (val dest = currStmt.dest) {
                     is LIRExpr.LIRTemp -> {
-                        CFGNode.Gets(dest.name, translateExpr(first.expr), null)
+                        CFGNode.Gets(dest.name, translateExpr(currStmt.expr), pointToNext())
                     }
 
                     is LIRMem -> {
-                        CFGNode.Mem(translateExpr(dest), translateExpr(dest), null)
+                        CFGNode.Mem(translateExpr(dest), translateExpr(dest), pointToNext())
                     }
 
                     else -> throw Exception("move has a non mem non temp and @kate said that's illegal")
@@ -64,12 +78,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
 
             nodes.add(next)
             labels.forEach { targets[it] = next }
-
-            if (prev.target == null) prev.target = Target.Real(next) //tbh this might only deal with return idfk anymore
-            prev = next
-            remaining = remaining.drop(1)
         }
-        return head
     }
 
     fun graphViz(): String {
@@ -84,15 +93,14 @@ class CFGBuilder(val lir: LIRFuncDecl) {
 
             map.forEach { appendLine("\t${it.value} [shape=rectangle; label=\"${it.key.pretty}\";];") }
             map.forEach { (from, graphKey) ->
-
                 when (from) {
                     is CFGNode.If -> {
-                        if (from.next != null) appendLine("\t$graphKey -> ${map[from.next]} [label=\"T\"];")
+                        if (from.to.node != null) appendLine("\t$graphKey -> ${map[from.to.node]} [label=\"T\"];")
                         if (from.take.node != null) appendLine("\t$graphKey -> ${map[from.take.node]} [label=\"F\"];")
                     }
 
                     is CFGNode.Cricket, is CFGNode.Funcking, is CFGNode.Gets, is CFGNode.Mem, is CFGNode.Return, is CFGNode.Start -> {
-                        if (from.next != null) appendLine("\t$graphKey -> ${map[from.next]};")
+                        if (from.to.node != null) appendLine("\t$graphKey -> ${map[from.to.node]};")
                     }
                 }
             }
@@ -108,6 +116,13 @@ class CFGBuilder(val lir: LIRFuncDecl) {
             is LIROp -> CFGExpr.BOp(translateExpr(it.left), translateExpr(it.right), it.op)
             is LIRExpr.LIRTemp -> CFGExpr.Var(it.name)
         }
+    }
+
+    private var freshLabelCount = 0
+    private fun pointToNext(): Target.Lazy {
+        freshLabelCount++
+        pointingTo = "\$G$freshLabelCount"
+        return Target.Lazy(targets, pointingTo)
     }
 
 }
