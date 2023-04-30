@@ -6,7 +6,7 @@ sealed class CFGNode(
     var to: Edge? = null
 ) {
     open fun resolveEdges() {
-        to = lazyTo.toReal
+        to = lazyTo.toReal()
     }
 
     open val edges : Set<Edge> get() = setOfNotNull(to)
@@ -37,7 +37,7 @@ sealed class CFGNode(
         override val pretty = "if (${cond.pretty})"
         override fun resolveEdges() {
             super.resolveEdges()
-            take = _take.toReal
+            take = _take.toReal(true)
         }
 
         override val edges: Set<Edge>
