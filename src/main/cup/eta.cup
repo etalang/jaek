@@ -132,7 +132,7 @@ methodArgs          ::= methodArg:ma                                            
                     | methodArg:ma COMMA methodArgs:mal                                      {:mal.add(0, ma); RESULT = mal;:};
 
 /* =============> [Global] Records <============= */
-record          ::= RECORD IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE    {: RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :};
+record              ::= RECORD IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE    {: RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
 statementOrBlockList   ::= statement:s                                              {:RESULT = ParseUtil.singleton(s);:}
@@ -204,7 +204,7 @@ expr            ::= binop:op                                         {: RESULT =
                     | expr:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1, e2, new Terminal(bleft,bright)); :}
                     | OPEN_PAREN expr:e CLOSE_PAREN                  {: RESULT = e; :}
                     | LENGTH:l OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e, new Terminal(lleft,lright)); :}
-                    | expr:e1 PERIOD IDENTIFIER:id                   {: RESULT = new Expr.FieldAccess(e1, id, new Terminal(e1.left,e2.right)); :};
+                    | expr:e PERIOD IDENTIFIER:id                    {: RESULT = new Expr.Field(e, id, new Terminal(eleft,eright)); :};
 exprList          ::= expr:e                                         {: RESULT = ParseUtil.singleton(e);  :}
                     | exprList:l COMMA expr:e                        {: l.add(e); RESULT = l; :}; //LR
 arrayAccess       ::= indexable:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2,new Terminal(bleft,bright)); :};
@@ -238,7 +238,7 @@ binop           ::= expr:r PLUS:o expr:l                             {: RESULT =
                     | expr:r NEQB:o expr:l                           {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l,new Terminal(oleft,oright)); :}
                     | expr:r AND:o expr:l                            {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l,new Terminal(oleft,oright)); :}
                     | expr:r OR:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l,new Terminal(oleft,oright)); :};
-field           ::= indexable:idx PERIOD IDENTIFIER:idfl             {: RESULT = new Expr.Field(idx, idfl, new Terminal(idrleft, idrright)); :} // TODO: can it only be indexable or also expr?
+field           ::= indexable:idx PERIOD IDENTIFIER:idfl             {: RESULT = new Expr.Field(idx, idfl, new Terminal(idxleft, idxright)); :} // TODO: can it only be indexable or also expr?
                     | field:f PERIOD IDENTIFIER:idfl                 {: RESULT = new Expr.Field(f, idfl, new Terminal(fleft, fright)); :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Types */
