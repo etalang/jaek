@@ -25,6 +25,11 @@ sealed class Statement : Node() {
             printer.endList()
         }
     }
+    class Break(override val terminal: Terminal) : Statement() {
+        override fun write(printer: SExpPrinter) {
+            printer.printAtom("break")
+        }
+    }
 
     class Return(val args: List<Expr>, override val terminal: Terminal) : Statement() {
         override fun write(printer: SExpPrinter) {

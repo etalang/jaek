@@ -24,6 +24,7 @@ sealed class EtaType {
                 is Type.Array -> return OrdinaryType.ArrayType(translateType(t.t))
                 is Primitive.BOOL -> return OrdinaryType.BoolType()
                 is Primitive.INT -> return OrdinaryType.IntType()
+                is Type.RecordType -> TODO()
             }
         }
     }

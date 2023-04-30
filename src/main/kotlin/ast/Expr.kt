@@ -42,6 +42,14 @@ sealed class Expr : Node() {
         }
 
     }
+    class Field(val record : Expr, val name: String, override val terminal: Terminal) : Expr(){
+        override fun write(printer: SExpPrinter) {
+            printer.startList()
+            printer.printAtom(name)
+            record.write(printer)
+            printer.endList()
+        }
+    }
 
 
 }

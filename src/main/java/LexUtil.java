@@ -94,6 +94,7 @@ public class LexUtil {
             case "while": return SymbolTable.WHILE;
             case "length": return SymbolTable.LENGTH;
             case "break": return SymbolTable.BREAK;
+            case "record": return SymbolTable.RECORD;
             case "null": return SymbolTable.NULL;
             case "int": return SymbolTable.INT;
             case "bool": return SymbolTable.BOOL;
