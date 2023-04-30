@@ -119,7 +119,6 @@ globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl       
                     | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n           {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
                                                                                              RESULT = new GlobalDecl(ParseUtil.singleton(id), t, new Literal.IntLit(Long.parseLong(n), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :}
                     | multiVarDecl:mvd                                                    {: RESULT = new GlobalDecl(mvd.getIds(), mvd.getType(), null, new Terminal(mvdleft,mvdright)); :};
-//                    IDENTIFIER:id COLON type:t                                              {: RESULT = new GlobalDecl(ParseUtil.singleton(id), t, null, new Terminal(idleft,idright)); :}
 
 /* =============> [Global] Methods <============= */
 methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
@@ -128,9 +127,9 @@ methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>(), new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>(), new Terminal(idleft,idright)); :};
-methodArg       ::= IDENTIFIER:id COLON type:t                                      {:RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
-methodArgs      ::= methodArg:ma                                                    {:RESULT = ParseUtil.singleton(ma); :}
-                    | methodArg:ma COMMA methodArgs:mal                             {:mal.add(0, ma); RESULT = mal;:};
+methodArg           ::= IDENTIFIER:id COLON type:t                                           {:RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
+methodArgs          ::= methodArg:ma                                                         {:RESULT = ParseUtil.singleton(ma); :}
+                    | methodArg:ma COMMA methodArgs:mal                                      {:mal.add(0, ma); RESULT = mal;:};
 
 /* =============> [Global] Records <============= */
 record          ::= RECORD IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE    {: RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :};
@@ -188,28 +187,28 @@ multiAssign     ::= assignables:tg EQUALS:o exprList:exprs         {: RESULT = n
 /* Initializations */
 arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         {: RESULT = new VarDecl.InitArr(id, ar, new Terminal(idleft,idright)); :};
 arrayInit      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                {: RESULT = new Statement.ArrayInit(pt, e); :}
-                       | arrayInit:anb OPEN_BRACKET CLOSE_BRACKET               {: anb.getDimensions().add(0, null); RESULT = anb; :}
-                       | arrayInit:anb OPEN_BRACKET expr:e CLOSE_BRACKET        {: anb.getDimensions().add(0, e); RESULT = anb; :};
+                   | arrayInit:anb OPEN_BRACKET CLOSE_BRACKET                   {: anb.getDimensions().add(0, null); RESULT = anb; :}
+                   | arrayInit:anb OPEN_BRACKET expr:e CLOSE_BRACKET            {: anb.getDimensions().add(0, e); RESULT = anb; :};
 method          ::= methodHeader:am returnableBlock:b                           {: am.setBody(b); RESULT = am; :};
 typelst         ::= type:t                                                      {: RESULT = ParseUtil.singleton(t);:}
                     | typelst:tl COMMA type:t                                   {: tl.add(t); RESULT = tl;:}; //LR
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
-expr            ::= binop:op                                       {: RESULT = op; :}
-                    | primitiveLiteral:pl                          {: RESULT = pl; :}
-                    | unop:op expr:arg                             {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
-                    | indexable:in                                 {: RESULT = in; :}
-                    | arrayLiteral:al                              {: RESULT = al; :}
-                    | STRING_LITERAL:s                             {: RESULT = new Literal.StringLit(s,new Terminal(sleft,sright)); :}
-                    | expr:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1, e2, new Terminal(bleft,bright)); :}
-                    | OPEN_PAREN expr:e CLOSE_PAREN                {: RESULT = e; :}
-                    | LENGTH:l OPEN_PAREN expr:e CLOSE_PAREN       {: RESULT = new Expr.FunctionCall.LengthFn(e, new Terminal(lleft,lright)); :}
-                    | field:f                                      {: RESULT = f; :};
-exprList          ::= expr:e                                       {: RESULT = ParseUtil.singleton(e);  :}
-                    | exprList:l COMMA expr:e                      {: l.add(e); RESULT = l; :}; //LR
+expr            ::= binop:op                                         {: RESULT = op; :}
+                    | primitiveLiteral:pl                            {: RESULT = pl; :}
+                    | unop:op expr:arg                               {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
+                    | indexable:in                                   {: RESULT = in; :}
+                    | arrayLiteral:al                                {: RESULT = al; :}
+                    | STRING_LITERAL:s                               {: RESULT = new Literal.StringLit(s,new Terminal(sleft,sright)); :}
+                    | expr:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET   {: RESULT = new Expr.ArrayAccess(e1, e2, new Terminal(bleft,bright)); :}
+                    | OPEN_PAREN expr:e CLOSE_PAREN                  {: RESULT = e; :}
+                    | LENGTH:l OPEN_PAREN expr:e CLOSE_PAREN         {: RESULT = new Expr.FunctionCall.LengthFn(e, new Terminal(lleft,lright)); :}
+                    | expr:e1 PERIOD IDENTIFIER:id                   {: RESULT = new Expr.FieldAccess(e1, id, new Terminal(e1.left,e2.right)); :};
+exprList          ::= expr:e                                         {: RESULT = ParseUtil.singleton(e);  :}
+                    | exprList:l COMMA expr:e                        {: l.add(e); RESULT = l; :}; //LR
 arrayAccess       ::= indexable:e1 OPEN_BRACKET:b expr:e2 CLOSE_BRACKET {: RESULT = new Expr.ArrayAccess(e1,e2,new Terminal(bleft,bright)); :};
-indexable         ::= functionCall:fc                              {: RESULT = fc; :}
+indexable         ::= functionCall:fc                                {: RESULT = fc; :}
                     | IDENTIFIER:id                                  {: RESULT = new Literal.Identifier(id,new Terminal(idleft,idright)); :}
                     | arrayAccess:aa                                 {: RESULT = aa; :};
 arrayLiteral     ::= OPEN_BRACE:b exprList:el CLOSE_BRACE            {: RESULT = new Literal.ArrayLit(el, new Terminal(bleft,bright)); :}
@@ -221,26 +220,26 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                              {: if (n.eq
                     | FALSE:o                                        {: RESULT = new Literal.BoolLit(false,new Terminal(oleft,oright)); :}
                     | TRUE:o                                         {: RESULT = new Literal.BoolLit(true,new Terminal(oleft,oright)); :}
                     | NULL:o                                         {: RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :};
-functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN  {: RESULT = new Expr.FunctionCall(id, vl,new Terminal(idleft,idright));:} // these should be statements!
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN            {: RESULT = new Expr.FunctionCall(id, new ArrayList<>(),new Terminal(idleft,idright));:};
+functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN {: RESULT = new Expr.FunctionCall(id, vl,new Terminal(idleft,idright));:} // these should be statements!
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN           {: RESULT = new Expr.FunctionCall(id, new ArrayList<>(),new Terminal(idleft,idright));:};
 unop            ::= MINUS:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NEG,new Terminal(uleft,uright)); :}  // cannot differentiate identical token but need diff prec
                     | NOT:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NOT,new Terminal(uleft,uright)); :}; // need to take expr
 binop           ::= expr:r PLUS:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.PLUS,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r TIMES:o expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r MINUS:o expr:l                                        {: RESULT = new BinaryOp(BinaryOp.Operation.MINUS,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r HIGHTIMES:o expr:l                                    {: RESULT = new BinaryOp(BinaryOp.Operation.HIGHTIMES,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r DIVIDE:o expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.DIVIDE,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r MODULO:o expr:l                                       {: RESULT = new BinaryOp(BinaryOp.Operation.MODULO,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r LT:o expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.LT,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r LEQ:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.LEQ,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r GT:o expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.GT,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r GEQ:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.GEQ,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r EQB:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.EQB,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r NEQB:o expr:l                                         {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r AND:o expr:l                                          {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l,new Terminal(oleft,oright)); :}
-                    | expr:r OR:o expr:l                                           {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l,new Terminal(oleft,oright)); :};
-field           ::= IDENTIFIER:idr PERIOD IDENTIFIER:idfl         {: RESULT = new Expr.Field(new Expr.Identifier(idr, new Terminal(idrleft, idrright)), idfl, new Terminal(idrleft, idrright)); :}
-                    | field:f PERIOD IDENTIFIER:idfl              {: RESULT = new Expr.Field(f, idfl, new Terminal(fleft, fright)); :};
+                    | expr:r TIMES:o expr:l                          {: RESULT = new BinaryOp(BinaryOp.Operation.TIMES,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r MINUS:o expr:l                          {: RESULT = new BinaryOp(BinaryOp.Operation.MINUS,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r HIGHTIMES:o expr:l                      {: RESULT = new BinaryOp(BinaryOp.Operation.HIGHTIMES,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r DIVIDE:o expr:l                         {: RESULT = new BinaryOp(BinaryOp.Operation.DIVIDE,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r MODULO:o expr:l                         {: RESULT = new BinaryOp(BinaryOp.Operation.MODULO,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r LT:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.LT,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r LEQ:o expr:l                            {: RESULT = new BinaryOp(BinaryOp.Operation.LEQ,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r GT:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.GT,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r GEQ:o expr:l                            {: RESULT = new BinaryOp(BinaryOp.Operation.GEQ,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r EQB:o expr:l                            {: RESULT = new BinaryOp(BinaryOp.Operation.EQB,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r NEQB:o expr:l                           {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r AND:o expr:l                            {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l,new Terminal(oleft,oright)); :}
+                    | expr:r OR:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l,new Terminal(oleft,oright)); :};
+field           ::= indexable:idx PERIOD IDENTIFIER:idfl             {: RESULT = new Expr.Field(idx, idfl, new Terminal(idrleft, idrright)); :} // TODO: can it only be indexable or also expr?
+                    | field:f PERIOD IDENTIFIER:idfl                 {: RESULT = new Expr.Field(f, idfl, new Terminal(fleft, fright)); :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Types */
 primType        ::= BOOL:s                                         {:RESULT = new Primitive.BOOL(new Terminal(sleft,sright)); :}
@@ -249,4 +248,4 @@ recordType      ::= IDENTIFIER:s                                   {:RESULT = ne
 type            ::= primType:pt                                    {:RESULT = pt; :}
                     | primType:pt OPEN_BRACKET CLOSE_BRACKET       {:RESULT = new Type.Array(pt);:}
                     | type:t OPEN_BRACKET CLOSE_BRACKET            {:RESULT = new Type.Array(t);:}
-                    | recordType:t                                 {: RESULT = t; :};
+                    | recordType:t                                 {:RESULT = t; :};
