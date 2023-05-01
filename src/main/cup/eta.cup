@@ -32,7 +32,7 @@ terminal INTERFACE, PROGRAM;
 /* Nonterminals */
 nonterminal Eta file;
 nonterminal Interface interface;
-nonterminal Program program;
+nonterminal Program etaprogram;
 nonterminal ArrayList<Use> imports;
 nonterminal Use use;
 nonterminal ArrayList<Definition> globalDefinitions, allDefinitions;
@@ -72,6 +72,9 @@ nonterminal Expr.ArrayAccess arrayAccess;
 nonterminal Expr indexable, arrayLiteral;
 nonterminal Expr.Field field;
 nonterminal Record record;
+nonterminal Definition header;
+nonterminal ArrayList<Definition> headers;
+nonterminal Record recordHeader;
 nonterminal Type.RecordType recordType;
 nonterminal VarDecl.RawVarDeclList multiVarDecl;
 nonterminal ArrayList<VarDecl.RawVarDeclList> multiVarDeclList;
@@ -91,9 +94,10 @@ precedence left OPEN_PAREN, CLOSE_PAREN;
 /* Root */
 start with file;
 file            ::= INTERFACE interface:It                      {: RESULT = It; :}
-                    | PROGRAM program:P                         {: RESULT = P;  :};
-interface       ::= methodHeaders:Mh                            {: RESULT = new Interface(Mh); :};
-program         ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
+                    | PROGRAM etaprogram:P                      {: RESULT = P;  :};
+interface       ::= imports:Is headers:Hds                      {: RESULT = new Interface(Is, Hds); :}; //TODO() add imports use
+etaprogram      ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
+rhoprogram      ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is,DS); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Imports */
@@ -115,24 +119,30 @@ definition      ::= method:m                                    {: RESULT = m; :
 /* =============> Global Variables <============= */
 // a : int[6] ILLEGAL
 // b : int[] = 5
-globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                 {: RESULT = new GlobalDecl(ParseUtil.singleton(id), t, pl, new Terminal(idleft,idright)); :}
-                    | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n           {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
-                                                                                             RESULT = new GlobalDecl(ParseUtil.singleton(id), t, new Literal.IntLit(Long.parseLong(n), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :}
-                    | multiVarDecl:mvd                                                    {: RESULT = new GlobalDecl(mvd.getIds(), mvd.getType(), null, new Terminal(mvdleft,mvdright)); :};
+globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                    {: RESULT = new GlobalDecl(ParseUtil.singleton(id), t, pl, new Terminal(idleft,idright)); :}
+                    | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n              {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
+                                                                                                RESULT = new GlobalDecl(ParseUtil.singleton(id), t, new Literal.IntLit(Long.parseLong(n), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :}
+                    | multiVarDecl:mvd                                                       {: RESULT = new GlobalDecl(mvd.getIds(), mvd.getType(), null, new Terminal(mvdleft,mvdright)); :};
 
 /* =============> [Global] Methods <============= */
 methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
                     | methodHeader:am                                                        {: RESULT = ParseUtil.singleton(am); :};
+header              ::= methodHeader:am                                                      {: RESULT = am; :}
+                    | recordHeader:ar                                                        {: RESULT = ar; :};
+headers             ::=  headers:hds header:hd                                               {: hds.add(hd); RESULT = hds; :}
+                    | header:hd                                                              {: RESULT = ParseUtil.singleton(hd); :};
 methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>(), new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>(), new Terminal(idleft,idright)); :};
+recordHeader        ::= RECORD IDENTIFIER:id OPEN_BRACE CLOSE_BRACE                          {: RESULT = new Record(id, new ArrayList<>(), new Terminal(idleft, idright)); :};
 methodArg           ::= IDENTIFIER:id COLON type:t                                           {:RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
 methodArgs          ::= methodArg:ma                                                         {:RESULT = ParseUtil.singleton(ma); :}
                     | methodArg:ma COMMA methodArgs:mal                                      {:mal.add(0, ma); RESULT = mal;:};
 
 /* =============> [Global] Records <============= */
-record              ::= RECORD IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE    {: RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :};
+record              ::= RECORD IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE     {: RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :}
+                        | recordHeader:rh                                                    {: RESULT = rh; :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
 statementOrBlockList   ::= statement:s                                              {:RESULT = ParseUtil.singleton(s);:}
