@@ -4,7 +4,7 @@ import ir.lowered.*
 import java.util.*
 
 class CFGBuilder(val lir: LIRFuncDecl) {
-    val targets: MutableMap<String, CFGNode> = mutableMapOf()
+    private val targets: MutableMap<String, CFGNode> = mutableMapOf()
     private val nodes: MutableList<CFGNode>
     private var pointingTo: String? = null;
     val start: CFGNode.Start
@@ -69,6 +69,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
         }
 
         nodes.forEach { it.resolveEdges() }
+        nodes.removeIf { it is CFGNode.Cricket }
     }
 
     private fun translateMove(currStmt: LIRMove): CFGNode.Mov {
@@ -87,7 +88,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
 
     fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
-        nodes.filter { it !is CFGNode.Cricket }.forEachIndexed { index, t -> map[t] = "n$index" }
+        nodes.forEachIndexed { index, t -> map[t] = "n$index" }
         return buildString {
             appendLine("digraph ${lir.name} {")
             appendLine("\trankdir=\"TB\"")

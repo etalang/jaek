@@ -11,7 +11,6 @@ class IROptimizer(val lir: LIRFuncDecl) {
             val builder = CFGBuilder(lir)
             var cfg: CFGNode = builder.start
             File("cfg.dot").writeText(builder.graphViz())
-            println(builder.targets)
         }
     }
 
