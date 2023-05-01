@@ -9,8 +9,8 @@ class IROptimizer(val lir: LIRFuncDecl) {
     init {
         if (lir.name == "_Imain_paai") {
             val builder = CFGBuilder(lir)
-            var cfg: CFGNode = builder.start
-            File("cfg.dot").writeText(builder.graphViz())
+            val cfg = builder.build()
+            File("cfg.dot").writeText(cfg.graphViz())
         }
     }
 

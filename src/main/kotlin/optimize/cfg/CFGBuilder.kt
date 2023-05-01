@@ -72,6 +72,10 @@ class CFGBuilder(val lir: LIRFuncDecl) {
         nodes.removeIf { it is CFGNode.Cricket }
     }
 
+    fun build(): CFG {
+        return CFG(start,lir.name,nodes)
+    }
+
     private fun translateMove(currStmt: LIRMove): CFGNode.Mov {
         return when (val dest = currStmt.dest) {
             is LIRExpr.LIRTemp -> {
@@ -83,26 +87,6 @@ class CFGBuilder(val lir: LIRFuncDecl) {
             }
 
             else -> throw Exception("move has a non mem non temp and @kate said that's illegal")
-        }
-    }
-
-    fun graphViz(): String {
-        val map = mutableMapOf<CFGNode, String>()
-        nodes.forEachIndexed { index, t -> map[t] = "n$index" }
-        return buildString {
-            appendLine("digraph ${lir.name} {")
-            appendLine("\trankdir=\"TB\"")
-            appendLine("\tfontname = \"Helvetica,Arial,sans-serif\";")
-            appendLine("\tnode [fontname = \"Helvetica,Arial,sans-serif\";];")
-            appendLine("\tedge [fontname = \"Helvetica,Arial,sans-serif\";];")
-
-            map.forEach { appendLine("\t${it.value} [shape=rectangle; label=\"${it.key.pretty}\";];") }
-            map.forEach { (from, graphKey) ->
-                for (edge in from.edges) {
-                    appendLine("\t$graphKey -> ${map[edge.node]} ${if (edge.jump) "[label=\"jump\"]" else ""};")
-                }
-            }
-            appendLine("}")
         }
     }
 
