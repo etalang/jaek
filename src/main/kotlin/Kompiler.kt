@@ -2,9 +2,9 @@
 import ast.Interface
 import ast.Node
 import ast.Program
+import ast.Method
+import ast.Record
 import errors.CompilerError
-import errors.LexicalError
-import errors.ParseError
 import errors.SemanticError
 import typechecker.Context
 import typechecker.EtaFunc
@@ -46,30 +46,35 @@ class Kompiler {
     }
 
     fun bindInterfaceMethods(inFile: File, interfaceAST : Interface, returnGamma : Context) : Context {
-        for (method in interfaceAST.methodHeaders) {
-            var domainList = ArrayList<EtaType.OrdinaryType>()
-            for (decl in method.args) {
-                domainList.add(EtaType.translateType(decl.type))
-            }
-            var codomainList = ArrayList<EtaType.OrdinaryType>()
-            for (t in method.returnTypes) {
-                codomainList.add(EtaType.translateType(t))
-            }
-            val currFunType = EtaFunc(
-                EtaType.ExpandedType(domainList),
-                EtaType.ExpandedType(codomainList),
-                true
-            )
-            if (returnGamma.contains(method.id)) {
-                if (returnGamma.lookup(method.id) != currFunType) {
-                    throw SemanticError(
-                        method.terminal.line, method.terminal.column,
-                        "Mismatch in type of function ${method.id} among interfaces", inFile
-                    )
+        //deal with interfaces allowing uses and also having interface headers
+        for (header in interfaceAST.headers) {
+            if (header is Method) {
+                var domainList = ArrayList<EtaType.OrdinaryType>()
+                for (decl in header.args) {
+                    domainList.add(EtaType.translateType(decl.type))
                 }
-            } else {
-                method.etaType = currFunType
-                returnGamma.bind(method.id, currFunType)
+                var codomainList = ArrayList<EtaType.OrdinaryType>()
+                for (t in header.returnTypes) {
+                    codomainList.add(EtaType.translateType(t))
+                }
+                val currFunType = EtaFunc(
+                    EtaType.ExpandedType(domainList),
+                    EtaType.ExpandedType(codomainList),
+                    true
+                )
+                if (returnGamma.contains(header.id)) {
+                    if (returnGamma.lookup(header.id) != currFunType) {
+                        throw SemanticError(
+                            header.terminal.line, header.terminal.column,
+                            "Mismatch in type of function ${header.id} among interfaces", inFile
+                        )
+                    }
+                } else {
+                    header.etaType = currFunType
+                    returnGamma.bind(header.id, currFunType)
+                }
+            } else if (header is Record){
+                TODO()
             }
         }
         return returnGamma

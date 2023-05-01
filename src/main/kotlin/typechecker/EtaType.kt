@@ -24,7 +24,7 @@ sealed class EtaType {
                 is Type.Array -> return OrdinaryType.ArrayType(translateType(t.t))
                 is Primitive.BOOL -> return OrdinaryType.BoolType()
                 is Primitive.INT -> return OrdinaryType.IntType()
-                is Type.RecordType -> TODO()
+                is Type.RecordType -> return OrdinaryType.RecordType(t.t)
             }
         }
     }
@@ -34,6 +34,8 @@ sealed class EtaType {
         class BoolType : OrdinaryType()
         class ArrayType(val t: OrdinaryType) : OrdinaryType()
         class UnknownType(val possiblyBool: Boolean) : OrdinaryType() // for empty arrays, underscores
+        class NullType : OrdinaryType()
+        class RecordType(val t: String) : OrdinaryType()
 
         override fun equals(other: Any?): Boolean {
             when (other) {
@@ -69,6 +71,8 @@ sealed class EtaType {
                 is BoolType -> "bool"
                 is IntType -> "int"
                 is UnknownType -> "unk"
+                is NullType -> "null"
+                is RecordType -> this.t
             }
         }
     }
@@ -134,6 +138,7 @@ sealed class EtaType {
                     is VarBind -> return (this is VarBind && this.item == other.item)
                     is ReturnType -> return (this is ReturnType && this.value == other.value)
                     is FunType -> return (this is FunType && this.domain == other.domain && this.codomain == other.codomain)
+//                    is RecordType -> return (this is RecordType && this.t == other.t)
                 }
             }
         }

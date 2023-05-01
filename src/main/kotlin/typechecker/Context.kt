@@ -5,7 +5,6 @@ import typechecker.EtaType.ContextType
 class Context {
     /** INVARIANT: "@" is always the name of the return variable. */
     var stack: ArrayList<MutableMap<String, ContextType>> = ArrayList()
-
     init {
         stack.add(HashMap())
     }
