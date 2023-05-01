@@ -8,16 +8,16 @@ public class SymbolTable {
   /* terminals */
   public static final int UNDERSCORE = 45;
   public static final int LT = 18;
-  public static final int RECORD = 32;
+  public static final int RECORD = 27;
   public static final int INTEGER_LITERAL = 5;
   public static final int MINUS = 12;
-  public static final int INTERFACE = 47;
+  public static final int INTERFACE = 48;
   public static final int OPEN_BRACE = 39;
   public static final int SEMICOLON = 43;
   public static final int EQB = 25;
-  public static final int BREAK = 31;
-  public static final int ELSE = 28;
-  public static final int IF = 27;
+  public static final int BREAK = 32;
+  public static final int ELSE = 29;
+  public static final int IF = 28;
   public static final int NULL = 10;
   public static final int CHARACTER_LITERAL = 4;
   public static final int MODULO = 16;
@@ -30,14 +30,14 @@ public class SymbolTable {
   public static final int AND = 22;
   public static final int PERIOD = 44;
   public static final int CLOSE_PAREN = 38;
-  public static final int PROGRAM = 48;
+  public static final int PROGRAM = 47;
   public static final int PLUS = 11;
   public static final int LENGTH = 34;
   public static final int CLOSE_BRACKET = 36;
   public static final int error = 1;
   public static final int INT = 8;
   public static final int DIVIDE = 15;
-  public static final int RETURN = 30;
+  public static final int RETURN = 31;
   public static final int CLOSE_BRACE = 40;
   public static final int IDENTIFIER = 2;
   public static final int EOF = 0;
@@ -54,7 +54,7 @@ public class SymbolTable {
   public static final int LEQ = 19;
   public static final int STRING_LITERAL = 3;
   public static final int FALSE = 7;
-  public static final int WHILE = 29;
+  public static final int WHILE = 30;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -83,12 +83,12 @@ public class SymbolTable {
   "EQUALS",
   "EQB",
   "NEQB",
+  "RECORD",
   "IF",
   "ELSE",
   "WHILE",
   "RETURN",
   "BREAK",
-  "RECORD",
   "USE",
   "LENGTH",
   "OPEN_BRACKET",
@@ -103,8 +103,8 @@ public class SymbolTable {
   "PERIOD",
   "UNDERSCORE",
   "UMINUS",
-  "INTERFACE",
-  "PROGRAM"
+  "PROGRAM",
+  "INTERFACE"
   };
 }
 

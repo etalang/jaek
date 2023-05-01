@@ -2,7 +2,12 @@ package ast
 
 import edu.cornell.cs.cs4120.util.SExpPrinter
 
-class Interface(val imports: MutableList<Use>, val headers: ArrayList<Definition>) : Eta() {
+sealed class Interface(val headers: ArrayList<Definition>) : Eta() {
+
+    class EtaInterface(headers : ArrayList<Definition>) : Interface(headers)
+
+    class RhoInterface(val imports : MutableList<Use>, headers : ArrayList<Definition>) : Interface(headers)
+
     override fun write(printer: SExpPrinter) {
         printer.startList()
         printer.startList()

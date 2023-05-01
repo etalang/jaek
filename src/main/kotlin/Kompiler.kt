@@ -16,30 +16,45 @@ class Kompiler {
     fun createTopLevelContext(inFile: File, ast : Node, libpath: String, typedFile: File?) : Context {
         var returnGamma = Context()
         if (ast is Program) {
-            for (import in ast.imports){
-                val filepath = File(libpath, import.lib + ".eti") // needs to use library path
-                if (filepath.exists()) {
-                    try {
-                        val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(filepath)
-                        if (interfaceAST is Interface) {
-                            returnGamma = bindInterfaceMethods(filepath, interfaceAST, returnGamma)
-                            libraries[import.lib] = interfaceAST
+            when (ast) {
+                is Program.EtaProgram -> {
+                    for (import in ast.imports){
+                        val filepath = File(libpath, import.lib + ".eti") // needs to use library path
+                        if (filepath.exists()) {
+                            try {
+                                val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(filepath)
+                                if (interfaceAST is Interface) {
+                                    returnGamma = bindInterfaceMethods(filepath, interfaceAST, returnGamma)
+                                    libraries[import.lib] = interfaceAST
+                                }
+                                else {
+                                    throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST", inFile)
+                                }
+                            } catch (e : CompilerError) {
+                                typedFile?.appendText("${import.terminal.line}:${import.terminal.column} error:Error in interface file ${import.lib} preventing 'use'")
+                                throw e
+                            }
+                        } else {
+                            throw SemanticError(import.terminal.line,import.terminal.column, "Could not find interface ${import.lib} file", inFile)
                         }
-                        else {
-                            throw SemanticError(import.terminal.line,import.terminal.column, "Could not import interface ${import.lib} AST", inFile)
-                        }
-                    } catch (e : CompilerError) {
-                        typedFile?.appendText("${import.terminal.line}:${import.terminal.column} error:Error in interface file ${import.lib} preventing 'use'")
-                        throw e
                     }
-                } else {
-                    throw SemanticError(import.terminal.line,import.terminal.column, "Could not find interface ${import.lib} file", inFile)
+                }
+                is Program.RhoModule -> {
+
                 }
             }
+
         } else {
             if (ast is Interface) {
-                returnGamma = bindInterfaceMethods(inFile, ast, returnGamma)
-                libraries[inFile.name] = ast
+                when (ast) {
+                    is Interface.EtaInterface -> {
+                    returnGamma = bindInterfaceMethods(inFile, ast, returnGamma)
+                    libraries[inFile.name] = ast
+                    }
+                    is Interface.RhoInterface -> {
+
+                    }
+                }
             }
         }
         return returnGamma
