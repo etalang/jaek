@@ -228,7 +228,6 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
                 }
                 is AssignTarget.DeclAssign -> {
-                    // TODO also assuming that we can't have x,y : int in multiassign
                     if (n.decl.ids.size != 1) {
                         semanticError(n.decl, "declaration must have exactly one variable assigned")
                     }
@@ -257,7 +256,12 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
                 is AssignTarget.Underscore -> { n.etaType = UnknownType(true) }
                 is AssignTarget.FieldAssign -> {
-
+                    typeCheck(n.fieldAssign, inWhile)
+                    val t = n.fieldAssign.etaType
+                    if (t != null && expectedType != t) {
+                        semanticError(n, "cannot assign value of type $expectedType to field of type $t")
+                    }
+                    n.etaType = t
                 }
             }
             return gammai
@@ -421,6 +425,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
 
                             is AssignTarget.FieldAssign -> {
+
                                 typeCheck(n.vals.first(), inWhile)
                                 typeCheck(target.fieldAssign, inWhile)
                                 val t = n.vals.first().etaType
@@ -546,6 +551,9 @@ class TypeChecker(topGamma: Context, val file: File) {
                         semanticError(n,"Identifier ${n.ids[0]} already exists")
                     }
                     else {
+                        if (n.type is Type.RecordType && recordTypes[n.type.t] == null) {
+                            semanticError(n,"Record type ${n.type.t} not defined")
+                        }
                         Gamma.bind(id, VarBind(translateType(n.type)))
                         n.etaType = UnitType()
                     }
