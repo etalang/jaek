@@ -18,6 +18,7 @@ import java.io.File
 
 class TypeChecker(topGamma: Context, val file: File) {
     var Gamma : Context = topGamma
+    val recordTypes = mutableMapOf<String, LinkedHashMap<String, EtaType>>()
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {
@@ -748,9 +749,31 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 " received ${n.args.size}")
                     }
                     n.etaType = ft.codomain.lst[0] // first (and only) type in list
-                } else {
-                    semanticError(n,"${n.fn} is not a defined function")
                 }
+                else {
+                    val rt = recordTypes[n.fn]
+                    if (rt != null) {
+                        if (n.args.size == rt.size) {
+                            val fieldtypes = ArrayList(rt.values)
+                            for (i in 0 until n.args.size) {
+                                typeCheck(n.args[i], inWhile)
+                                val argtype = n.args[i].etaType
+                                val fieldtype = fieldtypes[i]
+                                if (fieldtype != argtype) {
+                                    semanticError(n,"Record ${n.fn} expected $fieldtype as input" +
+                                            " at position $i, received $argtype")
+                                }
+                            }
+                        } else {
+                            semanticError(n,"Record constructor for ${n.fn} expected ${rt.size} fields," +
+                                    " received ${n.args.size}")
+                        }
+                    }
+                    else {
+                        semanticError(n,"${n.fn} is not a defined function or record type")
+                    }
+                }
+
             }
 
             is Expr.Identifier -> {
