@@ -9,7 +9,9 @@ parser code  {:
     throw new ParseError(current,file);
   }
   private File file;
+  private String extension;
   public void setFile(File file) {this.file = file;}
+  public void setExtension(String extension) {this.extension = extension;}
 :};
 scan with {: return getScanner().next_token(); :};
 
@@ -20,25 +22,24 @@ terminal Integer CHARACTER_LITERAL;
 terminal String INTEGER_LITERAL;
 terminal TRUE, FALSE;
 terminal INT, BOOL;
-terminal NULL;
+terminal String NULL;
 terminal String PLUS, MINUS, TIMES, HIGHTIMES, DIVIDE, MODULO, NOT, LT, LEQ, GT, GEQ, AND, OR, EQUALS, EQB, NEQB;
 
 terminal IF, ELSE, WHILE, RETURN, BREAK, RECORD, USE, LENGTH,
   OPEN_BRACKET, CLOSE_BRACKET, OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
   COLON, COMMA, SEMICOLON, PERIOD, UNDERSCORE, UMINUS;
 
-terminal INTERFACE, PROGRAM;
+terminal PROGRAM, INTERFACE;
 
 /* Nonterminals */
 nonterminal Eta file;
 nonterminal Interface interface;
-nonterminal Program etaprogram;
+nonterminal Program program;
 nonterminal ArrayList<Use> imports;
 nonterminal Use use;
 nonterminal ArrayList<Definition> globalDefinitions, allDefinitions;
 nonterminal Definition definition;
 nonterminal Method methodHeader;
-nonterminal ArrayList<Method> methodHeaders;
 nonterminal Method method;
 nonterminal GlobalDecl globalDecl;
 nonterminal ArrayList<Type> typelst;
@@ -94,16 +95,19 @@ precedence left OPEN_PAREN, CLOSE_PAREN;
 /* Root */
 start with file;
 file            ::= INTERFACE interface:It                      {: RESULT = It; :}
-                    | PROGRAM etaprogram:P                      {: RESULT = P;  :};
-interface       ::= imports:Is headers:Hds                      {: RESULT = new Interface(Is, Hds); :}; //TODO() add imports use
-etaprogram      ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is, Ds); :};
-rhoprogram      ::= imports:Is allDefinitions:Ds                {: RESULT = new Program(Is,DS); :};
+                    | PROGRAM program:P                         {: RESULT = P;  :};
+interface       ::= imports:Is headers:Hds                      {: if (Is.size() > 0) RESULT = new Interface.EtaInterface(Hds);
+                                                                   else RESULT = new Interface.RhoInterface(Is, Hds); :};
+program         ::= imports:Is allDefinitions:Ds                {: if (extension.equals("eta")) RESULT = new Program.EtaProgram(Is, Ds);
+                                                                   else RESULT = new Program.RhoModule(Is, Ds); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Imports */
 imports         ::= use:u imports:It                            {: It.add(0, u); RESULT = It; :}
                     |                                           {: RESULT = new ArrayList<Use>(); :};
-use             ::= USE IDENTIFIER:id semi                      {: RESULT = new Use(id, new Terminal(idleft,idright)); :};
+use             ::= USE:u IDENTIFIER:id semi                    {: if (extension.equals("eti"))
+                                                                        { throw new ParseError(new Token.StringToken(u, uleft, uright), file); }
+                                                                    RESULT = new Use(id, new Terminal(idleft,idright)); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
@@ -125,8 +129,6 @@ globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl       
                     | multiVarDecl:mvd                                                       {: RESULT = new GlobalDecl(mvd.getIds(), mvd.getType(), null, new Terminal(mvdleft,mvdright)); :};
 
 /* =============> [Global] Methods <============= */
-methodHeaders       ::=  methodHeaders:ams methodHeader:am                                   {: ams.add(am); RESULT = ams; :}
-                    | methodHeader:am                                                        {: RESULT = ParseUtil.singleton(am); :};
 header              ::= methodHeader:am                                                      {: RESULT = am; :}
                     | recordHeader:ar                                                        {: RESULT = ar; :};
 headers             ::=  headers:hds header:hd                                               {: hds.add(hd); RESULT = hds; :}
@@ -135,26 +137,29 @@ methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON
                     | IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN                     {: RESULT = new Method(id, Ds, new ArrayList<Type>(), new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>(), new Terminal(idleft,idright)); :};
-recordHeader        ::= RECORD IDENTIFIER:id OPEN_BRACE CLOSE_BRACE                          {: RESULT = new Record(id, new ArrayList<>(), new Terminal(idleft, idright)); :};
-methodArg           ::= IDENTIFIER:id COLON type:t                                           {:RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
-methodArgs          ::= methodArg:ma                                                         {:RESULT = ParseUtil.singleton(ma); :}
-                    | methodArg:ma COMMA methodArgs:mal                                      {:mal.add(0, ma); RESULT = mal;:};
+recordHeader        ::= RECORD:r IDENTIFIER:id OPEN_BRACE CLOSE_BRACE                        {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(r, rleft, rright), file); }
+                                                                                                RESULT = new Record(id, new ArrayList<>(), new Terminal(idleft, idright)); :};
+methodArg           ::= IDENTIFIER:id COLON type:t                                           {: RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
+methodArgs          ::= methodArg:ma                                                         {: RESULT = ParseUtil.singleton(ma); :}
+                    | methodArg:ma COMMA methodArgs:mal                                      {: mal.add(0, ma); RESULT = mal; :};
 
 /* =============> [Global] Records <============= */
-record              ::= RECORD IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE     {: RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :}
+record              ::= RECORD:r IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE   {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(r, rleft, rright), file) ;}
+                                                                                                RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :}
                         | recordHeader:rh                                                    {: RESULT = rh; :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
-statementOrBlockList   ::= statement:s                                              {:RESULT = ParseUtil.singleton(s);:}
-                           | returnableBlock:rb                                     {:RESULT = ParseUtil.singleton(rb);:}
-                           | statementOrBlockList:sbl statement:s                   {:sbl.add(s); RESULT = sbl;:}
-                           | statementOrBlockList:sbl returnableBlock:rb            {:sbl.add(rb); RESULT = sbl;:};
+statementOrBlockList   ::= statement:s                                              {:RESULT = ParseUtil.singleton(s); :}
+                           | returnableBlock:rb                                     {:RESULT = ParseUtil.singleton(rb); :}
+                           | statementOrBlockList:sbl statement:s                   {:sbl.add(s); RESULT = sbl; :}
+                           | statementOrBlockList:sbl returnableBlock:rb            {:sbl.add(rb); RESULT = sbl; :};
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
                     | arrayInitStatement:a semi                                     {: RESULT = a; :}
                     | procedureCall:fn semi                                         {: RESULT = fn; :}
-                    | BREAK:b semi                                                  {: RESULT = new Statement.Break(new Terminal(bleft,bright)); :}
+                    | BREAK:b semi                                                  {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(b, bleft, bright) ,file); }
+                                                                                       RESULT = new Statement.Break(new Terminal(bleft,bright)); :}
                     | multiVarDecl:mvd semi                                         {: RESULT = mvd; :};
 if              ::= IF:o expr:e block:b elseOptional:els                            {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :}
                     | IF:o OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els   {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :};
@@ -166,8 +171,8 @@ returnableBlock ::= OPEN_BRACE:b statementOrBlockList:sbl CLOSE_BRACE           
                     | OPEN_BRACE:b statementOrBlockList:sbl return:r CLOSE_BRACE    {: sbl.add(r); RESULT = new Statement.Block(sbl, new Terminal(bleft, bright)); :}
                     | OPEN_BRACE:b return:r CLOSE_BRACE                             {: RESULT = new Statement.Block(ParseUtil.singleton(r), new Terminal(bleft, bright)); :}
                     | OPEN_BRACE:b CLOSE_BRACE                                      {: RESULT = new Statement.Block(new ArrayList<Statement>(), new Terminal(bleft, bright)); :};
-procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl, new Terminal(idleft,idright));:} // these should be statements!
-                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>(), new Terminal(idleft,idright));:};
+procedureCall   ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN                {: RESULT = new Statement.Procedure(id, vl, new Terminal(idleft,idright)); :} // these should be statements!
+                    | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                          {: RESULT = new Statement.Procedure(id, new ArrayList<Expr>(), new Terminal(idleft,idright)); :};
 elseOptional    ::=
                     | ELSE block:b                                                  {: RESULT = b; :};
 semi            ::= SEMICOLON | ;
@@ -180,7 +185,8 @@ return          ::= RETURN:r semi                                               
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
 varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
-multiVarDecl    ::= IDENTIFIER:id COMMA multiVarDecl:mvd           {: mvd.getIds().add(0, id); RESULT = mvd; :}
+multiVarDecl    ::= IDENTIFIER:id COMMA:c multiVarDecl:mvd         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(c, cleft, cright) ,file); }
+                                                                      mvd.getIds().add(0, id); RESULT = mvd; :}
                     | varDecl:vd                                   {: RESULT = vd; :};
 multiVarDeclList::= multiVarDecl:mvd semi                          {: RESULT = ParseUtil.singleton(mvd); :}
                     | multiVarDecl:mvd semi multiVarDeclList:mvl   {: mvl.add(mvd); RESULT = mvl; :};
@@ -191,7 +197,7 @@ assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = n
                     | field:f                                      {: RESULT = new AssignTarget.FieldAssign(f); :};
 assignables     ::= assignable:at                                  {: RESULT = ParseUtil.singleton(at); :}
                     | assignables:atl COMMA assignable:at          {: atl.add(at); RESULT = atl; :} ; //LEFT RECURSIVE
-multiAssign     ::= assignables:tg EQUALS:o exprList:exprs         {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright));:};
+multiAssign     ::= assignables:tg EQUALS:o exprList:exprs         {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright)); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
@@ -200,8 +206,8 @@ arrayInit      ::= primType:pt OPEN_BRACKET expr:e CLOSE_BRACKET                
                    | arrayInit:anb OPEN_BRACKET CLOSE_BRACKET                   {: anb.getDimensions().add(0, null); RESULT = anb; :}
                    | arrayInit:anb OPEN_BRACKET expr:e CLOSE_BRACKET            {: anb.getDimensions().add(0, e); RESULT = anb; :};
 method          ::= methodHeader:am returnableBlock:b                           {: am.setBody(b); RESULT = am; :};
-typelst         ::= type:t                                                      {: RESULT = ParseUtil.singleton(t);:}
-                    | typelst:tl COMMA type:t                                   {: tl.add(t); RESULT = tl;:}; //LR
+typelst         ::= type:t                                                      {: RESULT = ParseUtil.singleton(t); :}
+                    | typelst:tl COMMA type:t                                   {: tl.add(t); RESULT = tl; :}; //LR
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Expressions */
@@ -229,7 +235,8 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                              {: if (n.eq
                     | CHARACTER_LITERAL:c                            {: RESULT = new Literal.CharLit(c,new Terminal(cleft,cright)); :}
                     | FALSE:o                                        {: RESULT = new Literal.BoolLit(false,new Terminal(oleft,oright)); :}
                     | TRUE:o                                         {: RESULT = new Literal.BoolLit(true,new Terminal(oleft,oright)); :}
-                    | NULL:o                                         {: RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :};
+                    | NULL:o                                         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(o, oleft, oright) ,file); }
+                                                                        RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :};
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN {: RESULT = new Expr.FunctionCall(id, vl,new Terminal(idleft,idright));:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN           {: RESULT = new Expr.FunctionCall(id, new ArrayList<>(),new Terminal(idleft,idright));:};
 unop            ::= MINUS:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NEG,new Terminal(uleft,uright)); :}  // cannot differentiate identical token but need diff prec
@@ -248,14 +255,16 @@ binop           ::= expr:r PLUS:o expr:l                             {: RESULT =
                     | expr:r NEQB:o expr:l                           {: RESULT = new BinaryOp(BinaryOp.Operation.NEQB,r,l,new Terminal(oleft,oright)); :}
                     | expr:r AND:o expr:l                            {: RESULT = new BinaryOp(BinaryOp.Operation.AND,r,l,new Terminal(oleft,oright)); :}
                     | expr:r OR:o expr:l                             {: RESULT = new BinaryOp(BinaryOp.Operation.OR,r,l,new Terminal(oleft,oright)); :};
-field           ::= indexable:idx PERIOD IDENTIFIER:idfl             {: RESULT = new Expr.Field(idx, idfl, new Terminal(idxleft, idxright)); :} // TODO: can it only be indexable or also expr?
-                    | field:f PERIOD IDENTIFIER:idfl                 {: RESULT = new Expr.Field(f, idfl, new Terminal(fleft, fright)); :};
+field           ::= indexable:idx PERIOD:p IDENTIFIER:idfl           {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(p, pleft, pright) ,file); }
+                                                                        RESULT = new Expr.Field(idx, idfl, new Terminal(idxleft, idxright)); :}
+                    | field:f PERIOD:p IDENTIFIER:idfl               {: RESULT = new Expr.Field(f, idfl, new Terminal(fleft, fright)); :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Types */
-primType        ::= BOOL:s                                         {:RESULT = new Primitive.BOOL(new Terminal(sleft,sright)); :}
-                    | INT:s                                        {:RESULT = new Primitive.INT(new Terminal(sleft,sright)); :};
-recordType      ::= IDENTIFIER:s                                   {:RESULT = new Type.RecordType(s, new Terminal(sleft,sright));:};
-type            ::= primType:pt                                    {:RESULT = pt; :}
-                    | primType:pt OPEN_BRACKET CLOSE_BRACKET       {:RESULT = new Type.Array(pt);:}
-                    | type:t OPEN_BRACKET CLOSE_BRACKET            {:RESULT = new Type.Array(t);:}
-                    | recordType:t                                 {:RESULT = t; :};
+primType        ::= BOOL:s                                           {: RESULT = new Primitive.BOOL(new Terminal(sleft,sright)); :}
+                    | INT:s                                          {: RESULT = new Primitive.INT(new Terminal(sleft,sright)); :};
+recordType      ::= IDENTIFIER:s                                     {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(s, sleft, sright) ,file); }
+                                                                        RESULT = new Type.RecordType(s, new Terminal(sleft,sright)); :};
+type            ::= primType:pt                                      {: RESULT = pt; :}
+                    | primType:pt OPEN_BRACKET CLOSE_BRACKET         {: RESULT = new Type.Array(pt); :}
+                    | type:t OPEN_BRACKET CLOSE_BRACKET              {: RESULT = new Type.Array(t); :}
+                    | recordType:t                                   {: RESULT = t; :};

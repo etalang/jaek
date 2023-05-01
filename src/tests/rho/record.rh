@@ -1,0 +1,12 @@
+swap(p: Point) {
+    t:int = p.x
+    p.x, _ = p.y, 0
+    p = Point(0, 0)
+    p.y = t
+}
+
+l,n : int;
+
+record Point {
+    x, y: int
+}
