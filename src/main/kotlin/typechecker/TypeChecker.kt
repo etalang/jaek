@@ -422,7 +422,7 @@ class TypeChecker(topGamma: Context, val file: File) {
 
                             is AssignTarget.FieldAssign -> {
                                 typeCheck(n.vals.first(), inWhile)
-                                typeCheck(target.fieldAssign, inWhile)
+                                typeCheck(target, inWhile)
                                 val t = n.vals.first().etaType
                                 val expected = target.etaType
                                 if (t != null && expected != t) {
