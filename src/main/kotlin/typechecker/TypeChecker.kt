@@ -422,9 +422,9 @@ class TypeChecker(topGamma: Context, val file: File) {
 
                             is AssignTarget.FieldAssign -> {
                                 typeCheck(n.vals.first(), inWhile)
-                                typeCheck(target, inWhile)
+                                typeCheck(target.fieldAssign, inWhile)
                                 val t = n.vals.first().etaType
-                                val expected = target.etaType
+                                val expected = target.fieldAssign.etaType
                                 if (t != null && expected != t) {
                                     semanticError(target, "cannot assign value of type $t to field of type $expected")
                                 }
