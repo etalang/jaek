@@ -772,6 +772,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                             " at position $i, received $argtype")
                                 }
                             }
+                            n.etaType = RecordType(n.fn)
                         } else {
                             semanticError(n,"Record constructor for ${n.fn} expected ${rt.size} fields," +
                                     " received ${n.args.size}")

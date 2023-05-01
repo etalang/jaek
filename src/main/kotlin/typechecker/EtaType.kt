@@ -44,21 +44,25 @@ sealed class EtaType {
                         return true
                     }
                 }
-
                 is BoolType -> {
                     if (this is BoolType || (this is UnknownType && this.possiblyBool)) {
                         return true
                     }
                 }
-
                 is ArrayType -> {
-                    if (this is UnknownType) {
+                    if (this is UnknownType || this is NullType) {
                         return true
                     } else if (this !is ArrayType) {
                         return false
                     } else return (this.t == other.t)
                 }
-
+                is RecordType -> {
+                    if (this is RecordType) {
+                        return (this.t == other.t)
+                    } else if (this is NullType) {
+                        return true
+                    }
+                }
                 is UnknownType -> return true
                 else -> return false
             }
