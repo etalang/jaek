@@ -45,15 +45,10 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 )
 
                 is LIRCallStmt -> {
-                    val returnMoves = mutableListOf<String>()
+                    val returnMoves = mutableListOf<CFGNode.Mov>()
                     for (i in 0 until currStmt.n_returns.toInt()) {
                         when (val movLIR = statements.removeFirst()) {
-                            is LIRMove -> {
-                                val dest = movLIR.dest
-                                if (dest is LIRExpr.LIRTemp) returnMoves.add(dest.name)
-                                else throw Exception("mooooooving into non-temp")
-                            }
-
+                            is LIRMove -> returnMoves.add(translateMove(movLIR))
                             else -> throw Exception("charles was really hoping this would be a move, and we were too :(")
                         }
                     }
@@ -63,17 +58,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 }
 
                 is LIRStmt.LIRLabel -> throw Exception("charles snuck more labels in")
-                is LIRMove -> when (val dest = currStmt.dest) {
-                    is LIRExpr.LIRTemp -> {
-                        CFGNode.Gets(dest.name, translateExpr(currStmt.expr), pointToNext())
-                    }
-
-                    is LIRMem -> {
-                        CFGNode.Mem(translateExpr(dest), translateExpr(dest), pointToNext())
-                    }
-
-                    else -> throw Exception("move has a non mem non temp and @kate said that's illegal")
-                }
+                is LIRMove -> translateMove(currStmt)
             }
 
             nodes.add(next)
@@ -84,6 +69,20 @@ class CFGBuilder(val lir: LIRFuncDecl) {
         }
 
         nodes.forEach { it.resolveEdges() }
+    }
+
+    private fun translateMove(currStmt: LIRMove): CFGNode.Mov {
+        return when (val dest = currStmt.dest) {
+            is LIRExpr.LIRTemp -> {
+                CFGNode.Gets(dest.name, translateExpr(currStmt.expr), pointToNext())
+            }
+
+            is LIRMem -> {
+                CFGNode.Mem(translateExpr(dest), translateExpr(dest), pointToNext())
+            }
+
+            else -> throw Exception("move has a non mem non temp and @kate said that's illegal")
+        }
     }
 
     fun graphViz(): String {
@@ -101,19 +100,6 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 for (edge in from.edges) {
                     appendLine("\t$graphKey -> ${map[edge.node]} ${if (edge.jump) "[label=\"jump\"]" else ""};")
                 }
-//                when (from) {
-//                    is CFGNode.If -> {
-//                        if (from.to != null) appendLine("\t$graphKey -> ${map[from.to?.node]} [label=\"T\"];")
-//                        if (from.take?.node != null) appendLine("\t$graphKey -> ${map[from.take?.node]} [label=\"F\"];")
-//                    }
-//
-//                    is CFGNode.Cricket, is CFGNode.Funcking, is CFGNode.Gets, is CFGNode.Mem, is CFGNode.Return, is CFGNode.Start -> {
-//
-//
-//
-//                        if (from.to?.node != null) appendLine("\t$graphKey -> ${map[from.to?.node]};")
-//                    }
-//                }
             }
             appendLine("}")
         }
@@ -123,7 +109,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
         return when (it) {
             is LIRExpr.LIRConst -> CFGExpr.Const(it.value)
             is LIRMem -> CFGExpr.Mem(translateExpr(it.address))
-            is LIRExpr.LIRName -> throw Exception("really not sure about this")
+            is LIRExpr.LIRName -> CFGExpr.Label(it.l)
             is LIROp -> CFGExpr.BOp(translateExpr(it.left), translateExpr(it.right), it.op)
             is LIRExpr.LIRTemp -> CFGExpr.Var(it.name)
         }

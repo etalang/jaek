@@ -43,5 +43,8 @@ sealed class CFGExpr {
     class Mem(val loc: CFGExpr) : CFGExpr() {
         override val pretty = loc.pretty
     }
+    class Label(val name : String) : CFGExpr() {
+        override val pretty = "*$name*"
+    }
 //    class Func(val args: List<CFGExpr>) : CFGExpr() // TODO: determine what "function calls at top level" means
 }
