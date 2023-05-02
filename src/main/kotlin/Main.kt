@@ -1,3 +1,5 @@
+import Settings.Opt
+import Settings.OutputIR
 import assembly.AssemblyGenerator
 import ast.*
 import com.github.ajalt.clikt.core.BadParameterValue
@@ -5,10 +7,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.options.OptionWithValues
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.file
 import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import errors.*
@@ -23,9 +22,8 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 
 /**
- * [etac] provides the central command line functionality for the compiler. It is
- * constructed from the program arguments and then dispatches commands based on that
- * initialization.
+ * [etac] provides the central command line functionality for the compiler. It is constructed from the program arguments
+ * and then dispatches commands based on that initialization.
  */
 class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyArgs = true) {
     // collect input options, specify help message
@@ -78,14 +76,15 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         help = "Specify the operating system for which to generate code " + "Default is linux. No other OS is supported."
     ).default("linux")
     private val target: String by targetOpt
+    private val printIROpts : List<String> by option("--optir", metavar = "<phase>",
+        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
+    private val printCFGOpts : List<String> by option(
+        "--optcfg",
+        metavar = "<phase>",
+        help ="Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
 
-    /**
-     * [run] is the main loop of the CLI. All program arguments have already been
-     * preprocessed into vars above.
-     */
+    /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
-//        File("cfg.dot").createNewFile()
-
         // the irrun flag should also generate the IR, just like irgen
         val outputIR = if (runIR) true else initOutputIR
         if (target != "linux") {
@@ -136,11 +135,13 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                         it.nameWithoutExtension,
                                         context.functionMap()
                                     )
-                                    val ir = translator.irgen(!disableOpt)
+                                    val ir =
+                                        translator.irgen(if (disableOpt) Opt.None else Opt.All, OutputIR(null,null))
+                                    //TODO: @KATE
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
-                                        irFileGen.printSExp(writer) // CHANGED HERE ALSO
+                                        irFileGen.printSExp(writer)
                                         writer.flush()
                                         writer.close()
                                     }
@@ -185,15 +186,14 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         }
     }
 
-    /**
-     * Takes a path string and expands beginning home reference ~ along with any instances of . and ..
-     */
+    /** Takes a path string and expands beginning home reference ~ along with any instances of . and .. */
     private fun expandPath(inPath: String): Path {
         return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
     }
 
     /**
      * Expand and make absolute a possibly relative directory path. Validate the directory existence.
+     *
      * @throws BadParameterValue when the directory is invalid
      */
     private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
