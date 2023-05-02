@@ -73,10 +73,10 @@ nonterminal ParseUtil.UnOpBundle unop;
 nonterminal Expr.ArrayAccess arrayAccess;
 nonterminal Expr indexable, arrayLiteral;
 nonterminal Expr.Field field;
-nonterminal Record record;
+nonterminal RhoRecord record;
 nonterminal Definition header;
 nonterminal ArrayList<Definition> headers;
-nonterminal Record recordHeader;
+nonterminal RhoRecord recordHeader;
 nonterminal Type.RecordType recordType;
 nonterminal VarDecl.RawVarDeclList multiVarDecl;
 nonterminal ArrayList<VarDecl.RawVarDeclList> multiVarDeclList;
@@ -140,14 +140,14 @@ methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN COLON typelst:Ts                  {: RESULT = new Method(id, new ArrayList<>(), Ts, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>(), new Terminal(idleft,idright)); :};
 recordHeader        ::= RECORD:r IDENTIFIER:id OPEN_BRACE CLOSE_BRACE                        {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(r, rleft, rright), file); }
-                                                                                                RESULT = new Record(id, new ArrayList<>(), new Terminal(idleft, idright)); :};
+                                                                                                RESULT = new RhoRecord(id, new ArrayList<>(), new Terminal(idleft, idright)); :};
 methodArg           ::= IDENTIFIER:id COLON type:t                                           {: RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
 methodArgs          ::= methodArg:ma                                                         {: RESULT = ParseUtil.singleton(ma); :}
                     | methodArg:ma COMMA methodArgs:mal                                      {: mal.add(0, ma); RESULT = mal; :};
 
 /* =============> [Global] Records <============= */
 record              ::= RECORD:r IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE   {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(r, rleft, rright), file) ;}
-                                                                                                RESULT = new Record(id, vdl, new Terminal(idleft, idright)); :}
+                                                                                                RESULT = new RhoRecord(id, vdl, new Terminal(idleft, idright)); :}
                         | recordHeader:rh                                                    {: RESULT = rh; :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
