@@ -114,7 +114,8 @@ use             ::= USE:u IDENTIFIER:id semi                    {: if (extension
 /* Top Level Declarations */
 allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :}
                     | globalDefinitions:Dt method:m             {: Dt.add(m); RESULT = Dt; :}
-                    | method:m                                  {: RESULT = ParseUtil.singleton(m); :};
+                    | method:m                                  {: RESULT = ParseUtil.singleton(m); :}
+                    | record:r                                  {: RESULT = ParseUtil.singleton(r); :};
 globalDefinitions  ::= globalDefinitions:Dt globalDecl:dc semi  {: Dt.add(dc); RESULT = Dt; :} //could be sketch
                     | globalDecl:dc semi                        {: RESULT = ParseUtil.singleton(dc); :};
 definition      ::= method:m                                    {: RESULT = m; :}
