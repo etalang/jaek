@@ -726,6 +726,32 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                         }
                     }
+                    is RecordType -> {
+                        if (ltype == rtype) {
+                            if (n.op in listOf(EQB, NEQB)) {
+                                n.etaType = BoolType()
+                            }
+                            else {
+                                semanticError(n,"Records cannot be used with ${n.op}")
+                            }
+                        }
+                        else {
+                            semanticError(n,"Binop ${n.op} attempted with records with mismatched types")
+                        }
+                    }
+                    is NullType -> {
+                        if (ltype == rtype) {
+                            if (n.op in listOf(EQB, NEQB)) {
+                                n.etaType = BoolType()
+                            }
+                            else {
+                                semanticError(n,"Null type cannot be used with ${n.op}")
+                            }
+                        }
+                        else {
+                            semanticError(n,"Binop ${n.op} attempted with nulls with mismatched types")
+                        }
+                    }
                     else -> {
                         semanticError(n,"Operation ${n.op} attempted with impossible type")
                     }

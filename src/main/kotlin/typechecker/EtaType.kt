@@ -38,6 +38,7 @@ sealed class EtaType {
         class RecordType(val t: String) : OrdinaryType()
 
         override fun equals(other: Any?): Boolean {
+            //TODO: how to deal with unknown
             when (other) {
                 is IntType -> {
                     if (this is IntType || this is UnknownType) {
@@ -60,6 +61,11 @@ sealed class EtaType {
                     if (this is RecordType) {
                         return (this.t == other.t)
                     } else if (this is NullType) {
+                        return true
+                    }
+                }
+                is NullType -> {
+                    if (this is NullType || this is RecordType || this is ArrayType) {
                         return true
                     }
                 }
