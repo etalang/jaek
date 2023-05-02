@@ -129,14 +129,17 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is Literal.IntLit -> longArrayOf(v.num)
             is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
             null -> longArrayOf(0)
+            is Literal.NullLit -> TODO()
         }
-        return IRData(n.id, data)
+        //TODO:id
+        return IRData(n.ids[0], data)
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
         val funcMoves: MutableList<IRStmt> = mutableListOf()
         for (i in 0 until n.args.size) {
-            funcMoves.add(IRMove(IRTemp(n.args[i].id), IRTemp("_ARG${i + 1}")))
+            //TODO:id
+            funcMoves.add(IRMove(IRTemp(n.args[i].ids[0]), IRTemp("_ARG${i + 1}")))
         }
 
         globalsByFunction[mangledFunctionNames[n.id]!!] = mutableSetOf()
@@ -154,9 +157,10 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private fun translateAssignTarget(n: AssignTarget, sourceFn: String): IRExpr {
         return when (n) {
             is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, sourceFn)
-            is AssignTarget.DeclAssign -> IRTemp(n.decl.id)
+            is AssignTarget.DeclAssign -> IRTemp(n.decl.ids[0])// TODO:id
             is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
             is AssignTarget.Underscore -> freshTemp()
+            is AssignTarget.FieldAssign -> TODO()
         }
 
     }
@@ -287,7 +291,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 )
             }
 
-            is VarDecl.RawVarDecl -> IRMove(IRTemp(n.id), IRConst(0)) //INIT 0
+            is VarDecl.RawVarDeclList -> IRMove(IRTemp(n.ids[0]), IRConst(0)) //INIT 0 // TODO: id
             is Statement.While -> {
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
@@ -303,6 +307,8 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     )
                 )
             }
+
+            is Statement.Break -> TODO()
         }
     }
 
@@ -621,6 +627,9 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 UnaryOp.Operation.NOT -> IROp(XOR, IRConst(1), translateExpr(n.arg, sourceFn))
                 UnaryOp.Operation.NEG -> IROp(SUB, IRConst(0), translateExpr(n.arg, sourceFn))
             }
+
+            is Expr.Field -> TODO()
+            is Literal.NullLit -> IRMem(IRConst(0))
         }
     }
 
