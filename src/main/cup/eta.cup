@@ -80,6 +80,8 @@ nonterminal RhoRecord recordHeader;
 nonterminal Type.RecordType recordType;
 nonterminal VarDecl.RawVarDeclList multiVarDecl;
 nonterminal ArrayList<VarDecl.RawVarDeclList> multiVarDeclList;
+nonterminal ArrayList<String> idList;
+nonterminal VarDecl.RawVarDeclList singleDecl;
 
 /* Precedences */
 precedence left OR;
@@ -157,12 +159,15 @@ statementOrBlockList   ::= statement:s                                          
                            | statementOrBlockList:sbl returnableBlock:rb            {:sbl.add(rb); RESULT = sbl; :};
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
+                    | varDecl semi
+//                    | varDecl:mvd semi                                         {: if ((extension.equals("eta") || extension.equals("eti")) && mvd.length() > 1)
+//                                                                                       { throw new ParseError(new Token.StringToken(",", mvdleft, mvdright),file); }
+//                                                                                       RESULT = mvd; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
                     | arrayInitStatement:a semi                                     {: RESULT = a; :}
                     | procedureCall:fn semi                                         {: RESULT = fn; :}
                     | BREAK:b semi                                                  {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(b, bleft, bright),file); }
-                                                                                       RESULT = new Statement.Break(new Terminal(bleft,bright)); :}
-                    | multiVarDecl:mvd semi                                         {: RESULT = mvd; :};
+                                                                                       RESULT = new Statement.Break(new Terminal(bleft,bright)); :};
 if              ::= IF:o expr:e block:b elseOptional:els                            {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :}
                     | IF:o OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els   {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :};
 while           ::= WHILE:o OPEN_PAREN expr:e CLOSE_PAREN block:b                   {: RESULT = new Statement.While(e, b, new Terminal(oleft,oright)); :}
@@ -186,18 +191,23 @@ return          ::= RETURN:r semi                                               
 /* =============> [MULTI] With Assignment <============= */
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
-varDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
-multiVarDecl    ::= IDENTIFIER:id COMMA:c multiVarDecl:mvd         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(c, cleft, cright),file); }
-                                                                      if (extension.equals("ri")) { throw new ParseError(new Token.StringToken(id, idleft, idright),file); }
-                                                                      mvd.getIds().add(0, id); RESULT = mvd; :}
-                    | varDecl:vd                                   {: RESULT = vd; :};
+singleDecl         ::= IDENTIFIER:id COLON type:t                     {: RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, new Terminal(idleft,idright)); :};
+idList          ::= IDENTIFIER:id1 COMMA IDENTIFIER:id2
+                    | IDENTIFIER:id COMMA:c idList                 ;
+multiVarDecl    ::= idList:idl COLON type:t                        ;
+varDecl         ::= singleDecl
+                    | multiVarDecl                                 ;
+//multiVarDecl    ::= IDENTIFIER:id COMMA:c multiVarDecl:mvd         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(c, cleft, cright),file); }
+//                                                                      if (extension.equals("ri")) { throw new ParseError(new Token.StringToken(id, idleft, idright),file); }
+//                                                                      mvd.getIds().add(0, id); RESULT = mvd; :}
+//                    | varDecl:vd                                   {: RESULT = vd; :};
 multiVarDeclList::= multiVarDecl:mvd semi                          {: RESULT = ParseUtil.singleton(mvd); :}
                     | multiVarDecl:mvd semi multiVarDeclList:mvl   {: mvl.add(mvd); RESULT = mvl; :};
 assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = new AssignTarget.ArrayAssign(e1); :}
-                    | varDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
+                    | singleDecl:vd                                   {: RESULT = new AssignTarget.DeclAssign(vd); :}
                     | UNDERSCORE:u                                 {: RESULT = new AssignTarget.Underscore(new Terminal(uleft,uright)); :}
                     | IDENTIFIER:id                                {: RESULT = new AssignTarget.IdAssign(new Expr.Identifier(id, new Terminal(idleft,idright))); :}
-                    | field:f                                      {: RESULT = new AssignTarget.FieldAssign(f); :};
+                    | field:f                                      {: RESULT = new AssignTarget.FieldAssign(f); :} ;
 assignables     ::= assignable:at                                  {: RESULT = ParseUtil.singleton(at); :}
                     | assignables:atl COMMA assignable:at          {: atl.add(at); RESULT = atl; :} ; //LEFT RECURSIVE
 multiAssign     ::= assignables:tg EQUALS:o exprList:exprs         {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright)); :};
