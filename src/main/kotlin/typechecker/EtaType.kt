@@ -51,24 +51,25 @@ sealed class EtaType {
                     }
                 }
                 is ArrayType -> {
-                    if (this is UnknownType || this is NullType) {
-                        return true
-                    } else if (this !is ArrayType) {
-                        return false
-                    } else return (this.t == other.t)
+                    return when (this) {
+                        is UnknownType, is NullType -> { true }
+                        !is ArrayType -> { false }
+                        else -> (this.t == other.t)
+                    }
                 }
                 is RecordType -> {
                     if (this is RecordType) {
                         return (this.t == other.t)
-                    } else if (this is NullType) {
-                        return true
                     }
+//                    else if (this is NullType) {
+//                        return true
+//                    }
                 }
-                is NullType -> {
-                    if (this is NullType || this is RecordType || this is ArrayType) {
-                        return true
-                    }
-                }
+//                is NullType -> {
+//                    if (this is NullType || this is RecordType || this is ArrayType) {
+//                        return true
+//                    }
+//                }
                 is UnknownType -> return true
                 else -> return false
             }

@@ -727,7 +727,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         }
                     }
                     is RecordType -> {
-                        if (ltype == rtype) {
+                        if ((rtype is RecordType && rtype.t == ltype.t) || rtype is NullType) {
                             if (n.op in listOf(EQB, NEQB)) {
                                 n.etaType = BoolType()
                             }
@@ -740,7 +740,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         }
                     }
                     is NullType -> {
-                        if (ltype == rtype) {
+                        if (rtype is RecordType || rtype is ArrayType || rtype is NullType) {
                             if (n.op in listOf(EQB, NEQB)) {
                                 n.etaType = BoolType()
                             }
