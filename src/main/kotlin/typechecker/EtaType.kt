@@ -52,7 +52,7 @@ sealed class EtaType {
                 }
                 is ArrayType -> {
                     return when (this) {
-                        is UnknownType, is NullType -> { true }
+                        is UnknownType -> { true }
                         !is ArrayType -> { false }
                         else -> (this.t == other.t)
                     }
