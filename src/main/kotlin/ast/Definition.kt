@@ -7,7 +7,7 @@ sealed class Definition : Node() { //
         when (this) {
             is Method -> this.write(printer)
             is GlobalDecl -> this.write(printer)
-            is Record -> this.write(printer)
+            is RhoRecord -> this.write(printer)
         }
     }
 }

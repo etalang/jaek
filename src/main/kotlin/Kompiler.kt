@@ -3,7 +3,7 @@ import ast.Interface
 import ast.Node
 import ast.Program
 import ast.Method
-import ast.Record
+import ast.RhoRecord
 import errors.CompilerError
 import errors.SemanticError
 import typechecker.Context
@@ -88,7 +88,7 @@ class Kompiler {
                     header.etaType = currFunType
                     returnGamma.bind(header.id, currFunType)
                 }
-            } else if (header is Record){
+            } else if (header is RhoRecord){
                 TODO()
             }
         }

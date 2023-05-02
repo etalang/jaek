@@ -84,7 +84,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 Gamma.bind(defn.id, funType)
                             }
                         }
-                        is Record -> {
+                        is RhoRecord -> {
                             if (defn.name in recordTypes.keys) {
                                 semanticError(defn, "Redeclared record type")
                             }
@@ -163,7 +163,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                             Gamma.leaveScope()
                         }
-                        is Record -> {
+                        is RhoRecord -> {
                             val fields = mutableSetOf<String>()
                             for (f in defn.fields) {
                                 val fieldType = translateType(f.type)
