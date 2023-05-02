@@ -660,6 +660,12 @@ class TypeChecker(topGamma: Context, val file: File) {
                             else {
                                 semanticError(n,"Binop ${n.op} attempted with arrays with mismatched types")
                             }
+                        } else if (rtype is NullType) {
+                            if (n.op in listOf(EQB, NEQB))
+                                n.etaType = BoolType()
+                            else {
+                                semanticError(n,"Arrays cannot be used with ${n.op}")
+                            }
                         } else {
                             semanticError(n,"Binop ${n.op} attempted with array and non-array")
                         }
