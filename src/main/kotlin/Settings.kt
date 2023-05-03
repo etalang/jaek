@@ -20,9 +20,20 @@ sealed class Settings {
     }
 
     class OutputIR(val initial: File?, val final: File?) {
-//        constructor(phases: List<String>, sourceDir: String) : this(
-//            if (phases.contains("initial")) File("") else null, if (phases.contains("final")) File("") else null
-//        )
-        //TODO: KATE
+    }
+
+    class OutputCFG(val initial: File?, val final: File?) {
+        //file expected is just path to desired output location + file name and any extension, no phase, no func
+        fun getOutInit(name : String) : File? {
+            return if (initial != null){
+                val funcFile =
+                    File(initial.parent, initial.nameWithoutExtension + "_${name}_initial.dot")
+                if (funcFile.exists() && !funcFile.isDirectory) {
+                    funcFile.delete()
+                }
+                funcFile.createNewFile()
+                funcFile
+            } else null
+        }
     }
 }

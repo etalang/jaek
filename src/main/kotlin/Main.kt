@@ -120,6 +120,12 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                 // TODO: test output assembly file to new -d path
                 val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, ".s") else null
 
+                val optIRInitialFile = if (printIROpts.contains("initial")) getOutFileName(it, Path(it.parent), "_initial.ir") else null
+                val optIRFinalFile = if (printIROpts.contains("final")) getOutFileName(it, Path(it.parent), "_final.ir") else null
+                val optCFGInitialFile : File? = if (printCFGOpts.contains("initial")) it else null
+//                print(it)
+                // TODO: output path for these three pending response to my Ed post since seems weird
+
                 val ast: Node?
                 try {
                     lex(it, lexedFile)
@@ -136,8 +142,8 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                         context.functionMap()
                                     )
                                     val ir =
-                                        translator.irgen(if (disableOpt) Opt.None else Opt.All, OutputIR(null,null))
-                                    //TODO: @KATE
+                                        translator.irgen(if (disableOpt) Opt.None else
+                                            Opt.All, OutputIR(optIRInitialFile,optIRFinalFile), Settings.OutputCFG(optCFGInitialFile, null))
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))

@@ -4,12 +4,14 @@ import ir.lowered.LIRFuncDecl
 import optimize.cfg.CFGBuilder
 import java.io.File
 
-class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt) {
+class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Settings.OutputCFG) {
     init {
-        if (lir.name == "_Imain_paai") {
+        if (outputCFG.initial != null) {
             val builder = CFGBuilder(lir)
             val cfg = builder.build()
-            File("cfg.dot").writeText(cfg.graphViz())
+            // construct the file_f_phase.dot name
+            val funcFile = outputCFG.getOutInit(lir.name)
+            funcFile?.writeText(cfg.graphViz())
         }
     }
 

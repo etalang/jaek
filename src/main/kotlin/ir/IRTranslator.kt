@@ -32,7 +32,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private var freshTempCount = 0
 
     /** WHERE IT HAPPENS * */
-    fun irgen(optimize: Settings.Opt, outputIR: Settings.OutputIR): LIRCompUnit {
+    fun irgen(optimize: Settings.Opt, outputIR: Settings.OutputIR, outputCFG: Settings.OutputCFG): LIRCompUnit {
         val mir = translateCompUnit(AST)
         getGlobalsTouched()
 
@@ -47,7 +47,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         //OPTIMIZE
         lir.reorderBlocks()
         if (optimize.desire(cf)) lir = ConstantFolder().apply(lir)
-        lir.functions.forEach { IROptimizer(it, optimize) }
+        lir.functions.forEach { IROptimizer(it, optimize, outputCFG) }
 
         outputIR.final?.let {
             val writer = CodeWriterSExpPrinter(PrintWriter(it))
