@@ -34,6 +34,16 @@ class CFG(val start: CFGNode.Start, val function: String) {
         return map
     }
 
+    fun getPredEdges(): Map<CFGNode, Set<Edge>> {
+        val map: MutableMap<CFGNode, MutableSet<Edge>> = mutableMapOf()
+        getNodes().forEach { node ->
+            node.edges.filter { it.node == node }.forEach {
+                map.computeIfAbsent(it.node) { mutableSetOf() }.add(it)
+            }
+        }
+        return map
+    }
+
     fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
         getNodes().forEachIndexed { index, t -> map[t] = "n$index" }

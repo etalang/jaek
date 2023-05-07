@@ -6,12 +6,20 @@ import kotlin.math.max
 
 sealed class Element {
     abstract val meet: Meet<*>
+    abstract val pretty: String
 
     sealed class UpperBounds : Element() {
-        object Top : UpperBounds()
-        object Bottom : UpperBounds()
+        object Top : UpperBounds() {
+            override val pretty = "⊤"
+        }
 
-        class Data(val t: Int) : UpperBounds()
+        object Bottom : UpperBounds() {
+            override val pretty = "⊥"
+        }
+
+        class Data(val t: Int) : UpperBounds() {
+            override val pretty = "stfu hoe"
+        }
 
         override val meet: Meet<UpperBounds> = object : RealMeet<UpperBounds, Data>(Top, Bottom) {
             override fun meetData(e1: Data, e2: Data): UpperBounds = Data(max(e1.t, e2.t))
@@ -19,8 +27,14 @@ sealed class Element {
     }
 
     sealed class Reachability : Element() {
-        object Top : Reachability()
-        object Bottom : Reachability()
+        object Top : Reachability() {
+            override val pretty = "⊤"
+        }
+
+        object Bottom : Reachability() {
+            override val pretty = "⊥"
+        }
+
 
         override val meet: Meet<Reachability> = object : Meet<Reachability>(Top, Bottom) {}
     }
