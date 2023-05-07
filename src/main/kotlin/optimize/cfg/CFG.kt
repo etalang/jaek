@@ -10,6 +10,7 @@ class CFG(val start: CFGNode.Start, val function: String) {
         while (stack.isNotEmpty()) {
             val node = stack.removeFirst()
             if (!visited.contains(node)) {
+                visited.add(node)
                 list.add(node)
                 stack.addAll(node.edges.map { it.node })
             }

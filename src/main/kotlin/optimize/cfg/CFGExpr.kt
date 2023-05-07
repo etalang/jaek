@@ -38,7 +38,7 @@ sealed class CFGExpr {
         override val pretty = value.toString()
     }
     class BOp(val left: CFGExpr, val right: CFGExpr, val op : IRBinOp.OpType) : CFGExpr() {
-        override val pretty = "${left.pretty} ${opString(op)} ${right.pretty}"
+        override val pretty = "(${left.pretty} ${opString(op)} ${right.pretty})"
     }
     class Mem(val loc: CFGExpr) : CFGExpr() {
         override val pretty = loc.pretty

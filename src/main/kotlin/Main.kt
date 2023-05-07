@@ -120,9 +120,9 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                 // TODO: test output assembly file to new -d path
                 val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, ".s") else null
 
-                val optIRInitialFile = if (printIROpts.contains("initial")) getOutFileName(it, Path(it.parent), "_initial.ir") else null
-                val optIRFinalFile = if (printIROpts.contains("final")) getOutFileName(it, Path(it.parent), "_final.ir") else null
-                val optCFGInitialFile : File? = if (printCFGOpts.contains("initial")) it else null
+                val optIRInitialFile = if (printIROpts.contains("initial")) getOutFileName(it, absDiagnosticPath, "_initial.ir") else null
+                val optIRFinalFile = if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
+                val optCFGInitialFile : File? = if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
 //                print(it)
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
