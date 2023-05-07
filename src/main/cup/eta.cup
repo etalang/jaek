@@ -194,7 +194,7 @@ return          ::= RETURN:r semi                                               
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
 singleDecl      ::= IDENTIFIER:id COLON type:t                     {: Terminal terminal = new Terminal(idleft,idright); RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(new Expr.Identifier(id,terminal)), t, terminal); :};
 idList          ::= IDENTIFIER:id1 COMMA IDENTIFIER:id2            {: ArrayList<Expr.Identifier> idList = ParseUtil.singleton(new Expr.Identifier(id1, new Terminal(id1left,id1right)));
-                                                                      idList.add(new Expr.Identifier(id1, new Terminal(id2left,id2right)));
+                                                                      idList.add(new Expr.Identifier(id2, new Terminal(id2left,id2right)));
                                                                       RESULT = idList;:}
                     | idList:idl COMMA:c IDENTIFIER:id             {: idl.add(new Expr.Identifier(id, new Terminal(idleft,idright))); RESULT = idl; :};
 multiVarDecl    ::= idList:idl COLON type:t                        {: RESULT = new VarDecl.RawVarDeclList(idl, t, idl.get(0).getTerminal()); :}; //Invariant that every idl has a first element
