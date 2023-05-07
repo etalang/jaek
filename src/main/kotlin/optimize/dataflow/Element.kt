@@ -6,19 +6,18 @@ import kotlin.math.max
 
 sealed class Element {
     abstract val meet: Meet<*>
-    abstract val pretty: String
 
     sealed class UpperBounds : Element() {
         object Top : UpperBounds() {
-            override val pretty = "⊤"
+            override fun toString() = "⊤"
         }
 
         object Bottom : UpperBounds() {
-            override val pretty = "⊥"
+            override fun toString() = "⊥"
         }
 
         class Data(val t: Int) : UpperBounds() {
-            override val pretty = "stfu hoe"
+            override fun toString() = t.toString()
         }
 
         override val meet: Meet<UpperBounds> = object : RealMeet<UpperBounds, Data>(Top, Bottom) {
@@ -28,11 +27,11 @@ sealed class Element {
 
     sealed class Reachability : Element() {
         object Top : Reachability() {
-            override val pretty = "⊤"
+            override fun toString() = "⊤"
         }
 
         object Bottom : Reachability() {
-            override val pretty = "⊥"
+            override fun toString() = "⊥"
         }
 
 
@@ -41,20 +40,20 @@ sealed class Element {
 
     sealed class IntersectNodes : Element() {
         object Top : IntersectNodes() {
-            override val pretty = "⊤"
+            override fun toString() = "⊤"
         }
 
         object Bottom : IntersectNodes() {
-            override val pretty = "⊥"
+            override fun toString() = "⊥"
         }
 
-        class DesignatedMeeter : IntersectNodes() {
-            override val pretty = "i meet you ૮ ˶ᵔ ᵕ ᵔ˶ ა"
-        }
+        class DesignatedMeeter : IntersectNodes()
 
 
         data class Data(val t: Set<CFGNode>) : IntersectNodes() {
-            override val pretty: String get() = t.map { it.index }.toString()
+            override fun toString(): String {
+                return t.map { it.index }.toString()
+            }
         }
 
         override val meet: Meet<IntersectNodes> = object : RealMeet<IntersectNodes, Data>(Top, Bottom) {

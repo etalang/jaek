@@ -7,7 +7,7 @@ sealed class CFGNode(
     companion object {
         var index = 0
         fun nextNumber(): Int {
-            return index++;
+            return index++
         }
     }
 

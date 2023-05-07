@@ -1,4 +1,3 @@
 package optimize.cfg
 
-class IRBuilder(val cfg : CFG) {
-}
+class IRBuilder(val cfg: CFG)

@@ -6,7 +6,7 @@ import java.util.*
 class CFGBuilder(val lir: LIRFuncDecl) {
     private val targets: MutableMap<String, CFGNode> = mutableMapOf()
     private val nodes: MutableList<CFGNode>
-    private var pointingTo: String? = null;
+    private var pointingTo: String? = null
     val start: CFGNode.Start
 
     init {
@@ -64,7 +64,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
             nodes.add(next)
             labels.forEach {
                 val target = targets[it]
-                if (target == null) targets[it] = next;
+                if (target == null) targets[it] = next
             }
         }
 
@@ -73,7 +73,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
     }
 
     fun build(): CFG {
-        return CFG(start,lir.name)
+        return CFG(start, lir.name)
     }
 
     private fun translateMove(currStmt: LIRMove): CFGNode.Mov {

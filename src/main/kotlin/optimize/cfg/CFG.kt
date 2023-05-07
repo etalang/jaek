@@ -1,6 +1,8 @@
 package optimize.cfg
 
-class CFG(val start: CFGNode.Start, val function: String) {
+import optimize.IROptimizer.Graphable
+
+class CFG(val start: CFGNode.Start, val function: String) : Graphable {
     /** compute sparingly <3 */
     fun getNodes(): Set<CFGNode> {
         val list: MutableSet<CFGNode> = mutableSetOf()
@@ -46,7 +48,7 @@ class CFG(val start: CFGNode.Start, val function: String) {
         return map
     }
 
-    fun graphViz(): String {
+    override fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
         getNodes().forEach { t -> map[t] = "n${t.index}" }
         return buildString {

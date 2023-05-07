@@ -1,11 +1,15 @@
-package optimize.cfg
+package optimize.dataflow
 
+import optimize.cfg.CFG
+import optimize.cfg.CFGNode
+import optimize.cfg.Edge
 import optimize.dataflow.Element.IntersectNodes
 
-class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg), UseDef {
-    override val values: MutableMap<Edge, Info> = mutableMapOf()
+class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg) {
+    override val top: Info = Info(IntersectNodes.Top)
+    override val name: String = "Dominating"
 
-    private final val moosher = IntersectNodes.DesignatedMeeter().meet // small frown :c but necessary
+    private val moosher = IntersectNodes.DesignatedMeeter().meet // small frown :c but necessary
 
     /** in[n] = ∩ out[n'] ∀ (n' predecessors) */
     override fun meet(e1: Info, e2: Info): Info {
@@ -34,10 +38,7 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg), UseDef {
     }
 
     /** the nodes that dominate this edge */
-    data class Info(val doms: IntersectNodes) : EdgeAnnos() {
-        override val pretty: String = doms.pretty;//.replace("(.{80})", "$1\n");
+    data class Info(val doms: IntersectNodes) : EdgeValues() {
+        override val pretty: String = doms.toString()//.replace("(.{80})", "$1\n");
     }
-
-    override val top: Info = Info(IntersectNodes.Top)
-    override val name: String = "Dominating"
 }

@@ -5,7 +5,7 @@ import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
 
 sealed class CFGExpr {
     companion object {
-        fun opString(op : IRBinOp.OpType) : String {
+        fun opString(op: IRBinOp.OpType): String {
             return when (op) {
                 ADD -> "+"
                 SUB -> "-"
@@ -29,21 +29,26 @@ sealed class CFGExpr {
             }
         }
     }
+
     abstract val pretty: String
 
-    class Var(val name : String) : CFGExpr() {
+    class Var(val name: String) : CFGExpr() {
         override val pretty = name
     }
-    class Const(val value : Long) : CFGExpr() {
+
+    class Const(val value: Long) : CFGExpr() {
         override val pretty = value.toString()
     }
-    class BOp(val left: CFGExpr, val right: CFGExpr, val op : IRBinOp.OpType) : CFGExpr() {
+
+    class BOp(val left: CFGExpr, val right: CFGExpr, val op: IRBinOp.OpType) : CFGExpr() {
         override val pretty = "(${left.pretty} ${opString(op)} ${right.pretty})"
     }
+
     class Mem(val loc: CFGExpr) : CFGExpr() {
         override val pretty = loc.pretty
     }
-    class Label(val name : String) : CFGExpr() {
+
+    class Label(val name: String) : CFGExpr() {
         override val pretty = "*$name*"
     }
 //    class Func(val args: List<CFGExpr>) : CFGExpr() // TODO: determine what "function calls at top level" means

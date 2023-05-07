@@ -1,19 +1,25 @@
-package optimize.cfg
+package optimize.dataflow
+
+import optimize.IROptimizer.Graphable
+import optimize.cfg.CFG
+import optimize.cfg.CFGNode
+import optimize.cfg.Edge
 
 
-sealed class CFGFlow<lattice : EdgeAnnos>(val cfg: CFG) {
-    abstract val values: MutableMap<Edge, lattice>
-    abstract fun meet(e1: lattice, e2: lattice): lattice
-    abstract fun transition(n: CFGNode, inInfo: lattice): Map<Edge, lattice>
-    abstract val top: lattice
+sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
+    val values: MutableMap<Edge, Lattice> = mutableMapOf()
+    abstract fun meet(e1: Lattice, e2: Lattice): Lattice
+    abstract fun transition(n: CFGNode, inInfo: Lattice): Map<Edge, Lattice>
+    abstract val top: Lattice
     abstract fun run()
-    abstract val name : String
+    abstract val name: String
 
-    abstract class Forward<lattice : EdgeAnnos>(cfg: CFG) : CFGFlow<lattice>(cfg) {
+    abstract class Forward<Lattice : EdgeValues>(cfg: CFG) : CFGFlow<Lattice>(cfg) {
         override fun run() {
             var counter = 0
-            val worklist = cfg.getNodes().toMutableSet()
-            cfg.getNodes().forEach { it.edges.forEach { values[it] = top } }
+            val nodes = cfg.getNodes()
+            val worklist = nodes.toMutableSet()
+            nodes.forEach { it.edges.forEach { values[it] = top } }
             val predEdges = cfg.getPredEdges()
             while (worklist.isNotEmpty() && counter < 10000) { //TODO: let it go later
                 val node = worklist.random()
@@ -29,11 +35,11 @@ sealed class CFGFlow<lattice : EdgeAnnos>(val cfg: CFG) {
                 }
                 counter++
             }
-            println("it took $counter to terminate :D")
+            println("it took $counter to terminate $name")
         }
 
-        private fun bigMeet(predEdges: Set<Edge>?, values: Map<Edge, lattice>): lattice {
-            var out: lattice? = null
+        private fun bigMeet(predEdges: Set<Edge>?, values: Map<Edge, Lattice>): Lattice {
+            var out: Lattice? = null
             predEdges?.forEach {
                 val edgeVal = values[it]!! // every edge should have a value
                 val _out = out
@@ -43,9 +49,7 @@ sealed class CFGFlow<lattice : EdgeAnnos>(val cfg: CFG) {
         }
     }
 
-    fun graphViz(): String {
-//        val map = mutableMapOf<CFGNode, String>()
-//        cfg.getNodes().forEach { t -> map[t] = "n${t.index}" }
+    override fun graphViz(): String {
         val nodes = cfg.getNodes()
         return buildString {
             appendLine("digraph ${cfg.function}_${name} {")

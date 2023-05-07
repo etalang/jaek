@@ -1,8 +1,9 @@
 package optimize
 
+import Settings
 import ir.lowered.LIRFuncDecl
 import optimize.cfg.CFGBuilder
-import optimize.cfg.Dominating
+import optimize.dataflow.Dominating
 import java.io.File
 
 class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Settings.OutputCFG) {
@@ -17,12 +18,13 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
             if (lir.name == "_Imain_paai") {
                 val o = Dominating(cfg)
                 o.run()
-//            println(o.values)
-
-                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms.pretty}") }
-                File("shitfuckidk.dot").writeText(o.graphViz())
+                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms}") }
+                File("maindataflow'.dot").writeText(o.graphViz())
             }
         }
     }
 
+    interface Graphable {
+        fun graphViz(): String
+    }
 }
