@@ -14,7 +14,7 @@ sealed class CFGFlow<lattice>(val cfg: CFG) {
             cfg.getNodes().forEach { it.edges.forEach { values[it] = top } }
             val predEdges = cfg.getPredEdges()
             while (worklist.isNotEmpty()) {
-                println(worklist)
+//                println(worklist)
                 val node = worklist.random()
                 worklist.remove(node)
                 val inInfo = bigMeet(predEdges[node], values)

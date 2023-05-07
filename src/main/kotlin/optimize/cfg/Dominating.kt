@@ -38,8 +38,8 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg), UseDef {
         return n.edges.associateWith{outInfo}
     }
 
-    /** [domMap] domain = cfg.nodes */
-    data class Info(val domMap: MutableMap<CFGNode, IntersectNodes>)
+    /** the nodes that dominate this edge */
+    data class Info(val doms: IntersectNodes)
 
-    override val top: Info = Info(cfg.getNodes().associateWith { IntersectNodes.Top }.toMutableMap())
+    override val top: Info = Info(IntersectNodes.Top)
 }

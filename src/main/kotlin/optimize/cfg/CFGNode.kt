@@ -12,6 +12,10 @@ sealed class CFGNode(
 
     abstract val pretty: String
 
+    override fun toString(): String {
+        return pretty
+    }
+
     sealed class Mov(edge: Edge.Lazy) : CFGNode(edge) {
         abstract val target: String
     }

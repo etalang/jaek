@@ -37,7 +37,7 @@ class CFG(val start: CFGNode.Start, val function: String) {
     fun getPredEdges(): Map<CFGNode, Set<Edge>> {
         val map: MutableMap<CFGNode, MutableSet<Edge>> = mutableMapOf()
         getNodes().forEach { node ->
-            node.edges.filter { it.node == node }.forEach {
+            node.edges.forEach {
                 map.computeIfAbsent(it.node) { mutableSetOf() }.add(it)
             }
         }

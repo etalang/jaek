@@ -14,21 +14,14 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
             val funcFile = outputCFG.getOutInit(lir.name)
             funcFile?.writeText(cfg.graphViz())
 
-            val o = Dominating(cfg)
-            o.run()
+            if (lir.name == "_Imain_paai") {
+                val o = Dominating(cfg)
+                o.run()
 //            println(o.values)
 
-            o.values.forEach { println("[${it.key.from.pretty} -> ${it.key.node.pretty}] : ${prettyMap(it.value)}") }
+                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms.pretty}") }
+            }
         }
-    }
-
-    private fun prettyMap(value: Dominating.Info): String {
-        var x = "{"
-        value.domMap.forEach {
-            x += "${it.key.pretty}=${it.value.pretty}\n"
-        }
-        x+="}"
-        return x
     }
 
 }

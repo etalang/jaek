@@ -48,14 +48,19 @@ sealed class Element {
             override val pretty = "⊥"
         }
 
+        class DesignatedMeeter : IntersectNodes() {
+            override val pretty = "i meet you ૮ ˶ᵔ ᵕ ᵔ˶ ა"
+        }
+
 
         class Data(val t: Set<CFGNode>) : IntersectNodes() {
             override val pretty: String
                 get()  {
-                    var out = "" //all my homies hate string builders
+                    var out = "{" //all my homies hate string builders
                     t.forEach {
-                        out += it.pretty
+                        out += it.pretty + ", "
                     }
+                    out+="}"
                     return out
                 }
         }
