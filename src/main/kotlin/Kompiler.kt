@@ -159,7 +159,7 @@ class Kompiler {
                 val fieldMap = mutableMapOf<String, EtaType.OrdinaryType>()
                 for (decl in header.fields) {
                     for (id in decl.ids) {
-                        fieldMap[id] = EtaType.translateType(decl.type)
+                        fieldMap[id.name] = EtaType.translateType(decl.type)
                     }
                 }
                 val currRecordType = EtaType.ContextType.RecordType(header.name, fieldMap)
