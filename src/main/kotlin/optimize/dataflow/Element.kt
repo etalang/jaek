@@ -40,12 +40,28 @@ sealed class Element {
     }
 
     sealed class IntersectNodes : Element() {
-        object Top : IntersectNodes()
-        object Bottom : IntersectNodes()
+        object Top : IntersectNodes() {
+            override val pretty = "⊤"
+        }
 
-        class Data(val t: Set<CFGNode>) : IntersectNodes()
+        object Bottom : IntersectNodes() {
+            override val pretty = "⊥"
+        }
+
+
+        class Data(val t: Set<CFGNode>) : IntersectNodes() {
+            override val pretty: String
+                get()  {
+                    var out = "" //all my homies hate string builders
+                    t.forEach {
+                        out += it.pretty
+                    }
+                    return out
+                }
+        }
 
         override val meet: Meet<IntersectNodes> = object : RealMeet<IntersectNodes, Data>(Top, Bottom) {
             override fun meetData(e1: Data, e2: Data): IntersectNodes = Data(e1.t intersect e2.t)
         }
+    }
 }

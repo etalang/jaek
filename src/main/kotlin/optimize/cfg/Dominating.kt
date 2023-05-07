@@ -9,12 +9,12 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg), UseDef {
 
     /** in[n] = ∩ out[n'] ∀ (n' predecessors) */
     override fun meet(e1: Info, e2: Info): Info {
-        TODO()
-//        e1.domMap.forEach { t, u ->
-//            val otherSet = e2.domMap[t]!! //e2's domain MUST be the set of nodes in the graph, same as e2
-//
-//        }
-//        return Info(moosher.meet(e1.nodes, e2.nodes))
+        val returnMap = mutableMapOf<CFGNode, IntersectNodes>()
+        e1.domMap.forEach { t, u ->
+            val otherSet = e2.domMap[t]!! //e2's domain MUST be the set of nodes in the graph, same as e2
+            returnMap[t] = moosher.meet(u, otherSet)
+        }
+        return Info(returnMap)
     }
 
     /** F_N (in) = {n} ∪ in */
