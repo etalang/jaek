@@ -197,7 +197,7 @@ idList          ::= IDENTIFIER:id1 COMMA IDENTIFIER:id2            {: ArrayList<
                                                                       idList.add(new Expr.Identifier(id1, new Terminal(id2left,id2right)));
                                                                       RESULT = idList;:}
                     | idList:idl COMMA:c IDENTIFIER:id             {: idl.add(new Expr.Identifier(id, new Terminal(idleft,idright))); RESULT = idl; :};
-multiVarDecl    ::= idList:idl COLON type:t                        {: new VarDecl.RawVarDeclList(idl, t, idl.get(0).getTerminal()); :}; //Invariant that every idl has a first element
+multiVarDecl    ::= idList:idl COLON type:t                        {: RESULT = new VarDecl.RawVarDeclList(idl, t, idl.get(0).getTerminal()); :}; //Invariant that every idl has a first element
 varDecl         ::= singleDecl:sd                                  {: RESULT = sd; :}
                     | multiVarDecl:mvd                             {: RESULT = mvd; :};
 multiVarDeclList::= multiVarDecl:mvd semi                          {: RESULT = ParseUtil.singleton(mvd); :}
