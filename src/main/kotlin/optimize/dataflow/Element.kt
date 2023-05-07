@@ -53,20 +53,13 @@ sealed class Element {
         }
 
 
-        class Data(val t: Set<CFGNode>) : IntersectNodes() {
-            override val pretty: String
-                get()  {
-                    var out = "{" //all my homies hate string builders
-                    t.forEach {
-                        out += it.pretty + ", "
-                    }
-                    out+="}"
-                    return out
-                }
+        data class Data(val t: Set<CFGNode>) : IntersectNodes() {
+            override val pretty: String get() = t.map { it.index }.toString()
         }
 
         override val meet: Meet<IntersectNodes> = object : RealMeet<IntersectNodes, Data>(Top, Bottom) {
             override fun meetData(e1: Data, e2: Data): IntersectNodes = Data(e1.t intersect e2.t)
         }
+
     }
 }

@@ -4,7 +4,7 @@ class CFG(val start: CFGNode.Start, val function: String) {
     /** compute sparingly <3 */
     fun getNodes(): Set<CFGNode> {
         val list: MutableSet<CFGNode> = mutableSetOf()
-        val visited: Set<CFGNode> = setOf()
+        val visited: MutableSet<CFGNode> = mutableSetOf()
         val stack: ArrayDeque<CFGNode> = ArrayDeque()
         stack.addFirst(start)
         while (stack.isNotEmpty()) {
@@ -15,6 +15,7 @@ class CFG(val start: CFGNode.Start, val function: String) {
             }
         }
         return list
+
     }
 
     fun getEdges(): Set<Edge> {
@@ -46,7 +47,7 @@ class CFG(val start: CFGNode.Start, val function: String) {
 
     fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
-        getNodes().forEachIndexed { index, t -> map[t] = "n$index" }
+        getNodes().forEach { t -> map[t] = "n${t.index}" }
         return buildString {
             appendLine("digraph $function {")
             appendLine("\trankdir=\"TB\"")

@@ -1,7 +1,6 @@
 package optimize.cfg
 
 import optimize.dataflow.Element.IntersectNodes
-import java.lang.Exception
 
 class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg), UseDef {
     override val values: MutableMap<Edge, Info> = mutableMapOf()
@@ -35,7 +34,10 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg), UseDef {
     }
 
     /** the nodes that dominate this edge */
-    data class Info(val doms: IntersectNodes)
+    data class Info(val doms: IntersectNodes) : EdgeAnnos() {
+        override val pretty: String = doms.pretty;//.replace("(.{80})", "$1\n");
+    }
 
     override val top: Info = Info(IntersectNodes.Top)
+    override val name: String = "Dominating"
 }

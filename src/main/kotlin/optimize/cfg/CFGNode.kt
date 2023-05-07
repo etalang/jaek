@@ -2,8 +2,15 @@ package optimize.cfg
 
 sealed class CFGNode(
     /** if you are not a `Lazy.Edge`, you should not be using lazyTo! */
-    val lazyTo: Edge.Lazy, var to: Edge? = null
+    val lazyTo: Edge.Lazy, val index: Int = nextNumber(), var to: Edge? = null
 ) {
+    companion object {
+        var index = 0
+        fun nextNumber(): Int {
+            return index++;
+        }
+    }
+
     open fun resolveEdges() {
         to = lazyTo.toReal(this)
     }
@@ -43,10 +50,14 @@ sealed class CFGNode(
 
     class If(val cond: CFGExpr, val _take: Edge.Lazy, edge: Edge.Lazy) : CFGNode(edge) {
         var take: Edge? = null
-        override val pretty = "if (${cond.pretty})"
+
+        //TODO: be less stupid?????
+        override val pretty =
+            if (cond.pretty.startsWith("(") && cond.pretty.endsWith(")")) "if ${cond.pretty}" else "if (${cond.pretty})"
+
         override fun resolveEdges() {
             super.resolveEdges()
-            take = _take.toReal(this,true)
+            take = _take.toReal(this, true)
         }
 
         override val edges: Set<Edge>

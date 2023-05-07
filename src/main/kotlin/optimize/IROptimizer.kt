@@ -20,6 +20,7 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
 //            println(o.values)
 
                 o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms.pretty}") }
+                File("shitfuckidk.dot").writeText(o.graphViz())
             }
         }
     }
