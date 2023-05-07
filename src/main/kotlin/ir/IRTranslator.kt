@@ -139,7 +139,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         val funcMoves: MutableList<IRStmt> = mutableListOf()
         for (i in 0 until n.args.size) {
             //TODO:id
-            funcMoves.add(IRMove(IRTemp(n.args[i].ids[0]), IRTemp("_ARG${i + 1}")))
+            funcMoves.add(IRMove(IRTemp(n.args[i].ids[0].name), IRTemp("_ARG${i + 1}")))
         }
 
         globalsByFunction[mangledFunctionNames[n.id]!!] = mutableSetOf()
@@ -157,7 +157,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private fun translateAssignTarget(n: AssignTarget, sourceFn: String): IRExpr {
         return when (n) {
             is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, sourceFn)
-            is AssignTarget.DeclAssign -> IRTemp(n.decl.ids[0])// TODO:id
+            is AssignTarget.DeclAssign -> IRTemp(n.decl.ids[0].name)// TODO:id
             is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
             is AssignTarget.Underscore -> freshTemp()
             is AssignTarget.FieldAssign -> TODO()
@@ -291,7 +291,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 )
             }
 
-            is VarDecl.RawVarDeclList -> IRMove(IRTemp(n.ids[0]), IRConst(0)) //INIT 0 // TODO: id
+            is VarDecl.RawVarDeclList -> IRMove(IRTemp(n.ids[0].name), IRConst(0)) //INIT 0 // TODO: id
             is Statement.While -> {
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
