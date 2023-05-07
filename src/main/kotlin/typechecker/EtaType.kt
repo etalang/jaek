@@ -2,6 +2,7 @@ package typechecker
 
 import ast.Primitive
 import ast.Type
+import errors.SemanticError
 
 sealed class EtaType {
     companion object {
@@ -52,7 +53,7 @@ sealed class EtaType {
                 }
                 is ArrayType -> {
                     return when (this) {
-                        is UnknownType -> { true }
+                        is UnknownType, is NullType -> { true }
                         !is ArrayType -> { false }
                         else -> (this.t == other.t)
                     }
@@ -61,9 +62,9 @@ sealed class EtaType {
                     if (this is RecordType) {
                         return (this.t == other.t)
                     }
-//                    else if (this is NullType) {
-//                        return true
-//                    }
+                    else if (this is NullType) {
+                        return true
+                    }
                 }
 //                is NullType -> {
 //                    if (this is NullType || this is RecordType || this is ArrayType) {
@@ -142,6 +143,17 @@ sealed class EtaType {
             val retCount get() = codomain.lst.size
         }
 
+        /* MutableMapOf preserves the iteration order in which elements were added to the map! */
+        class RecordType(val name : String, val fields : MutableMap<String, OrdinaryType>) : ContextType() {
+            val fieldOrder get() = fields.keys.toList()
+            val typeOrder: MutableList<OrdinaryType>
+                get() = run {
+                val typeList = mutableListOf<OrdinaryType>()
+                fields.keys.mapTo(typeList) { it -> fields[it]!! }
+                    typeList
+            }
+        }
+
         override fun equals(other: Any?): Boolean {
             if (other !is ContextType) return false
             else {
@@ -149,6 +161,23 @@ sealed class EtaType {
                     is VarBind -> return (this is VarBind && this.item == other.item)
                     is ReturnType -> return (this is ReturnType && this.value == other.value)
                     is FunType -> return (this is FunType && this.domain == other.domain && this.codomain == other.codomain)
+                    is RecordType -> {
+                        if (this !is RecordType) return false
+                        if (this.name != other.name) return false
+                        else {
+                            val fieldOrder = this.fieldOrder
+                            val typeOrder = this.typeOrder
+                            for (idx in 0 until other.fieldOrder.size) {
+                                if (fieldOrder[idx] != other.fieldOrder[idx]) {
+                                    return false
+                                }
+                                if (typeOrder[idx] != other.typeOrder[idx]) {
+                                    return false
+                                }
+                            }
+                            return true
+                        }
+                    }
 //                    is RecordType -> return (this is RecordType && this.t == other.t)
                 }
             }
@@ -159,6 +188,7 @@ sealed class EtaType {
                 is FunType -> "function"
                 is ReturnType -> "return" + this.value.toString()
                 is VarBind -> this.item.toString() + "variable"
+                is RecordType -> "record ${this.name}"
             }
         }
     }

@@ -31,6 +31,18 @@ class Context {
         return null
     }
 
+    fun recordTypes() : MutableSet<String> {
+        val recordSet = mutableSetOf<String>()
+        for (i in stack.size -1 downTo 0) {
+            for (key in stack[i].keys) {
+                val contextType = stack[i][key]
+                if (contextType is ContextType.RecordType) {
+                    recordSet.add(contextType.name)
+                }
+            }
+        }
+        return recordSet
+    }
     fun contains(id: String): Boolean {
         return (lookup(id) != null)
     }

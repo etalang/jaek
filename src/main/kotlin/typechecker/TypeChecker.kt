@@ -18,7 +18,7 @@ import java.io.File
 
 class TypeChecker(topGamma: Context, val file: File) {
     var Gamma : Context = topGamma
-    val recordTypes = mutableMapOf<String, LinkedHashMap<String, EtaType>>()
+//    val recordTypes = mutableMapOf<String, LinkedHashMap<String, EtaType>>()
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {
@@ -85,7 +85,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                         }
                         is RhoRecord -> {
-                            if (defn.name in recordTypes.keys) {
+                            if (defn.name in Gamma.recordTypes()) {
                                 semanticError(defn, "Redeclared record type")
                             }
                             // when iterating through this in the future, preserves order of adding elts to map
@@ -95,7 +95,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     fieldTypes[identifier] = translateType(f.type)
                                 }
                             }
-                            recordTypes[defn.name] = fieldTypes
+//                            Gamma.bind(defn.name,  fieldTypes)
                         }
                     }
                 }
@@ -167,7 +167,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             val fields = mutableSetOf<String>()
                             for (f in defn.fields) {
                                 val fieldType = translateType(f.type)
-                                if (fieldType is RecordType && fieldType.t !in recordTypes) {
+                                if (fieldType is OrdinaryType.RecordType && fieldType.t !in Gamma.recordTypes()) {
                                     semanticError(defn, "field type $fieldType is record type but not present")
                                 }
                                 f.ids.forEach{id ->
@@ -205,7 +205,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                 is AssignTarget.ArrayAssign -> {
                     typeCheck(n.arrayAssign.arr, inWhile)
                     typeCheck(n.arrayAssign.idx, inWhile)
-                    if (n.arrayAssign.arr.etaType !is ArrayType) {
+                    if (n.arrayAssign.arr.etaType !is ArrayType || n.arrayAssign.arr.etaType !is NullType) {
                         semanticError(n.arrayAssign.arr, "Indexed expression is not an array")
                     }
                     else {
@@ -220,6 +220,9 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     semanticError(n.arrayAssign, "Type mismatch on array assignment")
                                 }
                                 n.etaType = arrType.t
+                            }
+                            else if (arrType is NullType) {
+                                n.etaType = UnknownType(true) // don't know what type the array is
                             }
                             else {
                                 semanticError(n.arrayAssign, "Array assign is not assigning to an array")
@@ -388,19 +391,24 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 typeCheck(target.arrayAssign.arr, inWhile)
                                 typeCheck(target.arrayAssign.idx, inWhile)
                                 val expectedType = target.arrayAssign.arr.etaType
-                                if (expectedType !is ArrayType) {
+                                if (!(expectedType is ArrayType || expectedType is NullType)) {
                                     semanticError(target.arrayAssign.idx,"Type of indexed expression is not an array")
                                 }
                                 else if (target.arrayAssign.idx.etaType !is IntType){
                                     semanticError(target.arrayAssign.idx,"Type of indexing expression is not an integer")
                                 }
                                 else {
-                                    val expected = expectedType.t
-                                    if (t != expected) {
-                                        semanticError(target.arrayAssign,"Cannot assign to array of type ${expected}[]")
+                                    if (expectedType is ArrayType) {
+                                        val expected = expectedType.t
+                                        if (t != expected) {
+                                            semanticError(target.arrayAssign,"Cannot assign to array of type ${expected}[]")
+                                        }
+                                        n.etaType = UnitType()
                                     }
-                                    n.etaType = UnitType()
-
+                                    else {
+//                                        target.arrayAssign.arr.etaType = ArrayType(t)
+                                        n.etaType = UnitType() // nothing to do, but the
+                                    }
                                 }
                             }
                             is AssignTarget.IdAssign -> {
@@ -551,7 +559,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         semanticError(n,"Identifier ${n.ids[0]} already exists")
                     }
                     else {
-                        if (n.type is Type.RecordType && recordTypes[n.type.t] == null) {
+                        if (n.type is Type.RecordType && !Gamma.recordTypes().contains(n.type.t)) {
                             semanticError(n,"Record type ${n.type.t} not defined")
                         }
                         Gamma.bind(id, VarBind(translateType(n.type)))
@@ -595,7 +603,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         semanticError(n.idx,"Index must be an integer")
                     }
                 }
-                else if (arrt is UnknownType) {
+                else if (arrt is UnknownType || arrt is NullType) {
                     if (idxt is IntType) {
                         n.etaType = UnknownType(true)
                     }
@@ -732,8 +740,8 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                         }
                     }
-                    is RecordType -> {
-                        if ((rtype is RecordType && rtype.t == ltype.t) || rtype is NullType) {
+                    is OrdinaryType.RecordType -> {
+                        if ((rtype is OrdinaryType.RecordType && rtype.t == ltype.t) || rtype is NullType) {
                             if (n.op in listOf(EQB, NEQB)) {
                                 n.etaType = BoolType()
                             }
@@ -746,9 +754,12 @@ class TypeChecker(topGamma: Context, val file: File) {
                         }
                     }
                     is NullType -> {
-                        if (rtype is RecordType || rtype is ArrayType || rtype is NullType) {
+                        if (rtype is OrdinaryType.RecordType || rtype is ArrayType || rtype is NullType) {
                             if (n.op in listOf(EQB, NEQB)) {
                                 n.etaType = BoolType()
+                            }
+                            else if (n.op == PLUS && rtype is ArrayType) {
+                                n.etaType = rtype
                             }
                             else {
                                 semanticError(n,"Null type cannot be used with ${n.op}")
@@ -791,7 +802,11 @@ class TypeChecker(topGamma: Context, val file: File) {
                     n.etaType = ft.codomain.lst[0] // first (and only) type in list
                 }
                 else {
-                    val rt = recordTypes[n.fn]
+                    val rType = Gamma.lookup(n.fn)
+                    if (rType !is ContextType.RecordType) {
+                        semanticError(n, "found type is not a record type")
+                    } else {
+                    val rt = rType.fields
                     if (rt != null) {
                         if (n.args.size == rt.size) {
                             val fieldtypes = ArrayList(rt.values)
@@ -804,7 +819,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                             " at position $i, received $argtype")
                                 }
                             }
-                            n.etaType = RecordType(n.fn)
+                            n.etaType = OrdinaryType.RecordType(n.fn)
                         } else {
                             semanticError(n,"Record constructor for ${n.fn} expected ${rt.size} fields," +
                                     " received ${n.args.size}")
@@ -812,6 +827,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
                     else {
                         semanticError(n,"${n.fn} is not a defined function or record type")
+                    }
                     }
                 }
 
@@ -829,7 +845,7 @@ class TypeChecker(topGamma: Context, val file: File) {
             is LengthFn -> {
                 typeCheck(n.arg, inWhile)
                 val t = n.arg.etaType
-                if (t is ArrayType) {
+                if (t is ArrayType || t is NullType) {
                     n.etaType = IntType()
                 } else {
                     semanticError(n,"Length function must be applied to an array")
@@ -898,8 +914,10 @@ class TypeChecker(topGamma: Context, val file: File) {
             is Expr.Field -> {
                 typeCheckExpr(n.record, inWhile)
                 val rect = n.record.etaType
-                if (rect is RecordType) {
-                    val fieldMap = recordTypes[rect.t]
+                if (rect is OrdinaryType.RecordType) {
+                    val rType = Gamma.lookup(rect.t)
+                    if (rType is ContextType.RecordType) {
+                    val fieldMap = rType.fields
                     if (fieldMap != null) {
                         val fieldType = fieldMap[n.name]
                         if (fieldType != null) {
@@ -915,6 +933,9 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
                 else {
                     semanticError(n, "Cannot find label for non-record object")
+                }}
+                else {
+                    semanticError(n, "Char")
                 }
             }
 
