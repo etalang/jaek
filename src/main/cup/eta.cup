@@ -2,6 +2,7 @@ import ast.*;
 import java.util.*;
 import errors.*;
 import java.io.File;
+import java.util.stream.Collectors;
 
 parser code  {:
   public void syntax_error(java_cup.runtime.Symbol cur_token) {}
@@ -80,6 +81,8 @@ nonterminal RhoRecord recordHeader;
 nonterminal Type.RecordType recordType;
 nonterminal VarDecl.RawVarDeclList multiVarDecl;
 nonterminal ArrayList<VarDecl.RawVarDeclList> multiVarDeclList;
+nonterminal ArrayList<Expr.Identifier> idList;
+nonterminal VarDecl.RawVarDeclList singleDecl;
 
 /* Precedences */
 precedence left OR;
@@ -107,8 +110,8 @@ program         ::= imports:Is allDefinitions:Ds                {: if (extension
 imports         ::= use:u imports:It                            {: It.add(0, u); RESULT = It; :}
                     |                                           {: RESULT = new ArrayList<Use>(); :};
 use             ::= USE:u IDENTIFIER:id semi                    {: if (extension.equals("eti"))
-                                                                   { throw new ParseError(new Token.StringToken(u, uleft, uright), file); }
-                                                                   RESULT = new Use(id, new Terminal(idleft,idright)); :};
+                                                                        { throw new ParseError(new Token.StringToken(u, uleft, uright), file); }
+                                                                    RESULT = new Use(id, new Terminal(idleft,idright)); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
@@ -128,7 +131,8 @@ definition      ::= method:m                                    {: RESULT = m; :
 globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl                    {: RESULT = new GlobalDecl(ParseUtil.singleton(id), t, pl, new Terminal(idleft,idright)); :}
                     | IDENTIFIER:id COLON type:t EQUALS MINUS INTEGER_LITERAL:n              {: if (n.equals("-9223372036854775808")) { throw new ParseError(new Token.StringToken(n, nleft, nright),file); }
                                                                                                 RESULT = new GlobalDecl(ParseUtil.singleton(id), t, new Literal.IntLit(Long.parseLong(n), new Terminal(idleft,idright)), new Terminal(idleft,idright)); :}
-                    | multiVarDecl:mvd                                                       {: RESULT = new GlobalDecl(mvd.getIds(), mvd.getType(), null, new Terminal(mvdleft,mvdright)); :};
+                    | multiVarDecl:mvd                                                       {: RESULT = new GlobalDecl(new ArrayList<String>(mvd.getIds().stream().map(expr -> expr.getName()).collect(Collectors.toList())), mvd.getType(), null, new Terminal(mvdleft,mvdright)); :}
+                    | singleDecl:sd                                                          {: RESULT = new GlobalDecl(new ArrayList<String>(sd.getIds().stream().map(expr -> expr.getName()).collect(Collectors.toList())), sd.getType(), null, new Terminal(sdleft,sdright)); :};
 
 /* =============> [Global] Methods <============= */
 header              ::= methodHeader:am                                                      {: RESULT = am; :}
@@ -141,10 +145,9 @@ methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN                                   {: RESULT = new Method(id, new ArrayList<>(), new ArrayList<Type>(), new Terminal(idleft,idright)); :};
 recordHeader        ::= RECORD:r IDENTIFIER:id OPEN_BRACE CLOSE_BRACE                        {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(r, rleft, rright), file); }
                                                                                                 RESULT = new RhoRecord(id, new ArrayList<>(), new Terminal(idleft, idright)); :};
-methodArg           ::= IDENTIFIER:id COLON type:t                                           {: Terminal terminal = new Terminal(idleft,idright);
-                                                                                                RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, ParseUtil.singleton(terminal), terminal); :};
+methodArg           ::= IDENTIFIER:id COLON type:t                                           {: Terminal terminal = new Terminal(idleft,idright); RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(new Expr.Identifier(id, terminal)), t, terminal); :};
 methodArgs          ::= methodArg:ma                                                         {: RESULT = ParseUtil.singleton(ma); :}
-                    | methodArg:ma COMMA methodArgs:mal                                      {: mal.add(0, ma); RESULT = mal; :};
+                    | methodArgs:mal COMMA  methodArg:ma                                     {: mal.add(ma); RESULT = mal; :};
 
 /* =============> [Global] Records <============= */
 record              ::= RECORD:r IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl CLOSE_BRACE   {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(r, rleft, rright), file) ;}
@@ -152,18 +155,20 @@ record              ::= RECORD:r IDENTIFIER:id OPEN_BRACE multiVarDeclList:vdl C
                         | recordHeader:rh                                                    {: RESULT = rh; :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Statements */
-statementOrBlockList   ::= statement:s                                              {:RESULT = ParseUtil.singleton(s); :}
-                           | returnableBlock:rb                                     {:RESULT = ParseUtil.singleton(rb); :}
-                           | statementOrBlockList:sbl statement:s                   {:sbl.add(s); RESULT = sbl; :}
-                           | statementOrBlockList:sbl returnableBlock:rb            {:sbl.add(rb); RESULT = sbl; :};
+statementOrBlockList   ::= statement:s                                              {: RESULT = ParseUtil.singleton(s); :}
+                           | returnableBlock:rb                                     {: RESULT = ParseUtil.singleton(rb); :}
+                           | statementOrBlockList:sbl statement:s                   {: sbl.add(s); RESULT = sbl; :}
+                           | statementOrBlockList:sbl returnableBlock:rb            {: sbl.add(rb); RESULT = sbl; :};
 statement       ::= if:i                                                            {: RESULT = i; :}
                     | while:w                                                       {: RESULT = w; :}
+                    | singleDecl:vd semi                                            {: RESULT = vd; :}
+                    | multiVarDecl:vd semi                                          {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(vd.getIds().get(0).getName(), vdleft, vdright),file); }
+                                                                                       RESULT = vd; :}
                     | multiAssign:a semi                                            {: RESULT = a; :}
                     | arrayInitStatement:a semi                                     {: RESULT = a; :}
                     | procedureCall:fn semi                                         {: RESULT = fn; :}
-                    | BREAK:b semi                                                  {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(b, bleft, bright),file); }
-                                                                                       RESULT = new Statement.Break(new Terminal(bleft,bright)); :}
-                    | multiVarDecl:mvd semi                                         {: RESULT = mvd; :};
+                    | BREAK:b semi                                                  {: if (extension.equals("eta") || extension.equals("eti") || extension.equals("ri")) { throw new ParseError(new Token.StringToken(b, bleft, bright),file); }
+                                                                                       RESULT = new Statement.Break(new Terminal(bleft,bright)); :};
 if              ::= IF:o expr:e block:b elseOptional:els                            {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :}
                     | IF:o OPEN_PAREN expr:e CLOSE_PAREN block:b elseOptional:els   {: RESULT = new Statement.If(e, b, els, new Terminal(oleft,oright)); :};
 while           ::= WHILE:o OPEN_PAREN expr:e CLOSE_PAREN block:b                   {: RESULT = new Statement.While(e, b, new Terminal(oleft,oright)); :}
@@ -187,32 +192,30 @@ return          ::= RETURN:r semi                                               
 /* =============> [MULTI] With Assignment <============= */
 // includes a = b but also has more ~fun~ stuff with decls like a : int, b = 5, 4
 // RESULTS: Declaration + Init (var + []), Assignment (to var and to _)
-varDecl         ::= IDENTIFIER:id COLON type:t                     {: Terminal terminal = new Terminal(idleft,idright);
-                                                                      VarDecl.RawVarDeclList decl = new VarDecl.RawVarDeclList(ParseUtil.singleton(id), t, ParseUtil.singleton(terminal), terminal);
-                                                                      decl.getIdLocations().add(terminal);
-                                                                      RESULT = decl; :};
-multiVarDecl    ::= IDENTIFIER:id COMMA:c multiVarDecl:mvd         {: //if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(c, cleft, cright),file); }
-                                                                      if (extension.equals("ri")) { throw new ParseError(new Token.StringToken(id, idleft, idright),file); }
-                                                                      Terminal terminal = new Terminal(idleft,idright);
-                                                                      mvd.getIds().add(0,id);
-                                                                      mvd.getIdLocations().add(0,terminal);
-                                                                      RESULT = mvd; :}
-                    | varDecl:vd                                   {: RESULT = vd; :};
+singleDecl      ::= IDENTIFIER:id COLON type:t                     {: Terminal terminal = new Terminal(idleft,idright); RESULT = new VarDecl.RawVarDeclList(ParseUtil.singleton(new Expr.Identifier(id,terminal)), t, terminal); :};
+idList          ::= IDENTIFIER:id1 COMMA IDENTIFIER:id2            {: ArrayList<Expr.Identifier> idList = ParseUtil.singleton(new Expr.Identifier(id1, new Terminal(id1left,id1right)));
+                                                                      idList.add(new Expr.Identifier(id2, new Terminal(id2left,id2right)));
+                                                                      RESULT = idList;:}
+                    | idList:idl COMMA:c IDENTIFIER:id             {: idl.add(new Expr.Identifier(id, new Terminal(idleft,idright))); RESULT = idl; :};
+multiVarDecl    ::= idList:idl COLON type:t                        {: RESULT = new VarDecl.RawVarDeclList(idl, t, idl.get(0).getTerminal()); :}; //Invariant that every idl has a first element
+varDecl         ::= singleDecl:sd                                  {: RESULT = sd; :}
+                    | multiVarDecl:mvd                             {: RESULT = mvd; :};
 multiVarDeclList::= multiVarDecl:mvd semi                          {: RESULT = ParseUtil.singleton(mvd); :}
-                    | multiVarDecl:mvd semi multiVarDeclList:mvl   {: mvl.add(mvd); RESULT = mvl; :};
+                    | multiVarDeclList:mvl multiVarDecl:mvd semi   {: mvl.add(mvd); RESULT = mvl; :};
 assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = ParseUtil.singleton(new AssignTarget.ArrayAssign(e1)); :}
-                    | multiVarDecl:mvd                             {: ArrayList<String> ids = mvd.getIds();
-                                                                      ArrayList<AssignTarget> assignables = new ArrayList<AssignTarget>();
-                                                                      Terminal terminal;
-                                                                      for (int i = 0; i < ids.size() - 1; i ++)
-                                                                      { terminal = mvd.getIdLocations().get(i);
-                                                                      assignables.add(new AssignTarget.IdAssign(new Expr.Identifier(ids.get(i), terminal))); }
-                                                                      terminal = mvd.getIdLocations().get(ids.size() - 1);
-                                                                      assignables.add(new AssignTarget.DeclAssign(new VarDecl.RawVarDeclList(ParseUtil.singleton(ids.get(ids.size() - 1)), mvd.getType(), ParseUtil.singleton(terminal), terminal)));
-                                                                      RESULT = assignables; :}
+                    | singleDecl:vd                                {: RESULT = ParseUtil.singleton(new AssignTarget.DeclAssign(vd)); :}
+                    | multiVarDecl:vd                              {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                      ArrayList<Expr.Identifier> ids = vd.getIds();
+                                                                      for (int i = 0; i < ids.size() - 1; i++) { assignTargets.add(new AssignTarget.IdAssign(ids.get(i))); }
+                                                                      Expr.Identifier lastId = ids.get(ids.size() - 1);
+                                                                      assignTargets.add(new AssignTarget.DeclAssign(new VarDecl.RawVarDeclList(ParseUtil.singleton(lastId), vd.getType(), lastId.getTerminal())));
+                                                                      RESULT = assignTargets; :}
+                    | idList:idl                                   {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                      for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
+                                                                      RESULT = assignTargets;:}
                     | UNDERSCORE:u                                 {: RESULT = ParseUtil.singleton(new AssignTarget.Underscore(new Terminal(uleft,uright))); :}
                     | IDENTIFIER:id                                {: RESULT = ParseUtil.singleton(new AssignTarget.IdAssign(new Expr.Identifier(id, new Terminal(idleft,idright)))); :}
-                    | field:f                                      {: RESULT = ParseUtil.singleton(new AssignTarget.FieldAssign(f)); :};
+                    | field:f                                      {: RESULT = ParseUtil.singleton(new AssignTarget.FieldAssign(f)); :} ;
 assignables     ::= assignable:at                                  {: RESULT = at; :}
                     | assignables:atl COMMA assignable:at          {: atl.addAll(at); RESULT = atl; :} ; //LEFT RECURSIVE
 multiAssign     ::= assignables:tg EQUALS:o exprList:exprs         {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright)); :};

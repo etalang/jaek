@@ -4,11 +4,11 @@ import edu.cornell.cs.cs4120.util.SExpPrinter
 
 sealed class VarDecl() : Statement() {
 
-    class RawVarDeclList(val ids: ArrayList<String>, val type: Type, val idLocations : ArrayList<Terminal>, override val terminal: Terminal) : VarDecl() {
+    class RawVarDeclList(val ids: ArrayList<Expr.Identifier>, val type: Type, override val terminal: Terminal) : VarDecl() {
         override fun write(printer: SExpPrinter) {
             ids.forEach { id ->
                 printer.startList();
-                printer.printAtom(id);
+                printer.printAtom(id.name);
                 type.write(printer);
                 printer.endList()
             }

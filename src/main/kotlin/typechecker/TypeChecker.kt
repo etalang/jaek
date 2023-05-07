@@ -92,7 +92,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             val fieldTypes = linkedMapOf<String, EtaType>()
                             for (f in defn.fields) {
                                 for (identifier in f.ids) {
-                                    fieldTypes[identifier] = translateType(f.type)
+                                    fieldTypes[identifier.name] = translateType(f.type)
                                 }
                             }
 //                            Gamma.bind(defn.name,  fieldTypes)
@@ -136,10 +136,10 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     semanticError(decl, "declaration must have exactly one variable assigned")
                                 }
                                 val argName = decl.ids[0]
-                                if (Gamma.contains(argName)) {
+                                if (Gamma.contains(argName.name)) {
                                     semanticError(decl, "function parameter $argName shadows variable in global scope")
                                 }
-                                Gamma.bind(argName, VarBind(translateType(decl.type)))
+                                Gamma.bind(argName.name, VarBind(translateType(decl.type)))
                             }
 
                             // INVARIANT: "@" is the name of the return context varaiable
@@ -171,10 +171,10 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     semanticError(defn, "field type $fieldType is record type but not present")
                                 }
                                 f.ids.forEach{id ->
-                                    if (id in fields) {
+                                    if (id.name in fields) {
                                         semanticError(defn, "field $id is declared multiple times/shadowed")
                                     }
-                                    fields.add(id)
+                                    fields.add(id.name)
                                 }
                             }
                         }
@@ -234,7 +234,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                     if (n.decl.ids.size != 1) {
                         semanticError(n.decl, "declaration must have exactly one variable assigned")
                     }
-                    if (Gamma.contains(n.decl.ids[0]) || gammai.containsKey(n.decl.ids[0])) {
+                    if (Gamma.contains(n.decl.ids[0].name) || gammai.containsKey(n.decl.ids[0].name)) {
                         semanticError(n.decl, "Shadowing old variable ${n.decl.ids[0]} in multiassignment")
                     }
                     val t = translateType(n.decl.type)
@@ -242,7 +242,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         semanticError(n.decl, "Type mismatch on declaration assignment")
                     }
                     n.etaType = t
-                    gammai[n.decl.ids[0]] = VarBind(t)
+                    gammai[n.decl.ids[0].name] = VarBind(t)
                 }
                 is AssignTarget.IdAssign -> {
                     val t = Gamma.lookup(n.idAssign.name)
@@ -367,7 +367,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 if (target.decl.ids.size != 1) {
                                     semanticError(target.decl, "declaration must have exactly one variable assigned")
                                 }
-                                if (Gamma.contains(target.decl.ids[0])) {
+                                if (Gamma.contains(target.decl.ids[0].name)) {
                                     semanticError(target.decl,"Identifier ${target.decl.ids[0]} already exists in scope")
                                 }
                                 else {
@@ -380,7 +380,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                         if (t != translateType(target.decl.type)) {
                                             semanticError(target.decl,"Assigned expression type does not match expected type ${translateType(target.decl.type)}")
                                         }
-                                        Gamma.bind(target.decl.ids[0], VarBind(t))
+                                        Gamma.bind(target.decl.ids[0].name, VarBind(t))
                                         n.etaType = UnitType()
                                     }
                                 }
@@ -555,14 +555,14 @@ class TypeChecker(topGamma: Context, val file: File) {
             }
             is VarDecl.RawVarDeclList -> { // VarDecl
                 n.ids.forEach{id ->
-                    if (Gamma.contains(id)) {
+                    if (Gamma.contains(id.name)) {
                         semanticError(n,"Identifier ${n.ids[0]} already exists")
                     }
                     else {
                         if (n.type is Type.RecordType && !Gamma.recordTypes().contains(n.type.t)) {
                             semanticError(n,"Record type ${n.type.t} not defined")
                         }
-                        Gamma.bind(id, VarBind(translateType(n.type)))
+                        Gamma.bind(id.name, VarBind(translateType(n.type)))
                         n.etaType = UnitType()
                     }
                 }
