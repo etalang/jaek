@@ -2,40 +2,42 @@ package optimize.dataflow
 
 import optimize.cfg.CFGNode
 import optimize.dataflow.Meet.RealMeet
-import kotlin.math.max
 
 sealed class Element {
     abstract val meet: Meet<*>
 
-    sealed class UpperBounds : Element() {
-        object Top : UpperBounds() {
+    sealed class Definition : Element() {
+        object Top : Definition() {
             override fun toString() = "⊤"
         }
 
-        object Bottom : UpperBounds() {
+        object Bottom : Definition() {
             override fun toString() = "⊥"
         }
 
-        class Data(val t: Int) : UpperBounds() {
+        class Data(val t: Int) : Definition() {
             override fun toString() = t.toString()
         }
 
-        override val meet: Meet<UpperBounds> = object : RealMeet<UpperBounds, Data>(Top, Bottom) {
-            override fun meetData(e1: Data, e2: Data): UpperBounds = Data(max(e1.t, e2.t))
+        class DesignatedMeeter : Definition()
+
+        override val meet: Meet<Definition> = object : RealMeet<Definition, Data>(Top, Bottom) {
+            override fun meetData(e1: Data, e2: Data): Definition = Bottom // multiple definitions means we don't know what it is
         }
     }
 
-    sealed class Reachability : Element() {
-        object Top : Reachability() {
+    sealed class Unreachability : Element() {
+        object Top : Unreachability() {
             override fun toString() = "⊤"
         }
 
-        object Bottom : Reachability() {
+        object Bottom : Unreachability() {
             override fun toString() = "⊥"
         }
 
+        class DesignatedMeeter : Unreachability()
 
-        override val meet: Meet<Reachability> = object : Meet<Reachability>(Top, Bottom) {}
+        override val meet: Meet<Unreachability> = object : Meet<Unreachability>(Top, Bottom) {}
     }
 
     sealed class IntersectNodes : Element() {
