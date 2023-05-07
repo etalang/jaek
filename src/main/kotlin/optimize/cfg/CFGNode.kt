@@ -1,7 +1,7 @@
 package optimize.cfg
 
 sealed class CFGNode(
-    /** if you are not a `Lazy.Edge`, you should not be using this! */
+    /** if you are not a `Lazy.Edge`, you should not be using lazyTo! */
     val lazyTo: Edge.Lazy, var to: Edge? = null
 ) {
     open fun resolveEdges() {

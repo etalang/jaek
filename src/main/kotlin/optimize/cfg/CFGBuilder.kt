@@ -73,7 +73,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
     }
 
     fun build(): CFG {
-        return CFG(start,lir.name,nodes)
+        return CFG(start,lir.name)
     }
 
     private fun translateMove(currStmt: LIRMove): CFGNode.Mov {
