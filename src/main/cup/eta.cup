@@ -67,7 +67,6 @@ nonterminal ArrayList<Expr> exprList;
 nonterminal ArrayList<AssignTarget> assignable;
 nonterminal ArrayList<AssignTarget> assignables;
 nonterminal VarDecl.RawVarDeclList methodArg;
-nonterminal VarDecl.RawVarDeclList varDecl;
 nonterminal semi;
 nonterminal BinaryOp binop;
 nonterminal ParseUtil.UnOpBundle unop;
@@ -198,8 +197,6 @@ idList          ::= IDENTIFIER:id1 COMMA IDENTIFIER:id2            {: ArrayList<
                                                                       RESULT = idList;:}
                     | idList:idl COMMA:c IDENTIFIER:id             {: idl.add(new Expr.Identifier(id, new Terminal(idleft,idright))); RESULT = idl; :};
 multiVarDecl    ::= idList:idl COLON type:t                        {: RESULT = new VarDecl.RawVarDeclList(idl, t, idl.get(0).getTerminal()); :}; //Invariant that every idl has a first element
-varDecl         ::= singleDecl:sd                                  {: RESULT = sd; :}
-                    | multiVarDecl:mvd                             {: RESULT = mvd; :};
 multiVarDeclList::= multiVarDecl:mvd semi                          {: RESULT = ParseUtil.singleton(mvd); :}
                     | multiVarDeclList:mvl multiVarDecl:mvd semi   {: mvl.add(mvd); RESULT = mvl; :};
 assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = ParseUtil.singleton(new AssignTarget.ArrayAssign(e1)); :}
