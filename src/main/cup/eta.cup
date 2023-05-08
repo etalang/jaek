@@ -109,17 +109,18 @@ program         ::= imports:Is allDefinitions:Ds                {: if (extension
 imports         ::= use:u imports:It                            {: It.add(0, u); RESULT = It; :}
                     |                                           {: RESULT = new ArrayList<Use>(); :};
 use             ::= USE:u IDENTIFIER:id semi                    {: if (extension.equals("eti"))
-                                                                        { throw new ParseError(new Token.StringToken(u, uleft, uright), file); }
-                                                                    RESULT = new Use(id, new Terminal(idleft,idright)); :};
+                                                                   { throw new ParseError(new Token.StringToken(u, uleft, uright), file); }
+                                                                   RESULT = new Use(id, new Terminal(idleft,idright)); :};
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Top Level Declarations */
-allDefinitions  ::= allDefinitions:Dt definition:d              {: Dt.add(d); RESULT = Dt; :}
+allDefinitions     ::= allDefinitions:Dt definition:d           {: Dt.add(d); RESULT = Dt; :}
                     | globalDefinitions:Dt method:m             {: Dt.add(m); RESULT = Dt; :}
-                    | method:m                                  {: RESULT = ParseUtil.singleton(m); :}
-                    | record:r                                  {: RESULT = ParseUtil.singleton(r); :};
+                    | method:m                                  {: RESULT = ParseUtil.singleton(m); :};
 globalDefinitions  ::= globalDefinitions:Dt globalDecl:dc semi  {: Dt.add(dc); RESULT = Dt; :} //could be sketch
-                    | globalDecl:dc semi                        {: RESULT = ParseUtil.singleton(dc); :};
+                    | globalDefinitions:Dt record:r             {: Dt.add(r); RESULT = Dt; :}
+                    | globalDecl:dc semi                        {: RESULT = ParseUtil.singleton(dc); :}
+                    | record:r                                  {: RESULT = ParseUtil.singleton(r); :};
 definition      ::= method:m                                    {: RESULT = m; :}
                     | globalDecl:dc semi                        {: RESULT = dc; :}
                     | record:r                                  {: RESULT = r; :};
