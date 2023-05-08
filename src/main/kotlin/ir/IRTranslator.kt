@@ -23,6 +23,9 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     /** Tracks function calls done by a function **/
     private val functionCalls: MutableMap<String, MutableSet<String>> = HashMap()
 
+    /** Tracks the records defined in the program **/
+    private val records: MutableMap<String, Map<String, Int>> = HashMap()
+
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -56,7 +59,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
             visit(startFunc)
         }
-        functions.forEach() { function ->
+        functions.forEach { function ->
             bfs(function)
         }
     }
@@ -115,7 +118,11 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         p.definitions.forEach {
             when (it) {
                 is Method -> if (it.body != null) functions.add(translateFuncDecl(it))
-                is RhoRecord -> TODO()
+                is RhoRecord -> {
+                    val fields = mutableMapOf<String, Int>()
+                    var counter = 0
+                    it.fields.forEach { field -> field.ids.forEach { id -> fields[id.name] = counter; counter++; } }
+                }
                 else -> {}
             }
         }
@@ -164,7 +171,11 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private fun translateAssignTarget(n: AssignTarget, sourceFn: String): IRExpr {
         return when (n) {
             is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, sourceFn)
-            is AssignTarget.DeclAssign -> IRTemp(n.decl.ids[0].name)// TODO:id
+            is AssignTarget.DeclAssign -> if (n.decl.ids.size != 1) {
+                throw Exception("Multiple ids in declaration assignment target")
+            } else {
+                IRTemp(n.decl.ids[0].name)
+            }
             is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
             is AssignTarget.Underscore -> freshTemp()
             is AssignTarget.FieldAssign -> translateExpr(n.fieldAssign, sourceFn)
@@ -570,8 +581,28 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
 
             is Expr.FunctionCall -> {
-                functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
-                IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
+                //TODO: add record initialization here
+                if (n.fn in records){
+                    val dimension = records[n.fn]!!.size.toLong()
+                    val tempM = freshTemp()
+                    val moves = arrayInitMoves(IRConst(dimension), tempM)
+                    for (i in 0 until dimension) {
+                        moves.add(
+                            IRMove(
+                                IRMem(IROp(ADD, tempM, IRConst((8 * (i + 1))))),
+                                translateExpr(n.args[i.toInt()], sourceFn)
+                            )
+                        )
+                    }
+                    IRESeq(
+                        IRSeq(
+                            moves
+                        ), IROp(ADD, tempM, IRConst(8))
+                    )
+                } else {
+                    functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
+                    IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
+                }
             }
 
             is Expr.Identifier -> {
@@ -645,7 +676,19 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 UnaryOp.Operation.NEG -> IROp(SUB, IRConst(0), translateExpr(n.arg, sourceFn))
             }
 
-            is Expr.Field -> TODO()
+            is Expr.Field -> {
+                val type = n.record.etaType
+                if (type is EtaType.OrdinaryType.RecordType){
+                    val fieldNumber = records[type.t]!![n.name]
+                    if (fieldNumber != null) {
+                        IRMem(IRConst((8 * (fieldNumber + 1)).toLong()))
+                    } else {
+                        throw Exception("Field access on field not in record type (should have been done in type checking)")
+                    }
+                } else {
+                    throw Exception("Field access on non-record type (should have been done in type checking)")
+                }
+            }
             is Literal.NullLit -> IRMem(IRConst(0))
         }
     }
