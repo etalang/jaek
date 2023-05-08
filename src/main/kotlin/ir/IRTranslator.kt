@@ -106,18 +106,16 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         p.definitions.forEach {
             when (it) {
                 is GlobalDecl -> {
-                    globals.add(translateData(it))
+                    globals.addAll(translateData(it))
                 }
-
                 else -> {}
             }
         }
 
-//        globals.forEach { println(it.name) }
-
         p.definitions.forEach {
             when (it) {
                 is Method -> if (it.body != null) functions.add(translateFuncDecl(it))
+                is RhoRecord -> TODO()
                 else -> {}
             }
         }
@@ -125,7 +123,8 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     }
 
     // TODO: Arrays in global data should also have their length? how does this affect pointers to their info?
-    private fun translateData(n: GlobalDecl): IRData {
+    private fun translateData(n: GlobalDecl): List<IRData> {
+        if (n.ids.size != 1 && n.value != null) throw Exception("Multiple ids in global assignment")
         val data: LongArray = when (val v = n.value) {
             is Literal.ArrayLit -> v.list.map { translateExpr(it, "_globals").java.constant() }
                 .toLongArray() //let's hope this doesn't throw
@@ -136,14 +135,17 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is Literal.NullLit -> TODO()
             null -> longArrayOf(0)
         }
-        //TODO:id
-        return IRData(n.ids[0], data)
+        val irDataList = mutableListOf<IRData>()
+        for (i in 0 until n.ids.size) {
+            irDataList.add(IRData(n.ids[i], data))
+        }
+        return irDataList
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
         val funcMoves: MutableList<IRStmt> = mutableListOf()
         for (i in 0 until n.args.size) {
-            //TODO:id
+            if (n.args[i].ids.size != 1) throw Exception("Multiple ids in arg")
             funcMoves.add(IRMove(IRTemp(n.args[i].ids[0].name), IRTemp("_ARG${i + 1}")))
         }
 
