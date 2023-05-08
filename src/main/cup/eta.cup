@@ -202,22 +202,46 @@ multiVarDeclList::= multiVarDecl:mvd semi                          {: RESULT = P
                     | multiVarDeclList:mvl multiVarDecl:mvd semi   {: mvl.add(mvd); RESULT = mvl; :};
 assignable      ::= arrayAccess:e1   /*  a[2] = , f(x)[0] = */     {: RESULT = ParseUtil.singleton(new AssignTarget.ArrayAssign(e1)); :}
                     | singleDecl:vd                                {: RESULT = ParseUtil.singleton(new AssignTarget.DeclAssign(vd)); :}
-                    | multiVarDecl:vd                              {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
-                                                                      ArrayList<Expr.Identifier> ids = vd.getIds();
-                                                                      for (int i = 0; i < ids.size() - 1; i++) { assignTargets.add(new AssignTarget.IdAssign(ids.get(i))); }
-                                                                      Expr.Identifier lastId = ids.get(ids.size() - 1);
-                                                                      assignTargets.add(new AssignTarget.DeclAssign(new VarDecl.RawVarDeclList(ParseUtil.singleton(lastId), vd.getType(), lastId.getTerminal())));
-                                                                      RESULT = assignTargets; :}
-                    | idList:idl                                   {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
-                                                                      for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
-                                                                      RESULT = assignTargets;:}
                     | UNDERSCORE:u                                 {: RESULT = ParseUtil.singleton(new AssignTarget.Underscore(new Terminal(uleft,uright))); :}
                     | IDENTIFIER:id                                {: RESULT = ParseUtil.singleton(new AssignTarget.IdAssign(new Expr.Identifier(id, new Terminal(idleft,idright)))); :}
                     | field:f                                      {: RESULT = ParseUtil.singleton(new AssignTarget.FieldAssign(f)); :} ;
 assignables     ::= assignable:at                                  {: RESULT = at; :}
                     | assignables:atl COMMA assignable:at          {: atl.addAll(at); RESULT = atl; :} ; //LEFT RECURSIVE
-multiAssign     ::= assignables:tg EQUALS:o exprList:exprs         {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright)); :};
-
+multiAssign     ::= assignables:tg EQUALS:o exprList:exprs                                       {: RESULT = new MultiAssign(tg, exprs, new Terminal(oleft,oright)); :}
+                    | multiVarDecl:vd EQUALS:o exprList:exprs                                    {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                    ArrayList<Expr.Identifier> ids = vd.getIds();
+                                                                                                    for (int i = 0; i < ids.size() - 1; i++) { assignTargets.add(new AssignTarget.IdAssign(ids.get(i))); }
+                                                                                                    Expr.Identifier lastId = ids.get(ids.size() - 1);
+                                                                                                    assignTargets.add(new AssignTarget.DeclAssign(new VarDecl.RawVarDeclList(ParseUtil.singleton(lastId), vd.getType(), lastId.getTerminal())));
+                                                                                                    RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright)); :}
+                    | idList:idl EQUALS:o exprList:exprs                                          {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                     for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
+                                                                                                     RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright));:}
+                    | multiVarDecl:vd COMMA:c assignables:as EQUALS:o exprList:exprs              {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                     ArrayList<Expr.Identifier> ids = vd.getIds();
+                                                                                                     for (int i = 0; i < ids.size() - 1; i++) { assignTargets.add(new AssignTarget.IdAssign(ids.get(i))); }
+                                                                                                     Expr.Identifier lastId = ids.get(ids.size() - 1);
+                                                                                                     assignTargets.add(new AssignTarget.DeclAssign(new VarDecl.RawVarDeclList(ParseUtil.singleton(lastId), vd.getType(), lastId.getTerminal())));
+                                                                                                     assignTargets.addAll(as);
+                                                                                                     RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright)); :}
+                    | idList:idl COMMA UNDERSCORE:u COMMA assignables:as EQUALS:o exprList:exprs   {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                      for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
+                                                                                                      assignTargets.add(new AssignTarget.Underscore(new Terminal(uleft,uright)));
+                                                                                                      assignTargets.addAll(as);
+                                                                                                      RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright)); :}
+                    | idList:idl COMMA UNDERSCORE:u EQUALS:o exprList:exprs                        {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                      for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
+                                                                                                      assignTargets.add(new AssignTarget.Underscore(new Terminal(uleft,uright)));
+                                                                                                      RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright)); :}
+                    | idList:idl COMMA field:f COMMA assignables:as EQUALS:o exprList:exprs        {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                      for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
+                                                                                                      assignTargets.add(new AssignTarget.FieldAssign(f));
+                                                                                                      assignTargets.addAll(as);
+                                                                                                      RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright)); :}
+                    | idList:idl COMMA field:f EQUALS:o exprList:exprs                             {: ArrayList<AssignTarget> assignTargets = new ArrayList<>();
+                                                                                                      for (Expr.Identifier id: idl){ assignTargets.add(new AssignTarget.IdAssign(id)); }
+                                                                                                      assignTargets.add(new AssignTarget.FieldAssign(f));
+                                                                                                      RESULT = new MultiAssign(assignTargets, exprs, new Terminal(oleft,oright)); :};
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* Initializations */
 arrayInitStatement ::= IDENTIFIER:id COLON arrayInit:ar                         {: RESULT = new VarDecl.InitArr(id, ar, new Terminal(idleft,idright)); :};
