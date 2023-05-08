@@ -139,7 +139,8 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is Literal.CharLit -> longArrayOf(v.char.toLong())
             is Literal.IntLit -> longArrayOf(v.num)
             is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
-            is Literal.NullLit -> TODO()
+            //is this how you do null literals???
+            is Literal.NullLit -> longArrayOf(0)
             null -> longArrayOf(0)
         }
         val irDataList = mutableListOf<IRData>()
@@ -309,7 +310,17 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 )
             }
 
-            is VarDecl.RawVarDeclList -> IRMove(IRTemp(n.ids[0].name), IRConst(0)) //INIT 0 // TODO: id
+            is VarDecl.RawVarDeclList -> {
+                if (n.ids.size == 1){
+                    IRMove(IRTemp(n.ids[0].name), IRConst(0))
+                } else {
+                    val moves = mutableListOf<IRStmt>()
+                    n.ids.forEach {
+                        moves.add(IRMove(IRTemp(it.name), IRConst(0)))
+                    }
+                    IRSeq(moves)
+                }
+            }
             is Statement.While -> {
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
@@ -581,7 +592,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
 
             is Expr.FunctionCall -> {
-                //TODO: add record initialization here
+                //Record initialization allocates an array of constant size
                 if (n.fn in records){
                     val dimension = records[n.fn]!!.size.toLong()
                     val tempM = freshTemp()
