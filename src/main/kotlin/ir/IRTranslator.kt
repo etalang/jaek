@@ -26,6 +26,11 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
+    /** Tracks where the label of the first enclosed while is **/
+    //Assumes that statements are translated in order iteratively
+    private var enclosingWhileLabel: IRLabel? = null
+
+
     /** WHERE IT HAPPENS **/
     fun irgen(optimize: Boolean = false): LIRCompUnit {
         val mir = translateCompUnit(AST)
@@ -71,6 +76,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is EtaType.OrdinaryType.ArrayType -> "a" + mangleType(t.t)
             is EtaType.OrdinaryType.BoolType -> "b"
             is EtaType.OrdinaryType.IntType -> "i"
+            is EtaType.OrdinaryType.RecordType -> "r" + t.t.length + t.t
             else -> "Charles Sherk <3"
         }
     }
@@ -88,7 +94,6 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     "_", "__"
                 ) + "_" + retType + type.domain.lst.fold("") { acc, e -> acc + mangleType(e) }
             }
-
             else -> {
                 "i love cs 4120 ta charles sherk"
             }
@@ -128,8 +133,8 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is Literal.CharLit -> longArrayOf(v.char.toLong())
             is Literal.IntLit -> longArrayOf(v.num)
             is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
-            null -> longArrayOf(0)
             is Literal.NullLit -> TODO()
+            null -> longArrayOf(0)
         }
         //TODO:id
         return IRData(n.ids[0], data)
@@ -160,7 +165,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is AssignTarget.DeclAssign -> IRTemp(n.decl.ids[0].name)// TODO:id
             is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
             is AssignTarget.Underscore -> freshTemp()
-            is AssignTarget.FieldAssign -> TODO()
+            is AssignTarget.FieldAssign -> translateExpr(n.fieldAssign, sourceFn)
         }
 
     }
@@ -296,19 +301,29 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
                 val startLabel = freshLabel()
+                var setWhileLabel = false
+                if (enclosingWhileLabel == null){
+                    enclosingWhileLabel = falseLabel
+                    setWhileLabel = true
+                }
+                val guard = translateControl(n.guard, trueLabel, falseLabel, sourceFn)
+                val body = translateStatement(n.body, sourceFn)
+                if (setWhileLabel){
+                    enclosingWhileLabel = null
+                }
                 IRSeq(
                     listOf(
                         startLabel,
-                        translateControl(n.guard, trueLabel, falseLabel, sourceFn),
+                        guard,
                         trueLabel,
-                        translateStatement(n.body, sourceFn),
+                        body,
                         IRJump(IRName(startLabel.l)),
                         falseLabel
                     )
                 )
             }
-
-            is Statement.Break -> TODO()
+            //If there is no enclosing while label then it shouldn't have typed checked...
+            is Statement.Break -> IRJump(IRName(enclosingWhileLabel!!.l))
         }
     }
 
