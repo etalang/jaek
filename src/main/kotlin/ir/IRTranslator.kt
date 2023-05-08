@@ -26,6 +26,9 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     /** Tracks the records defined in the program **/
     private val records: MutableMap<String, Map<String, Int>> = HashMap()
 
+    /** Null Reference **/
+    private val nullRef = IRMem(IRConst(0))
+
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
@@ -311,12 +314,16 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
 
             is VarDecl.RawVarDeclList -> {
+                val defaultType = when (n.type){
+                    is Type.Array, is Type.RecordType -> { val nullPtr = freshTemp(); IRESeq(IRMove(nullPtr, nullRef), nullPtr) }
+                    is Primitive.BOOL, is Primitive.INT  -> IRConst(0)
+                }
                 if (n.ids.size == 1){
-                    IRMove(IRTemp(n.ids[0].name), IRConst(0))
+                    IRMove(IRTemp(n.ids[0].name), defaultType)
                 } else {
                     val moves = mutableListOf<IRStmt>()
                     n.ids.forEach {
-                        moves.add(IRMove(IRTemp(it.name), IRConst(0)))
+                        moves.add(IRMove(IRTemp(it.name), defaultType))
                     }
                     IRSeq(moves)
                 }
@@ -700,7 +707,9 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     throw Exception("Field access on non-record type (should have been done in type checking)")
                 }
             }
-            is Literal.NullLit -> IRMem(IRConst(0))
+            is Literal.NullLit -> {
+                val nullPtr = freshTemp()
+                IRESeq(IRMove(nullPtr, nullRef), nullPtr) }
         }
     }
 
