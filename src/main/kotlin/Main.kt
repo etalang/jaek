@@ -257,7 +257,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
             val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
             var tc = TypeChecker(topGamma, inFile)
             if (ast !is Interface) {
-                tc.typeCheck(ast, false)
+                tc.typeCheck(ast)
             }
             typedFile?.appendText("Valid Eta Program")
             return tc.Gamma
