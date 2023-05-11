@@ -332,16 +332,11 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
                 val startLabel = freshLabel()
-                var setWhileLabel = false
-                if (enclosingWhileLabel == null){
-                    enclosingWhileLabel = falseLabel
-                    setWhileLabel = true
-                }
+                val oldWhileLabel = enclosingWhileLabel
+                enclosingWhileLabel = falseLabel
                 val guard = translateControl(n.guard, trueLabel, falseLabel, sourceFn)
                 val body = translateStatement(n.body, sourceFn)
-                if (setWhileLabel){
-                    enclosingWhileLabel = null
-                }
+                enclosingWhileLabel = oldWhileLabel
                 IRSeq(
                     listOf(
                         startLabel,
