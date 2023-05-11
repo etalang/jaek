@@ -12,7 +12,7 @@ import assembly.x86.Register.x86Name.*
 import assembly.x86.Source.*
 import typechecker.EtaFunc
 
-class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
+class TrivialRegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
     /**
      * default three registers used in trivial register allocation ASSUME: we don't use these registers ANYWHERE in a
      * nontrivial capacity before we allocate
