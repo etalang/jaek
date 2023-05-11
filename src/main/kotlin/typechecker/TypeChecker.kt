@@ -25,7 +25,7 @@ class TypeChecker(topGamma: Context, val file: File) {
         throw SemanticError(node.terminal.line,node.terminal.column,msg,file)
     }
 
-    fun typeCheck(n : Node, inWhile: Boolean) {
+    fun typeCheck(n : Node) {
         when (n) {
             is Program -> {
                 // first pass
@@ -111,7 +111,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 }
                                 else {
                                     if (defn.value != null) {
-                                        typeCheck(defn.value, inWhile)
+                                        typeCheck(defn.value)
                                         val t = defn.value.etaType
                                         if (vartype !is VarBind) {
                                             semanticError(defn,"Global declaration is not for variable")
@@ -153,7 +153,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 semanticError(defn, "function in program file missing body")
                             }
                             else {
-                                typeCheck(s, inWhile)
+                                typeCheck(s)
                                 if (defn.returnTypes.size != 0) {
                                     if (s.etaType !is VoidType) {
                                         semanticError(s, "function body does not return")
@@ -181,8 +181,8 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
                 }
             }
-            is Statement -> { typeCheckStmt(n, inWhile) }
-            is Expr -> typeCheckExpr(n, inWhile)
+            is Statement -> { typeCheckStmt(n) }
+            is Expr -> typeCheckExpr(n)
             else -> {
                 semanticError(n,"Unreachable, calling typeCheck on Node that should not be type-checked explicitly")
                 // AssignTarget case -> do nothing, should never be typechecked from here
@@ -196,15 +196,15 @@ class TypeChecker(topGamma: Context, val file: File) {
     /** typeCheckAssignHelp(n, et, gammai) executes the judgement
      * Gamma, (Gamma :: gammai) |- n :: t -| (Gamma : gammai'), where gammai' is the
      * returned map from typeCheckAssignHelp */
-    private fun typeCheckAssignHelp (n:AssignTarget, expectedType:EtaType?, gammai : HashMap<String, ContextType>, inWhile: Boolean) : HashMap<String, ContextType> {
+    private fun typeCheckAssignHelp (n:AssignTarget, expectedType:EtaType?, gammai : HashMap<String, ContextType>) : HashMap<String, ContextType> {
         if (expectedType == null) {
             semanticError(n, "unreachable, should have just created this type")
         }
         else {
             when (n) {
                 is AssignTarget.ArrayAssign -> {
-                    typeCheck(n.arrayAssign.arr, inWhile)
-                    typeCheck(n.arrayAssign.idx, inWhile)
+                    typeCheck(n.arrayAssign.arr)
+                    typeCheck(n.arrayAssign.idx)
                     if (n.arrayAssign.arr.etaType !is ArrayType || n.arrayAssign.arr.etaType !is NullType) {
                         semanticError(n.arrayAssign.arr, "Indexed expression is not an array")
                     }
@@ -259,7 +259,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
                 is AssignTarget.Underscore -> { n.etaType = UnknownType(true) }
                 is AssignTarget.FieldAssign -> {
-                    typeCheck(n.fieldAssign, inWhile)
+                    typeCheck(n.fieldAssign)
                     val t = n.fieldAssign.etaType
                     if (t != null && expectedType != t) {
                         semanticError(n, "cannot assign value of type $expectedType to field of type $t")
@@ -272,7 +272,7 @@ class TypeChecker(topGamma: Context, val file: File) {
         throw Exception("not sure how this happened")
     }
 
-    private fun typeCheckStmt(n: Statement, inWhile: Boolean) {
+    private fun typeCheckStmt(n: Statement) {
         when (n) {
             is Statement.Block -> {
                 if (n.stmts.isEmpty()) {
@@ -281,7 +281,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                 else {
                     Gamma.enterScope()
                     for (i in 0 until n.stmts.size) {
-                        typeCheck(n.stmts[i], inWhile)
+                        typeCheck(n.stmts[i])
                         val t = n.stmts[i].etaType
                         if (i < n.stmts.size - 1 && t !is UnitType) {
                             semanticError(n.stmts[i], "Function block should have void type")
@@ -292,15 +292,15 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
             }
             is Statement.If -> {
-                typeCheck(n.guard, inWhile)
+                typeCheck(n.guard)
                 val t = n.guard.etaType
                 if (t is BoolType) {
-                    typeCheckStmt(n.thenBlock, inWhile)
+                    typeCheckStmt(n.thenBlock)
                     if (n.elseBlock == null) { // no else block? (IF)
                         n.etaType = UnitType()
                     }
                     else {
-                        typeCheckStmt(n.elseBlock, inWhile)
+                        typeCheckStmt(n.elseBlock)
                         val r1 = n.thenBlock.etaType
                         val r2 = n.elseBlock.etaType
                         if (r1 is StatementType && r2 is StatementType) {
@@ -328,7 +328,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 }
                                 else {
                                     for (i in 0 until f.args.size) {
-                                        typeCheck(f.args[i], inWhile)
+                                        typeCheck(f.args[i])
                                         if (f.args[i].etaType != fType.domain.lst[i]) {
                                             semanticError(f.args[i], "type mismatch as argument to function")
                                         }
@@ -339,7 +339,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     else {
                                         var newBindings = HashMap<String, ContextType>()
                                         for (i in 0 until fType.codomain.lst.size) {
-                                            newBindings = typeCheckAssignHelp(n.targets[i], fType.codomain.lst[i], newBindings, inWhile)
+                                            newBindings = typeCheckAssignHelp(n.targets[i], fType.codomain.lst[i], newBindings)
                                         }
                                         for (k in newBindings.keys) {
                                             newBindings[k]?.let { Gamma.bind(k, it) }
@@ -371,7 +371,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     semanticError(target.decl,"Identifier ${target.decl.ids[0]} already exists in scope")
                                 }
                                 else {
-                                    typeCheck(n.vals.first(), inWhile)
+                                    typeCheck(n.vals.first())
                                     val t = n.vals.first().etaType
                                     if (t == null || t !is OrdinaryType) {
                                         semanticError(n.vals.first(),"Unreachable, variable type is not valid") //TODO
@@ -386,10 +386,10 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 }
                             }
                             is AssignTarget.ArrayAssign -> { // ArrAssign rule
-                                typeCheck(n.vals.first(), inWhile)
+                                typeCheck(n.vals.first())
                                 val t = n.vals.first().etaType
-                                typeCheck(target.arrayAssign.arr, inWhile)
-                                typeCheck(target.arrayAssign.idx, inWhile)
+                                typeCheck(target.arrayAssign.arr)
+                                typeCheck(target.arrayAssign.idx)
                                 val expectedType = target.arrayAssign.arr.etaType
                                 if (!(expectedType is ArrayType || expectedType is NullType)) {
                                     semanticError(target.arrayAssign.idx,"Type of indexed expression is not an array")
@@ -412,7 +412,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 }
                             }
                             is AssignTarget.IdAssign -> {
-                                typeCheck(n.vals.first(), inWhile)
+                                typeCheck(n.vals.first())
                                 val t = n.vals.first().etaType
                                 val varType = Gamma.lookup(target.idAssign.name)
                                 if (varType == null || varType !is VarBind) {
@@ -427,15 +427,15 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 }
                             }
                             is AssignTarget.Underscore -> {
-                                typeCheck(n.vals.first(), inWhile)
+                                typeCheck(n.vals.first())
                                 n.etaType = UnitType()
 //                                throw SemanticError(0,0,"Underscore not permitted in single assignment")
                             }
 
                             is AssignTarget.FieldAssign -> {
 
-                                typeCheck(n.vals.first(), inWhile)
-                                typeCheck(target.fieldAssign, inWhile)
+                                typeCheck(n.vals.first())
+                                typeCheck(target.fieldAssign)
                                 val t = n.vals.first().etaType
                                 val expected = target.fieldAssign.etaType
                                 if (t != null && expected != t) {
@@ -448,11 +448,11 @@ class TypeChecker(topGamma: Context, val file: File) {
                     else { // multiple case
                         // generate the t_is
                         for (i in 0 until n.targets.size) {
-                            typeCheck(n.vals[i], inWhile)
+                            typeCheck(n.vals[i])
                         }
                         var newBindings = HashMap<String, ContextType>()
                         for (i in 0 until n.targets.size) {
-                            newBindings = typeCheckAssignHelp(n.targets[i], n.vals[i].etaType, newBindings, inWhile)
+                            newBindings = typeCheckAssignHelp(n.targets[i], n.vals[i].etaType, newBindings)
                         }
                         for (k in newBindings.keys) {
                             newBindings[k]?.let { Gamma.bind(k, it) }
@@ -481,7 +481,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                             else {
                                 for (i in 0 until fnType.domain.lst.size) {
-                                    typeCheck(n.args[i], inWhile)
+                                    typeCheck(n.args[i])
                                     if (n.args[i].etaType != fnType.domain.lst[i]) {
                                         semanticError(n.args[i],"Argument at position $i does not match procedure's expected type")
 
@@ -508,7 +508,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 "only ${n.args.size}")
                     }
                     for (i in 0 until n.args.size) {
-                        typeCheck(n.args[i], inWhile)
+                        typeCheck(n.args[i])
                         if (retType.value.lst[i] != n.args[i].etaType){
                             semanticError(n.args[i],"Return type expected ${n.args[i].etaType}" +
                                     " at position $i, actual return was ${retType.value.lst[i]}")
@@ -540,7 +540,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         semanticError(n,"Incorrect dimensions for array initialization")
                     }
                     else {
-                        n.arrInit.dimensions[j]?.let { typeCheck(it, inWhile) }
+                        n.arrInit.dimensions[j]?.let { typeCheck(it) }
                         if (n.arrInit.dimensions[j]?.etaType !is IntType){
                             semanticError(n.arrInit, "Initialization dimension not an integer")
                         }
@@ -568,10 +568,12 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
             }
             is Statement.While -> {
-                typeCheck(n.guard, inWhile)
+                typeCheck(n.guard)
                 val t = n.guard.etaType
                 if (t is BoolType) {
-                    typeCheckStmt(n.body, true)
+                    Gamma.enterLoop()
+                    typeCheckStmt(n.body)
+                    Gamma.leaveLoop()
                     n.etaType = UnitType()
                 }
                 else {
@@ -580,18 +582,19 @@ class TypeChecker(topGamma: Context, val file: File) {
             }
 
             is Statement.Break -> {
-                if (!inWhile) {
+                if (Gamma.inLoop()) {
                     semanticError(n, "Break statement not enclosed by while loop")
                 }
+                n.etaType = VoidType()
             }
         }
     }
 
-    private fun typeCheckExpr(n:Expr, inWhile: Boolean) {
+    private fun typeCheckExpr(n:Expr) {
         when (n) {
             is Expr.ArrayAccess -> {
-                typeCheck(n.arr, inWhile)
-                typeCheck(n.idx, inWhile)
+                typeCheck(n.arr)
+                typeCheck(n.idx)
                 val arrt = n.arr.etaType
                 val idxt = n.idx.etaType
                 if (arrt is ArrayType) {
@@ -613,8 +616,8 @@ class TypeChecker(topGamma: Context, val file: File) {
                 }
             }
             is BinaryOp -> {
-                typeCheck(n.left, inWhile)
-                typeCheck(n.right, inWhile)
+                typeCheck(n.left)
+                typeCheck(n.right)
                 val ltype = n.left.etaType
                 val rtype = n.right.etaType
                 when (ltype) {
@@ -781,7 +784,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                     if (n.args.size == ft.domain.lst.size) {
                         if (ft.codomain.lst.size == 1) {
                             for (i in 0 until n.args.size) {
-                                typeCheck(n.args[i], inWhile)
+                                typeCheck(n.args[i])
                                 val argtype = n.args[i].etaType
                                 if (ft.domain.lst[i] != argtype) {
                                     semanticError(n,"Function ${n.fn} expected ${ft.domain.lst[i]} as input" +
@@ -811,7 +814,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         if (n.args.size == rt.size) {
                             val fieldtypes = ArrayList(rt.values)
                             for (i in 0 until n.args.size) {
-                                typeCheck(n.args[i], inWhile)
+                                typeCheck(n.args[i])
                                 val argtype = n.args[i].etaType
                                 val fieldtype = fieldtypes[i]
                                 if (fieldtype != argtype) {
@@ -843,7 +846,7 @@ class TypeChecker(topGamma: Context, val file: File) {
             }
 
             is LengthFn -> {
-                typeCheck(n.arg, inWhile)
+                typeCheck(n.arg)
                 val t = n.arg.etaType
                 if (t is ArrayType || t is NullType) {
                     n.etaType = IntType()
@@ -857,7 +860,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                     is ArrayLit -> {
                         val typeList = ArrayList<EtaType?>()
                         for (e in n.list) {
-                            typeCheck(e, inWhile)
+                            typeCheck(e)
                             val et = e.etaType
                             typeList.add(et)
                         }
@@ -890,7 +893,7 @@ class TypeChecker(topGamma: Context, val file: File) {
             is UnaryOp -> {
                 when (n.op) {
                     NOT -> {
-                        typeCheck(n.arg, inWhile)
+                        typeCheck(n.arg)
                         val t = n.arg.etaType
                         if (t is BoolType) {
                             n.etaType = BoolType()
@@ -900,7 +903,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
 
                     NEG -> {
-                        typeCheck(n.arg, inWhile)
+                        typeCheck(n.arg)
                         val t = n.arg.etaType
                         if (t is IntType) {
                             n.etaType = IntType()
@@ -912,7 +915,7 @@ class TypeChecker(topGamma: Context, val file: File) {
             }
 
             is Expr.Field -> {
-                typeCheckExpr(n.record, inWhile)
+                typeCheckExpr(n.record)
                 val rect = n.record.etaType
                 if (rect is OrdinaryType.RecordType) {
                     val rType = Gamma.lookup(rect.t)

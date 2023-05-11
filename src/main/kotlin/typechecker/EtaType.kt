@@ -1,6 +1,7 @@
 package typechecker
 
 import ast.Primitive
+import ast.Statement
 import ast.Type
 import errors.SemanticError
 
@@ -66,11 +67,11 @@ sealed class EtaType {
                         return true
                     }
                 }
-//                is NullType -> {
-//                    if (this is NullType || this is RecordType || this is ArrayType) {
-//                        return true
-//                    }
-//                }
+                is NullType -> {
+                    if (this is NullType || this is RecordType || this is ArrayType) {
+                        return true
+                    }
+                }
                 is UnknownType -> return true
                 else -> return false
             }
