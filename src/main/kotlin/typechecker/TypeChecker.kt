@@ -205,7 +205,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                 is AssignTarget.ArrayAssign -> {
                     typeCheck(n.arrayAssign.arr)
                     typeCheck(n.arrayAssign.idx)
-                    if (n.arrayAssign.arr.etaType !is ArrayType && n.arrayAssign.arr.etaType !is NullType) {
+                    if (n.arrayAssign.arr.etaType !is ArrayType) {
                         semanticError(n.arrayAssign.arr, "Indexed expression is not an array")
                     }
                     else {
