@@ -13,8 +13,8 @@ public class UltimateLexer extends JFlexLexer {
      * Creates a new scanner
      *
      */
-    public UltimateLexer(Reader in, HeaderToken header, File file) {
-        super(in, file);
+    public UltimateLexer(Reader in, HeaderToken header, File file, String extension) {
+        super(in, file, extension);
         this.hasAbsorbed = false;
         this.header = header;
     }

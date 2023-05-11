@@ -220,7 +220,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
     @Throws(LexicalError::class)
     private fun lex(inFile: File, lexedFile: File?) {
-        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile)
+        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
         while (true) {
             try {
                 val t: Symbol = (jFlexLexer.next_token() ?: break)

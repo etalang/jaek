@@ -1,0 +1,12 @@
+use io
+use conv
+
+main(args:int[][]) {
+    A : int = 1
+    while (A < 10) {
+        if (A == null){
+            break
+        }
+        A = A + 1
+    }
+}
