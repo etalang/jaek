@@ -32,7 +32,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
-    /** Tracks where the label of the first enclosed while is **/
+    /** Tracks where the false label of the while loop that you are currently in**/
     //Assumes that statements are translated in order iteratively
     private var enclosingWhileLabel: IRLabel? = null
 
@@ -315,7 +315,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
 
             is VarDecl.RawVarDeclList -> {
                 val defaultType = when (n.type){
-                    is Type.Array, is Type.RecordType -> { val nullPtr = freshTemp(); IRESeq(IRMove(nullPtr, nullRef), nullPtr) }
+                    is Type.Array, is Type.RecordType -> { nullRef }
                     is Primitive.BOOL, is Primitive.INT  -> IRConst(0)
                 }
                 if (n.ids.size == 1){
@@ -602,16 +602,12 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     for (i in 0 until dimension) {
                         moves.add(
                             IRMove(
-                                IRMem(IROp(ADD, tempM, IRConst((8 * (i + 1))))),
+                                IRMem(IROp(ADD, tempM, IRConst((8 * i)))),
                                 translateExpr(n.args[i.toInt()], sourceFn)
                             )
                         )
                     }
-                    IRESeq(
-                        IRSeq(
-                            moves
-                        ), IROp(ADD, tempM, IRConst(8))
-                    )
+                    tempM
                 } else {
                     functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
                     IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
@@ -693,8 +689,9 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 val type = n.record.etaType
                 if (type is EtaType.OrdinaryType.RecordType){
                     val fieldNumber = records[type.t]!![n.name]
+                    val record = translateExpr(n.record, sourceFn)
                     if (fieldNumber != null) {
-                        IRMem(IRConst((8 * (fieldNumber + 1)).toLong()))
+                        IRMem(IROp(ADD, record, IRConst((8 * fieldNumber).toLong())))
                     } else {
                         throw Exception("Field access on field not in record type (should have been done in type checking)")
                     }
@@ -703,8 +700,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 }
             }
             is Literal.NullLit -> {
-                val nullPtr = freshTemp()
-                IRESeq(IRMove(nullPtr, nullRef), nullPtr) }
+                nullRef }
         }
     }
 
