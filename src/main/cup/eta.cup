@@ -257,7 +257,7 @@ typelst         ::= type:t                                                      
 expr            ::= binop:op                                         {: RESULT = op; :}
                     | primitiveLiteral:pl                            {: RESULT = pl; :}
                     | NULL:o                                         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(o, oleft, oright),file); }
-                                                                                            RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :}
+                                                                        RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :}
                     | unop:op expr:arg                               {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
                     | indexable:in                                   {: RESULT = in; :}
                     | arrayLiteral:al                                {: RESULT = al; :}
