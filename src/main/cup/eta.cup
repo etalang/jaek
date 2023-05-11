@@ -256,6 +256,8 @@ typelst         ::= type:t                                                      
 /* Expressions */
 expr            ::= binop:op                                         {: RESULT = op; :}
                     | primitiveLiteral:pl                            {: RESULT = pl; :}
+                    | NULL:o                                         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(o, oleft, oright),file); }
+                                                                                            RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :}
                     | unop:op expr:arg                               {: RESULT = new UnaryOp(op.operation, arg, op.terminal); :} %prec UMINUS //TODO: inline please
                     | indexable:in                                   {: RESULT = in; :}
                     | arrayLiteral:al                                {: RESULT = al; :}
@@ -277,9 +279,8 @@ primitiveLiteral  ::= INTEGER_LITERAL:n                              {: if (n.eq
                                                                         RESULT = new Literal.IntLit(Long.parseLong(n),new Terminal(nleft,nright)); :}
                     | CHARACTER_LITERAL:c                            {: RESULT = new Literal.CharLit(c,new Terminal(cleft,cright)); :}
                     | FALSE:o                                        {: RESULT = new Literal.BoolLit(false,new Terminal(oleft,oright)); :}
-                    | TRUE:o                                         {: RESULT = new Literal.BoolLit(true,new Terminal(oleft,oright)); :}
-                    | NULL:o                                         {: if (extension.equals("eta") || extension.equals("eti")) { throw new ParseError(new Token.StringToken(o, oleft, oright),file); }
-                                                                        RESULT = new Literal.NullLit(new Terminal(oleft,oright)); :};
+                    | TRUE:o                                         {: RESULT = new Literal.BoolLit(true,new Terminal(oleft,oright)); :};
+
 functionCall    ::= IDENTIFIER:id OPEN_PAREN exprList:vl CLOSE_PAREN {: RESULT = new Expr.FunctionCall(id, vl,new Terminal(idleft,idright));:} // these should be statements!
                     | IDENTIFIER:id OPEN_PAREN CLOSE_PAREN           {: RESULT = new Expr.FunctionCall(id, new ArrayList<>(),new Terminal(idleft,idright));:};
 unop            ::= MINUS:u                                          {: RESULT = new ParseUtil.UnOpBundle(UnaryOp.Operation.NEG,new Terminal(uleft,uright)); :}  // cannot differentiate identical token but need diff prec
