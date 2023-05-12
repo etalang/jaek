@@ -147,9 +147,9 @@ class TrivialRegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
                 }
             }
 
-            is CMP -> insn.copy(
-                dest = replaceDestRegister(insn.dest, replaceMap),
-                src = replaceSrcRegister(insn.src, replaceMap)
+            is CMP -> CMP(
+                replaceDestRegister(insn.dest, replaceMap),
+                replaceSrcRegister(insn.src, replaceMap)
             )
 
             is Logic -> {
@@ -187,11 +187,11 @@ class TrivialRegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
             }
 
             is MOV -> MOV(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-            is POP -> insn.copy(dest = replaceRegister(insn.dest, replaceMap))
-            is PUSH -> insn.copy(arg = replaceRegister(insn.arg, replaceMap))
-            is TEST -> insn.copy(
-                reg1 = replaceRegister(insn.reg1, replaceMap),
-                reg2 = replaceRegister(insn.reg2, replaceMap)
+            is POP -> POP(replaceRegister(insn.dest, replaceMap))
+            is PUSH -> PUSH(replaceRegister(insn.arg, replaceMap))
+            is TEST -> TEST(
+                replaceRegister(insn.reg1, replaceMap),
+                replaceRegister(insn.reg2, replaceMap)
             )
 
             is JumpSet -> {
