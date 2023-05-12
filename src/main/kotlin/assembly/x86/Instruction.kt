@@ -8,16 +8,11 @@ package assembly.x86
  * - PF = 1 <=> sum of bits is even
  */
 sealed class Instruction {
-    @Deprecated("") abstract val written: Set<Register>
-    @Deprecated("") abstract val read: Set<Register>
-    @Deprecated("") val abstractEncountered: List<Register.Abstract> get() = (written union read).filterIsInstance<Register.Abstract>()
-    @Deprecated("") val abstractWritten: List<Register.Abstract> get() = written.filterIsInstance<Register.Abstract>()
-    @Deprecated("") val abstractRead: List<Register.Abstract> get() = read.filterIsInstance<Register.Abstract>()
     abstract val involved: Set<Register.Abstract>
+    abstract val use: Set<Register>
+    abstract val def: Set<Register>
 
-    data class COMMENT(val str: String) : Instruction() {
-        @Deprecated("") override val written: Set<Register> = setOf()
-        @Deprecated("") override val read: Set<Register> = setOf()
+    class COMMENT(val str: String) : Instruction() {
         override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {

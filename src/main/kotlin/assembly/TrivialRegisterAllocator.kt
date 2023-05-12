@@ -1,5 +1,6 @@
 package assembly
 
+import assembly.LVA.LiveVariableAnalysis
 import assembly.x86.*
 import assembly.x86.Destination.MemoryDest
 import assembly.x86.Destination.RegisterDest
@@ -31,6 +32,7 @@ class TrivialRegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
+        val dataflow = LiveVariableAnalysis(n)
         return x86FuncDecl(n.name, allocateRegisters(n.body, n.name))
     }
 
