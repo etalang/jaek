@@ -3,6 +3,7 @@ package optimize
 import Settings
 import ir.lowered.LIRFuncDecl
 import optimize.cfg.CFGBuilder
+import optimize.dataflow.CondConstProp
 import optimize.dataflow.Dominating
 import java.io.File
 
@@ -16,9 +17,12 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
             funcFile?.writeText(cfg.graphViz())
 
             if (lir.name == "_Imain_paai") {
-                val o = Dominating(cfg)
+//                val o = Dominating(cfg)
+                val o = CondConstProp(cfg)
                 o.run()
-                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms}") }
+//                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms}") }
+                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.unreachability}, ${it.value.varVals}") }
+
                 File("maindataflow'.dot").writeText(o.graphViz())
             }
         }

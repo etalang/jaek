@@ -15,7 +15,7 @@ sealed class Element {
             override fun toString() = "⊥"
         }
 
-        class Data(val t: Int) : Definition() {
+        class Data(val t: Long) : Definition() {
             override fun toString() = t.toString()
         }
 
