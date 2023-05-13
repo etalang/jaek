@@ -13,4 +13,8 @@ class Edge(val from: CFGNode, var node: CFGNode, val jump: Boolean = false) {
             return target?.let { Edge(from, target, foundJump) }
         }
     }
+
+    fun copy(from: CFGNode = this.from, node: CFGNode = this.node, jump: Boolean = this.jump) : Edge {
+        return Edge(from, node, jump)
+    }
 }

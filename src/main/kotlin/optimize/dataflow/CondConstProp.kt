@@ -10,22 +10,21 @@ import optimize.cfg.Edge
 import optimize.dataflow.Element.*
 import optimize.dataflow.Properties.*
 
-class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), Def {
-    override val top: Info = Info(Unreachability.Bottom, mutableMapOf())
+class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostProc<CondConstProp.Info> {
+    override val top: Info = Info(Unreachability.Top, mutableMapOf())
     override val name: String = "Conditional Constant Propogation"
 
     override fun transition(n: CFGNode, inInfo: Info): Map<Edge, Info> {
         val outInfo = inInfo.copy()
         val allVarsTop = outInfo.varVals.mapValues { Definition.Top }
         val unreachableInfo = Info(Unreachability.Top, allVarsTop.toMutableMap())
+        if (n is CFGNode.Start) return n.edges.associateWith { Info(Unreachability.Bottom, inInfo.varVals) } // start must be reachable
         if (inInfo.unreachability == Unreachability.Bottom) { // if reachable
             when (n) {
                 is CFGNode.If -> {
                     when (val guardAbs = abstractInterpretation(n.cond, varVals = outInfo.varVals)) {
                         Definition.Bottom -> return n.edges.associateWith { outInfo } // can't predict anything here
                         is Definition.Data -> {
-//                            val first = n.edges.first()
-//                            val second = n.edges.last() // assuming only two edges out of if
                             val falseEdge = n.to
                             val trueEdge = n.take
                             if (guardAbs.t == 0L) { // false edge TAKEN
@@ -101,7 +100,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), Def {
                         }
                     }
 
-                    else -> leftAbs // consider if this needs to be cloned, supposed to do bot=bot, top=top, ignore meeter
+                    else -> leftAbs
                 }
             }
 
@@ -111,9 +110,6 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), Def {
             is CFGExpr.Var -> varVals.getOrDefault(expr.name, Definition.Top)
         }
     }
-
-//    fun absInterpMoosh
-
 
     private final val defMoosher = Definition.DesignatedMeeter().meet
     private final val reachMoosher = Unreachability.DesignatedMeeter().meet
@@ -134,6 +130,36 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), Def {
         override val pretty: String = "($unreachability, ($varVals))"
         fun copy() : Info {
             return Info(unreachability, varVals.toMutableMap())
+        }
+    }
+    override fun postprocess(edgeValues: Map<Edge, Info>, cfg: CFG) {
+        // delete unreachables (don't need to delete nodes, just delete edges)
+        val predEdges = cfg.getPredEdges().toMutableMap() // we could recompute it, but that's quite expensive, so we fix as we go
+        edgeValues.forEach {
+            if (it.value.unreachability is Unreachability.Top) {
+                val unreachedEdge = it.key
+                val lastReachedNode = unreachedEdge.from
+                val firstUnreachedNode = unreachedEdge.node
+                when (lastReachedNode) {
+                    is CFGNode.If -> { // two following nodes
+                        val preIfEdges = predEdges.getOrDefault(lastReachedNode, emptySet())
+                        if (unreachedEdge == lastReachedNode.to) {
+                            preIfEdges.forEach {
+                                it.from.to = lastReachedNode.take?.copy(from = it.from)
+                            }
+                        } else { // unreached edge is the take
+                            preIfEdges.forEach {
+                                it.from.to = lastReachedNode.to?.copy(from = it.from)
+                            }
+                        }
+                        predEdges[lastReachedNode] = predEdges.getOrDefault(lastReachedNode, emptySet()).plus(preIfEdges)
+                        // hopefully we don't care about our now-abandoned node
+                    }
+                    else -> { // one following node
+                        lastReachedNode.to = firstUnreachedNode.to?.copy(from = lastReachedNode) // directly mutating
+                    }
+                }
+            }
         }
     }
 }

@@ -52,7 +52,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     override fun graphViz(): String {
         val nodes = cfg.getNodes()
         return buildString {
-            appendLine("digraph ${cfg.function}_${name} {")
+            appendLine("digraph ${cfg.function.drop(1)}_${name.filterNot { it.isWhitespace() }} {")
             appendLine("\trankdir=\"TB\"")
             appendLine("\tfontname = \"Helvetica,Arial,sans-serif\";")
             appendLine("\tnode [fontname = \"Helvetica,Arial,sans-serif\";];")

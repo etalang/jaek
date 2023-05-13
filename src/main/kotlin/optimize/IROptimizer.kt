@@ -22,8 +22,9 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
                 o.run()
 //                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms}") }
                 o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.unreachability}, ${it.value.varVals}") }
-
-                File("maindataflow'.dot").writeText(o.graphViz())
+                File("maindataflowpreproc.dot").writeText(o.graphViz())
+                o.postprocess(o.values, cfg)
+                File("maindataflowpostproc.dot").writeText(o.graphViz())
             }
         }
     }
