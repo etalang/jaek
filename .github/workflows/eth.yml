@@ -40,7 +40,7 @@ jobs:
 
       - name: Run vm tests
         working-directory: /home/student/
-        run: eth /home/student/eth/tests/pa5/ethScript -ec -noout -compilerpath /home/student/shared/production/
+        run: eth /home/student/eth/tests/pa6/ethScript -ec -noout -compilerpath /home/student/shared/production/
 
       - name: Run custom tests
         working-directory: /home/student/
