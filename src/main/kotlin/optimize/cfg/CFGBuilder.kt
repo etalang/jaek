@@ -83,7 +83,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
             }
 
             is LIRMem -> {
-                CFGNode.Mem(translateExpr(dest), translateExpr(dest), pointToNext())
+                CFGNode.Mem(translateExpr(dest), translateExpr(currStmt.expr), pointToNext())
             }
 
             else -> throw Exception("move has a non mem non temp and @kate said that's illegal")

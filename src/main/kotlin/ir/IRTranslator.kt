@@ -37,6 +37,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         getGlobalsTouched()
 
         var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir)
+        lir.reorderBlocks()
         outputIR.initial?.let {
             val writer = CodeWriterSExpPrinter(PrintWriter(it))
             lir.java.printSExp(writer)
@@ -45,9 +46,12 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         }
 
         //OPTIMIZE
-        lir.reorderBlocks()
         if (optimize.desire(cf)) lir = ConstantFolder().apply(lir)
-        lir.functions.forEach { IROptimizer(it, optimize, outputCFG) }
+        val optFuncs = lir.functions.map {
+            IROptimizer(it, optimize, outputCFG).destroy()
+        }
+
+        lir = LIRCompUnit(lir.name, optFuncs, lir.globals) // use post-cfg functions
 
         outputIR.final?.let {
             val writer = CodeWriterSExpPrinter(PrintWriter(it))
