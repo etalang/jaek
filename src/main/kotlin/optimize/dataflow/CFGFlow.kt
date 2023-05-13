@@ -61,6 +61,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
             nodes.forEach { appendLine("\tn${it.index} [shape=rectangle; label=\" ${it.pretty}\"; xlabel=\"${it.index}\";];") }
             nodes.forEach { from ->
                 for (edge in from.edges) {
+//                    println(edge.from == from)
                     appendLine("\tn${from.index} -> n${edge.node.index} [label=\"    ${values[edge]?.pretty}\"]")
                 }
             }
@@ -68,4 +69,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
         }
     }
 
+}
+interface PostProc {
+    fun postprocess()
 }

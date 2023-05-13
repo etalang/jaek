@@ -21,11 +21,12 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
                 val o = CondConstProp(cfg)
                 o.run()
 //                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.doms}") }
-                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.unreachability}, ${it.value.varVals}") }
+                o.values.forEach { println("[〚${it.key.from.pretty}〛 -> 〚${it.key.node.pretty}〛] : ${it.value.pretty}") }
                 File("maindataflowpreproc.dot").writeText(o.graphViz())
-                o.postprocess(o.values, cfg)
+                o.postprocess()
                 File("maindataflowpostproc.dot").writeText(o.graphViz())
             }
+            print("fish")
         }
     }
 

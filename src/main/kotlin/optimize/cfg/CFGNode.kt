@@ -18,7 +18,6 @@ sealed class CFGNode(
     open val edges: Set<Edge> get() = setOfNotNull(to)
 
     abstract val pretty: String
-
     override fun toString(): String {
         return pretty
     }
@@ -27,18 +26,18 @@ sealed class CFGNode(
         abstract val target: String
     }
 
-    class Gets(val varName: String, val expr: CFGExpr, edge: Edge.Lazy) : Mov(edge) {
-        override val pretty = "$varName ← ${expr.pretty}"
+    class Gets(val varName: String, var expr: CFGExpr, edge: Edge.Lazy) : Mov(edge) {
+        override val pretty get() = "$varName ← ${expr.pretty}"
         override val target: String = varName
     }
 
-    class Mem(val loc: CFGExpr, val expr: CFGExpr, edge: Edge.Lazy) : Mov(edge) {
-        override val pretty = "[${loc.pretty}] ← ${expr.pretty}"
+    class Mem(var loc: CFGExpr, var expr: CFGExpr, edge: Edge.Lazy) : Mov(edge) {
+        override val pretty get() = "[${loc.pretty}] ← ${expr.pretty}"
         override val target: String = "[${loc.pretty}]"
     }
 
     //reallllly relying on some LIR invariants about how funciotns and procedures are always translated
-    class Funcking(val name: String, val movIntos: List<Mov>, val args: List<CFGExpr>, edge: Edge.Lazy) :
+    class Funcking(val name: String, val movIntos: List<Mov>, var args: List<CFGExpr>, edge: Edge.Lazy) :
         CFGNode(edge) {
         override val pretty: String
             get() { //todo make less written shittility stupid
@@ -48,11 +47,11 @@ sealed class CFGNode(
 
     }
 
-    class If(val cond: CFGExpr, val _take: Edge.Lazy, edge: Edge.Lazy) : CFGNode(edge) {
+    class If(var cond: CFGExpr, val _take: Edge.Lazy, edge: Edge.Lazy) : CFGNode(edge) {
         var take: Edge? = null
 
         //TODO: be less stupid?????
-        override val pretty =
+        override val pretty get() =
             if (cond.pretty.startsWith("(") && cond.pretty.endsWith(")")) "if ${cond.pretty}" else "if (${cond.pretty})"
 
         override fun resolveEdges() {
@@ -68,8 +67,8 @@ sealed class CFGNode(
         override val pretty = "start"
     }
 
-    class Return(val rets: List<CFGExpr>, edge: Edge.Lazy) : CFGNode(edge) {
-        override val pretty = "return ${rets.joinToString(", ") { it.pretty }}"
+    class Return(var rets: List<CFGExpr>, edge: Edge.Lazy) : CFGNode(edge) {
+        override val pretty get() = "return ${rets.joinToString(", ") { it.pretty }}"
     }
 
     class Cricket(to: Edge.Lazy) : CFGNode(to) {
