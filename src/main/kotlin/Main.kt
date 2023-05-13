@@ -143,16 +143,16 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                         writer.close()
                                     }
 
-                                    try {
+//                                    try {
                                         val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
-                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
+                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap, true)
                                         // print to file.s
                                         val assembly = assemblyAssembler.generate()
                                         assemblyFile?.writeText(assembly)
-                                    } catch (e: Throwable) {
-                                        assemblyFile?.writeText("Failed to generate assembly for " + it.name)
-                                        if (!disableOutput) println("Failed to generate assembly for " + it.name)
-                                    }
+//                                    } catch (e: Throwable) {
+//                                        assemblyFile?.writeText("Failed to generate assembly for " + it.name)
+//                                        if (!disableOutput) println("Failed to generate assembly for " + it.name)
+//                                    }
 
                                 }
 
