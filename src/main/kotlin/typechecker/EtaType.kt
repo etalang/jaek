@@ -179,7 +179,6 @@ sealed class EtaType {
                             return true
                         }
                     }
-//                    is RecordType -> return (this is RecordType && this.t == other.t)
                 }
             }
         }

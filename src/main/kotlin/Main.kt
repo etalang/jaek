@@ -132,7 +132,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     val translator = IRTranslator(
                                         ast,
                                         it.nameWithoutExtension,
-                                        context.functionMap()
+                                        context
                                     )
                                     val ir = translator.irgen(!disableOpt)
                                     val irFileGen = ir.java

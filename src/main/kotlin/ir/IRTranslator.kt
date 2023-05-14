@@ -12,9 +12,10 @@ import ir.mid.IRStmt.*
 import ir.optimize.ConstantFolder
 import typechecker.EtaFunc
 import typechecker.EtaType
+import typechecker.Context
 
-class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String, EtaFunc>) {
-    private var mangledFunctionNames = functionTypes.mapValues { mangleMethodName(it.key, it.value) }
+class IRTranslator(val AST: Program, val name: String, context : Context) {
+    private var mangledFunctionNames = context.functionMap().mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
 
     /** Tracks globals changed by a function call **/
