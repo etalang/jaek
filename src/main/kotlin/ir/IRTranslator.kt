@@ -120,15 +120,23 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
 
         p.definitions.forEach {
             when (it) {
-                is Method -> if (it.body != null) functions.add(translateFuncDecl(it))
                 is RhoRecord -> {
                     val fields = mutableMapOf<String, Int>()
                     var counter = 0
                     it.fields.forEach { field -> field.ids.forEach { id -> fields[id.name] = counter; counter++; } }
+                    records[it.name] = fields
                 }
                 else -> {}
             }
         }
+
+        p.definitions.forEach {
+            when (it) {
+                is Method -> if (it.body != null) functions.add(translateFuncDecl(it))
+                else -> {}
+            }
+        }
+
         return IRCompUnit(name, functions, globals)
     }
 
@@ -142,7 +150,6 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is Literal.CharLit -> longArrayOf(v.char.toLong())
             is Literal.IntLit -> longArrayOf(v.num)
             is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
-            //is this how you do null literals???
             is Literal.NullLit -> longArrayOf(0)
             null -> longArrayOf(0)
         }

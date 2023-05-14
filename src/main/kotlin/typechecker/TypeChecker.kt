@@ -89,12 +89,15 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 semanticError(defn, "Redeclared record type")
                             }
                             // when iterating through this in the future, preserves order of adding elts to map
-                            val fieldTypes = linkedMapOf<String, EtaType>()
+                            val fieldTypes = linkedMapOf<String, OrdinaryType>()
                             for (f in defn.fields) {
                                 for (identifier in f.ids) {
                                     fieldTypes[identifier.name] = translateType(f.type)
                                 }
                             }
+                            val recordType = ContextType.RecordType(defn.name, fieldTypes)
+                            defn.etaType = recordType
+                            Gamma.bind(defn.name, recordType)
                         }
                     }
                 }
