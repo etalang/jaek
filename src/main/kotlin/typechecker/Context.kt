@@ -45,13 +45,13 @@ class Context {
         return null
     }
 
-    fun recordTypes() : MutableSet<String> {
-        val recordSet = mutableSetOf<String>()
+    fun recordTypes() : MutableMap<String, ContextType.RecordType> {
+        val recordSet = mutableMapOf<String, ContextType.RecordType>()
         for (i in stack.size -1 downTo 0) {
             for (key in stack[i].keys) {
                 val contextType = stack[i][key]
                 if (contextType is ContextType.RecordType) {
-                    recordSet.add(contextType.name)
+                    recordSet[contextType.name] = contextType
                 }
             }
         }

@@ -145,7 +145,7 @@ sealed class EtaType {
         }
 
         /* MutableMapOf preserves the iteration order in which elements were added to the map! */
-        class RecordType(val name : String, val fields : MutableMap<String, OrdinaryType>) : ContextType() {
+        class RecordType(val name : String, val fields : LinkedHashMap<String, OrdinaryType>) : ContextType() {
             val fieldOrder get() = fields.keys.toList()
             val typeOrder: MutableList<OrdinaryType>
                 get() = run {

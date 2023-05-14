@@ -18,7 +18,6 @@ import java.io.File
 
 class TypeChecker(topGamma: Context, val file: File) {
     var Gamma : Context = topGamma
-//    val recordTypes = mutableMapOf<String, LinkedHashMap<String, EtaType>>()
 
     @Throws(SemanticError::class)
     private fun semanticError(node : Node, msg: String) {

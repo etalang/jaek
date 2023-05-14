@@ -13,6 +13,7 @@ import ir.optimize.ConstantFolder
 import typechecker.EtaFunc
 import typechecker.EtaType
 import typechecker.Context
+import typechecker.EtaType.ContextType
 
 class IRTranslator(val AST: Program, val name: String, context : Context) {
     private var mangledFunctionNames = context.functionMap().mapValues { mangleMethodName(it.key, it.value) }
@@ -25,7 +26,7 @@ class IRTranslator(val AST: Program, val name: String, context : Context) {
     private val functionCalls: MutableMap<String, MutableSet<String>> = HashMap()
 
     /** Tracks the records defined in the program **/
-    private val records: MutableMap<String, Map<String, Int>> = HashMap()
+    private val records = context.recordTypes().mapValues{ createRecordMap(it.key, it.value) }
 
     /** Null Reference **/
     private val nullRef = IRMem(IRConst(0))
@@ -107,6 +108,13 @@ class IRTranslator(val AST: Program, val name: String, context : Context) {
         }
     }
 
+    fun createRecordMap(name: String, type : ContextType.RecordType): LinkedHashMap<String, Int> {
+        val map = LinkedHashMap<String, Int>()
+        var counter = 0
+        type.fields.forEach { field -> map[field.key] = counter; counter++; }
+        return map
+    }
+
     private fun translateCompUnit(p: Program): IRCompUnit {
         val functions: MutableList<IRFuncDecl> = ArrayList()
         // Make two passes
@@ -114,18 +122,6 @@ class IRTranslator(val AST: Program, val name: String, context : Context) {
             when (it) {
                 is GlobalDecl -> {
                     globals.addAll(translateData(it))
-                }
-                else -> {}
-            }
-        }
-
-        p.definitions.forEach {
-            when (it) {
-                is RhoRecord -> {
-                    val fields = mutableMapOf<String, Int>()
-                    var counter = 0
-                    it.fields.forEach { field -> field.ids.forEach { id -> fields[id.name] = counter; counter++; } }
-                    records[it.name] = fields
                 }
                 else -> {}
             }

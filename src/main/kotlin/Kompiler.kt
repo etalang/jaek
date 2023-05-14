@@ -156,7 +156,7 @@ class Kompiler {
                     returnGamma.bind(header.id, currFunType)
                 }
             } else if (header is RhoRecord){
-                val fieldMap = mutableMapOf<String, EtaType.OrdinaryType>()
+                val fieldMap = linkedMapOf<String, EtaType.OrdinaryType>()
                 for (decl in header.fields) {
                     for (id in decl.ids) {
                         fieldMap[id.name] = EtaType.translateType(decl.type)
