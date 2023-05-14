@@ -251,21 +251,39 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     // DO THE CALL IN HERE DO NOT PASS IT DOWN
                     // assuming that the number of returns must match the number of targets, checked in typecheck
 
-                    functionCalls[sourceFn]?.add(mangledFunctionNames[first.fn]!!)
+                    // TODO: record initialization
 
-                    stmts.add(
-                        IRCallStmt(IRName(
-                            mangledFunctionNames[first.fn]!!
-                        ),
-                            n.targets.size.toLong(),
-                            first.args.map { translateExpr(it, sourceFn) }
-                        ))
-                    val returnTemps: MutableList<IRTemp> = mutableListOf()
-                    for (i in 1..n.targets.size) {
-                        returnTemps.add(IRTemp("_RV$i"))
+                    if (first.fn in records) {
+                        val dimension = records[first.fn]!!.size.toLong()
+                        val tempM = freshTemp()
+                        val moves = arrayListOf(IRMove(tempM, IRCall(IRName("_eta_alloc"), listOf(IROp(MUL, IRConst(dimension), IRConst(8))))))
+                        for (i in 0 until dimension) {
+                            moves.add(
+                                IRMove(
+                                    IRMem(IROp(ADD, tempM, IRConst((8 * i)))),
+                                    translateExpr(first.args[i.toInt()], sourceFn)
+                                )
+                            )
+                        }
+                        stmts.addAll(moves)
+                        stmts.add(IRMove(targetList[0], tempM))
+                        IRSeq(stmts)
+                    } else {
+                        functionCalls[sourceFn]?.add(mangledFunctionNames[first.fn]!!)
+                        stmts.add(
+                            IRCallStmt(IRName(
+                                mangledFunctionNames[first.fn]!!
+                            ),
+                                n.targets.size.toLong(),
+                                first.args.map { translateExpr(it, sourceFn) }
+                            ))
+                        val returnTemps: MutableList<IRTemp> = mutableListOf()
+                        for (i in 1..n.targets.size) {
+                            returnTemps.add(IRTemp("_RV$i"))
+                        }
+                        stmts.addAll((targetList zip returnTemps).map { multiAssignMove(it) })
+                        IRSeq(stmts)
                     }
-                    stmts.addAll((targetList zip returnTemps).map { multiAssignMove(it) })
-                    IRSeq(stmts)
                 } else {
                     val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it, sourceFn) } // rhs first
                     val exprTempList: MutableList<IRExpr> = mutableListOf()
@@ -605,7 +623,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 if (n.fn in records){
                     val dimension = records[n.fn]!!.size.toLong()
                     val tempM = freshTemp()
-                    val moves = arrayInitMoves(IRConst(dimension), tempM)
+                    val moves = arrayListOf(IRMove(tempM, IRCall(IRName("_eta_alloc"), listOf(IROp(MUL, IRConst(dimension), IRConst(8))))))
                     for (i in 0 until dimension) {
                         moves.add(
                             IRMove(
