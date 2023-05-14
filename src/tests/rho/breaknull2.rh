@@ -3,9 +3,9 @@ use conv
 
 main(args:int[][]) {
     A : int = 1
-    B : int[] = {}
+    B : int[]
     while (A < 10) {
-        if (B == null){
+        if (B != null){
             break
         }
         A = A + 1
