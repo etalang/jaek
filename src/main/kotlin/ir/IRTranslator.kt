@@ -34,7 +34,7 @@ class IRTranslator(val AST: Program, val name: String, context : Context) {
     private val records = context.recordTypes().mapValues{ createRecordMap(it.key, it.value) }
 
     /** Null Reference **/
-    private val nullRef = IRMem(IRConst(0))
+    private val nullRef = IRConst(0)
 
     private var freshLabelCount = 0
     private var freshTempCount = 0
