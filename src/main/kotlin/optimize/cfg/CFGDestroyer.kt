@@ -9,31 +9,31 @@ import optimize.cfg.CFGNode.*
 
 class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     val body: LIRSeq
-    val visited: MutableSet<LabelNode> = mutableSetOf()
-    val stack: ArrayDeque<LabelNode> = ArrayDeque()
+    val visited: MutableSet<CFGNode> = mutableSetOf()
+    val stack: ArrayDeque<CFGNode> = ArrayDeque()
     val stmts = mutableListOf<FlatStmt>()
-    val toJumpLabels: MutableMap<CFGNode, LIRLabel> = mutableMapOf()
+    private val toJumpLabels: MutableMap<CFGNode, LIRLabel> = mutableMapOf()
 
     init {
         val predEdges = cfg.getPredEdges()
-        stack.addFirst(LabelNode(cfg.start))
+        stack.addFirst(cfg.start)
         while (stack.isNotEmpty()) {
-            val labeledNode = stack.removeFirst()
-            visited.add(labeledNode)
-            labeledNode.label?.let { stmts.add(it) } // if we said this node would need a jump label, add the label first
-            predEdges[labeledNode.node]?.let {
-                if (it.size > 1) {
-                    if (!toJumpLabels.contains(labeledNode.node)) {
+            val node = stack.removeFirst()
+            visited.add(node)
+            predEdges[node]?.let {
+                val jumpPreds = it.filter { it.jump }
+                if (jumpPreds.isNotEmpty()) {
+                    if (!toJumpLabels.contains(node)) {
                         val jumpLabel = freshLabel()
                         stmts.add(jumpLabel)
-                        toJumpLabels[labeledNode.node] = jumpLabel
+                        toJumpLabels[node] = jumpLabel
                     } else {
-                        stmts.add(toJumpLabels[labeledNode.node]!!)
+                        stmts.add(toJumpLabels[node]!!)
                     }
                 }
             }
 
-            when (val node = labeledNode.node) {
+            when (node) {
                 is Funcking -> {
                     val retMoves = node.movIntos.map {
                         when (it) {
@@ -52,11 +52,15 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                 }
 
                 is If -> {
-                    val trueLabel = freshLabel()
-                    stmts.add(LIRTrueJump(translateExpr(node.cond), trueLabel))
+                    if (toJumpLabels.contains(node)) { // if we have seen the node we're jumping to
+                        stmts.add(LIRTrueJump(translateExpr(node.cond), toJumpLabels[node]!!)) // jump to pre-inserted label
+                    } else { // we have not seen the node we're jumping to
+                        val trueLabel = freshLabel()
+                        node.take?.node?.let { toJumpLabels[it] = trueLabel } // label before whatever the true jump is
+                        stmts.add(LIRTrueJump(translateExpr(node.cond), trueLabel))
+                    }
                     addFallThrough(node)
-                    addTake(node, visited, stack, trueLabel)
-                    // need to jump back to "end" of if statement after ? check where the crickets WERE and add in jumps
+                    addTake(node)
                 }
 
                 is Gets -> {
@@ -92,14 +96,14 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                     stmts.add(LIRJump(LIRName(jumpLabel.l))) // jump to imaginary label that will be inserted later
                 }
             }
-            if (!visited.contains(LabelNode(it.node))) {
-                stack.addFirst(LabelNode(it.node)) // since it's a fall-through, we do it right now
+            if (!visited.contains(it.node)) {
+                stack.addFirst(it.node) // since it's a fall-through, we do it right now
             }
         }
     }
 
-    fun addTake(node: If, visited: Set<LabelNode>, stack: ArrayDeque<LabelNode>, newLabel: LIRLabel) {
-        node.take?.let { if (!visited.contains(LabelNode(it.node))) stack.addLast(LabelNode(it.node, newLabel)) }
+    fun addTake(node: If) {
+        node.take?.let { if (!visited.contains(it.node)) stack.addLast(it.node) }
     }
 
     fun destroy(): LIRFuncDecl {
@@ -121,11 +125,5 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     private fun freshLabel(): LIRLabel {
         freshLabelCount++
         return LIRLabel("\$NI$freshLabelCount")
-    }
-
-    data class LabelNode(val node: CFGNode, val label: LIRLabel? = null) {
-        override fun equals(other: Any?): Boolean {
-            return if (!(other is LabelNode)) false else other.node == node
-        }
     }
 }
