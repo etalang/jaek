@@ -136,7 +136,7 @@ globalDecl      ::= IDENTIFIER:id COLON type:t EQUALS primitiveLiteral:pl       
 
 /* =============> [Global] Methods <============= */
 header              ::= methodHeader:am                                                      {: RESULT = am; :}
-                    | recordHeader:ar                                                        {: RESULT = ar; :};
+                    | record:ar                                                              {: RESULT = ar; :};
 headers             ::=  headers:hds header:hd                                               {: hds.add(hd); RESULT = hds; :}
                     | header:hd                                                              {: RESULT = ParseUtil.singleton(hd); :};
 methodHeader        ::= IDENTIFIER:id OPEN_PAREN methodArgs:Ds CLOSE_PAREN COLON typelst:Ts  {: RESULT = new Method(id, Ds, Ts, new Terminal(idleft,idright)); :}
