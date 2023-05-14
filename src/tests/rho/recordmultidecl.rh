@@ -1,0 +1,29 @@
+use io
+use conv
+
+swap(p: Point) {
+    t:int = p.x
+    p.x, _ = p.y, 0
+    p.y = t
+}
+
+record Point {
+    x, y: int
+}
+
+main(args: int[][]) {
+    p, p1 : Point
+    p = Point(1, 2)
+    if (p == null) {
+        println("p is null")
+    } else {
+        println("p is not null")
+    }
+
+    if (p1 == null) {
+        println("p1 is null")
+    } else {
+        println("p1 is not null")
+    }
+
+}

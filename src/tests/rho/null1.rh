@@ -1,0 +1,9 @@
+use io
+use conv
+
+main(args: int[][]) {
+// this is our main function
+
+    a : int[]
+    b : int = a[0]
+}
