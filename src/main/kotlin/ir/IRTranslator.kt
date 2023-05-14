@@ -270,7 +270,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                         if (targetList.size != 1){
                             throw Exception("Record constructor used for multiple targets")
                         }
-                        stmts.add(IRMove(targetList[0], tempM))
+                        stmts.add(multiAssignMove(Pair(targetList[0], tempM)))
                         IRSeq(stmts)
                     } else {
                         functionCalls[sourceFn]?.add(mangledFunctionNames[first.fn]!!)
