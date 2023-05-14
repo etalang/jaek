@@ -9,6 +9,7 @@ import assembly.x86.Memory.*
 import assembly.x86.Instruction.*
 import assembly.x86.Instruction
 import typechecker.EtaFunc
+import java.io.File
 
 class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String, EtaFunc>) :
     RegisterAllocator(assembly, functionTypes) {
@@ -54,7 +55,6 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     fun chitLoop(n: x86FuncDecl): x86FuncDecl {
         debugLoopCtr++
         println("${n.name} allocation round $debugLoopCtr")
-        println(n)
         // LIVENESS ANALYSIS
         val dataflow = LiveVariableAnalysis(n)
         // BUILD INTERFERENCE GRAPH
@@ -84,7 +84,10 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         // check for spills -- if there are spills, have to repeat >.<
         return if (worklist.spilledNodes.isNotEmpty()) {
             val spillInsns = rewriteSpills(n, worklist)
-            chitLoop(x86FuncDecl(n.name, spillInsns))
+            val nextFuncDecl = x86FuncDecl(n.name, spillInsns)
+//            println(nextFuncDecl)
+            File("assembleeee${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
+            chitLoop(nextFuncDecl)
         } else {
             val replaceMap = mutableMapOf<String, Int>()
             for (reg in worklist.ig.colors.keys) {
@@ -153,8 +156,20 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         worklist.freezeMoves(u)
     }
 
+    private fun heuristic(regSet : Set<Register>) : Register {
+        val nonSpills = mutableSetOf<Register>()
+        for (reg in regSet) {
+            if (reg is Abstract && !reg.name.startsWith("\$S")) {
+                nonSpills.add(reg)
+            }
+        }
+        if (nonSpills.isNotEmpty())
+            return nonSpills.last()
+        return regSet.random()
+    }
+
     private fun selectSpill(worklist: Worklist) {
-        val m = worklist.spillWorkList.elementAt(0)  // TODO: can pick w/ heuristic instead
+        val m = heuristic(worklist.spillWorkList) // worklist.spillWorkList.random()  // TODO: MUST pick w/ heuristic instead
         worklist.spillWorkList.remove(m)
         worklist.simplifyWorkList.add(m)
         worklist.freezeMoves(m)
@@ -221,7 +236,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             for (r in spilledInvolved) {
                 if (r is Abstract) {
                     val regCount = spilledInvolvementCounters[r.name]!!
-                    val regName = "${r.name}$regCount"
+                    val regName = spill()
                     renameMap[r.name] = regName
 
                     if (r in insn.use) {
@@ -400,6 +415,12 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     private fun calleeSpill(): Abstract {
         freshCalleeTempCount++
         return Abstract("\$C$freshCalleeTempCount")
+    }
+
+    private var freshSpillTempCount = 0
+    private fun spill(): String {
+        freshSpillTempCount++
+        return ("\$S$freshSpillTempCount")
     }
 
 }
