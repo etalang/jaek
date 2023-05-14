@@ -266,6 +266,10 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                             )
                         }
                         stmts.addAll(moves)
+                        //TODO: should this be allowed?
+                        if (targetList.size != 1){
+                            throw Exception("Record constructor used for multiple targets")
+                        }
                         stmts.add(IRMove(targetList[0], tempM))
                         IRSeq(stmts)
                     } else {
@@ -632,7 +636,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                             )
                         )
                     }
-                    tempM
+                    IRESeq(IRSeq(moves), tempM)
                 } else {
                     functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
                     IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
