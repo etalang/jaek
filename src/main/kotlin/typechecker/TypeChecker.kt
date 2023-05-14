@@ -95,7 +95,6 @@ class TypeChecker(topGamma: Context, val file: File) {
                                     fieldTypes[identifier.name] = translateType(f.type)
                                 }
                             }
-//                            Gamma.bind(defn.name,  fieldTypes)
                         }
                     }
                 }
@@ -582,7 +581,7 @@ class TypeChecker(topGamma: Context, val file: File) {
             }
 
             is Statement.Break -> {
-                if (Gamma.inLoop()) {
+                if (!Gamma.inLoop()) {
                     semanticError(n, "Break statement not enclosed by while loop")
                 }
                 n.etaType = VoidType()
