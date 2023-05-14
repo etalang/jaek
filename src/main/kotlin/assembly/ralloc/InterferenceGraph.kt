@@ -6,12 +6,15 @@ import assembly.x86.Instruction
 import assembly.x86.Register
 import assembly.x86.Register.*
 import assembly.x86.Source
+import assembly.x86.Register.x86Name.*
 
 /** InterferenceGraph represents the interferences of all registers? (abstract registers) with other
  * registers */
 class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : List<Instruction>) {
     val adjList: MutableMap<Register, MutableSet<Register>> = mutableMapOf()
     val degrees: MutableMap<Register, Int> = mutableMapOf()
+    val precolored : Set<x86> = setOf(x86(RAX), x86(RBX), x86(RCX), x86(RDX), x86(RDI), x86(RSI), x86(RSP), x86(RBP),
+        x86(R8), x86(R9), x86(R10), x86(R11), x86(R12), x86(R13), x86(R14), x86(R15))
     class Move(val dest: Register, val src : Register)
     val moveList: MutableMap<Register, MutableSet<Move>> = mutableMapOf()
     val alias: MutableMap<Register, Register> = mutableMapOf()
@@ -20,15 +23,14 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
 
 
     fun addEdge(src: Register, dest: Register) {
-        if (adjList.keys.contains(src)) {
+        if (adjList.keys.contains(src) && src !is x86) {
             adjList[src]?.add(dest)
             degrees[src] = degrees[src]?.plus(1) ?: -1
         }
         else {
-            adjList[src] = mutableSetOf(dest)
-            degrees[src] = 1
-            if (src is x86) {
-                colors[src] = src.name.ordinal
+            if (src !is x86) {
+                adjList[src] = mutableSetOf(dest)
+                degrees[src] = 1
             }
         }
     }
@@ -39,6 +41,11 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
         for (temp in encountered) {
             adjList[temp] = mutableSetOf()
             degrees[temp] = 0
+        }
+        for (p in precolored) {
+            adjList[p] = mutableSetOf()
+            degrees[p] = 0
+            colors[p] = p.name.ordinal
         }
         for (conflictSet in liveIns.values) {
             for (u in conflictSet) { // more elegant way to iterate over all pairs?
@@ -62,8 +69,6 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
                 }
             }
         }
-
-
     }
 
     

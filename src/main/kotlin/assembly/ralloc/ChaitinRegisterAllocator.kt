@@ -11,11 +11,9 @@ import assembly.x86.Instruction
 import typechecker.EtaFunc
 
 class ChaitinRegisterAllocator(assembly : x86CompUnit, functionTypes: Map<String, EtaFunc>) : RegisterAllocator(assembly, functionTypes) {
-    val K = 16
-    val regOrder = listOf(x86(RAX), x86(RBX), x86(RCX), x86(RDX), x86(RSP), x86(RBP), x86(RDI),
-        x86(RSI), x86(R8), x86(R9), x86(R10), x86(R11), x86(R12), x86(R13), x86(R14), x86(R15))
-    private val callerSavedRegs = listOf(x86(RAX), x86(RCX), x86(RDX), x86(RDI), x86(RSI),
-        x86(R8), x86(R9), x86(R10), x86(R11))
+    val K = 12
+    val regOrder = listOf(x86(RCX), x86(RDI),
+        x86(RSI), x86(R8), x86(R9), x86(R10), x86(R11), x86(RBX), x86(R12), x86(R13), x86(R14), x86(R15), )
     // tracking offset map of spilled temps per function (func name -> (temp name -> offset))
     val fullOffsetMap: MutableMap<String, MutableMap<String, Int>> = mutableMapOf()
 //    // counters for new spilled temps for a function (func name -> (temp name -> use/def count))
@@ -194,55 +192,64 @@ class ChaitinRegisterAllocator(assembly : x86CompUnit, functionTypes: Map<String
         // - forwards: when we see a CALL instruction, keep an eye out for the next appearance of a POP
         // - when we see a POP, add unless the register is not used
         // - once we stop seeing POPs, switch all flags off and continue normally
-        var callSpotted = false
-        var inPopBlock = false
         for (insn in allocatedInsns) {
             if (insn is LEAVE) { //saved regs pop back off in reverse order
                 conventionInsns.addAll(usedCalleeSaved.reversed().map { POP(it) })
             }
-            else if (insn is CALL) {
-                callSpotted = true
-            }
-            else if (insn is POP && callSpotted) {
-                if (!inPopBlock) inPopBlock = true
-                if (callerSavedRegs.contains(insn.dest) && !usedCallerSaved.contains(insn.dest)) {
-                    continue
-                }
-            }
-            else if (insn !is POP && callSpotted && inPopBlock) {
-                callSpotted = false
-                inPopBlock = false
+            else if (insn is CALLERSAVEPUSH) {
                 if (padSavedRegisters) {
-                    conventionInsns.add(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8L)))
+                    conventionInsns.add(PAD())
                 }
+                usedCallerSaved.forEach { conventionInsns.add(PUSH(it)) }
+                continue
             }
+            else if (insn is CALLERSAVEPOP) {
+                usedCallerSaved.reversed().forEach { conventionInsns.add(POP(it)) }
+                if (padSavedRegisters) {
+                    conventionInsns.add(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8)))
+                }
+                continue
+            }
+//            else if (insn is POP && callSpotted) {
+//                if (!inPopBlock) inPopBlock = true
+//                if (callerSavedRegs.contains(insn.dest) && !usedCallerSaved.contains(insn.dest)) {
+//                    continue
+//                }
+//            }
+//            else if (insn !is POP && callSpotted && inPopBlock) {
+//                callSpotted = false
+//                inPopBlock = false
+//                if (padSavedRegisters) {
+//                    conventionInsns.add(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8L)))
+//                }
+//            }
             conventionInsns.add(insn)
         }
-        // - repeat, but walking backwards, and looking for PUSHes instead
-        val returnedInsns = mutableListOf<Instruction>()
-        callSpotted = false
-        var inPushBlock = false
-        for (i in conventionInsns.indices.reversed()) {
-            val insn = conventionInsns[i]
-            if (insn is CALL) {
-                callSpotted = true
-            }
-            else if (insn is PUSH && callSpotted) {
-                if (!inPushBlock) inPushBlock = true
-                if (callerSavedRegs.contains(insn.arg) && !usedCallerSaved.contains(insn.arg)) {
-                    continue
-                }
-            }
-            else if (insn !is PUSH && callSpotted && inPushBlock) {
-                callSpotted = false
-                inPushBlock = false
-                if (padSavedRegisters) {
-                    returnedInsns.add(PAD())
-                }
-            }
-            returnedInsns.add(insn)
-        }
-        return returnedInsns.reversed()
+//        // - repeat, but walking backwards, and looking for PUSHes instead
+//        val returnedInsns = mutableListOf<Instruction>()
+//        callSpotted = false
+//        var inPushBlock = false
+//        for (i in conventionInsns.indices.reversed()) {
+//            val insn = conventionInsns[i]
+//            if (insn is CALL) {
+//                callSpotted = true
+//            }
+//            else if (insn is PUSH && callSpotted) {
+//                if (!inPushBlock) inPushBlock = true
+//                if (callerSavedRegs.contains(insn.arg) && !usedCallerSaved.contains(insn.arg)) {
+//                    continue
+//                }
+//            }
+//            else if (insn !is PUSH && callSpotted && inPushBlock) {
+//                callSpotted = false
+//                inPushBlock = false
+//                if (padSavedRegisters) {
+//                    returnedInsns.add(PAD())
+//                }
+//            }
+//            returnedInsns.add(insn)
+//        }
+        return conventionInsns
     }
     fun rewriteSpills(funcDecl : x86FuncDecl, worklist : Worklist) : List<Instruction> {
         // build offset map (which might involve previous state)
@@ -253,9 +260,9 @@ class ChaitinRegisterAllocator(assembly : x86CompUnit, functionTypes: Map<String
                 spilledInvolvementCounters[temp.name] = 0
                 offsetMap[temp.name] = offsetMap.keys.size + 1
             }
-//            else { // TODO: bandaid fix?
-//                throw Exception("cannot spill a machine register to stack!")
-//            }
+            else { // TODO: bandaid fix?
+                throw Exception("cannot spill a machine register to stack!")
+            }
         }
         // pass through instructions now
         val spilledInsns = mutableListOf<Instruction>()
@@ -387,7 +394,7 @@ class ChaitinRegisterAllocator(assembly : x86CompUnit, functionTypes: Map<String
             is DIV -> DIV(renameRegister(insn.divisor, renameMap))
             is IMULSingle -> IMULSingle(renameRegister(insn.factor, renameMap))
 
-            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump, is PAD -> insn
+            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump, is PAD, is CALLERSAVEPOP, is CALLERSAVEPUSH -> insn
 
             is Arith.DEC -> Arith.DEC(renameDestRegister(insn.dest, renameMap))
             is Arith.INC -> Arith.INC(renameDestRegister(insn.dest, renameMap))

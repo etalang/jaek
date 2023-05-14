@@ -70,6 +70,14 @@ class TrivialRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             val encountered = insn.involved.toList()
             assert(encountered.size <= 3)
             encountered.forEachIndexed { index, register -> replaced[register.name] = index }
+            if (insn is CALLERSAVEPUSH) {
+                callerSavedRegs.forEach { returnedInsns.add(PUSH(it)) }
+                continue
+            }
+            if (insn is CALLERSAVEPOP) {
+                callerSavedRegs.reversed().forEach{ returnedInsns.add(POP(it)) }
+                continue
+            }
             if (insn is LEAVE) { //saved regs pop back off in reverse order
                 returnedInsns.addAll(calleeSavedRegs.reversed().map { POP(it) })
             }

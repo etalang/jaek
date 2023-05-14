@@ -172,8 +172,8 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         while (selectStack.isNotEmpty()) {
             val n = selectStack.elementAt(0)
             selectStack.remove(n)
-            if (n is x86) // TODO: still a bandaid fix but maybe more plausible
-                coloredNodes.add(n)
+//            if (n is x86) // TODO: still a bandaid fix but maybe more plausible
+//                coloredNodes.add(n)
             val okColors = mutableSetOf<Int>()
             okColors.addAll(0 until K )
             val nNeighbors = ig.adjList[n] ?: emptySet()

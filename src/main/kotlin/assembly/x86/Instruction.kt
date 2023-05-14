@@ -403,6 +403,28 @@ sealed class Instruction {
         }
     }
 
+    /** pseudo-instruction, a placeholder for pushing caller-save registers onto the stack */
+    class CALLERSAVEPUSH() : Instruction() {
+        override val def: Set<Register> = setOf()
+        override val use: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
+
+        override fun toString(): String {
+            return "push on charles"
+        }
+    }
+
+    /** pseudo-instruction, a placeholder for popping caller-save registers off of the stack */
+    class CALLERSAVEPOP() : Instruction() {
+        override val def: Set<Register> = setOf()
+        override val use: Set<Register> = setOf()
+        override val involved: Set<Register.Abstract> = setOf()
+
+        override fun toString(): String {
+            return "pop off charles"
+        }
+    }
+
 
     /**
      * Loads the value from the top of the stack to [dest] and then increments the stack pointer.
@@ -426,7 +448,16 @@ sealed class Instruction {
      * TODO: The operand can be an immediate value, a general-purpose register, or a memory location.
      */
     class CALL(val label: Label) : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
+        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP),
+            Register.x86(Register.x86Name.RAX),
+            Register.x86(Register.x86Name.RCX),
+            Register.x86(Register.x86Name.RDX),
+            Register.x86(Register.x86Name.RDI),
+            Register.x86(Register.x86Name.RSI),
+            Register.x86(Register.x86Name.R8),
+            Register.x86(Register.x86Name.R9),
+            Register.x86(Register.x86Name.R10),
+            Register.x86(Register.x86Name.R11))
         override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
         override val involved: Set<Register.Abstract> = setOf()
 
@@ -476,7 +507,12 @@ sealed class Instruction {
      */
     class RET : Instruction() {
         override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
+        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP),
+            Register.x86(Register.x86Name.RBX),
+            Register.x86(Register.x86Name.R12),
+            Register.x86(Register.x86Name.R13),
+            Register.x86(Register.x86Name.R14),
+            Register.x86(Register.x86Name.R15))
         override val involved: Set<Register.Abstract> = setOf()
 
         override fun toString(): String {

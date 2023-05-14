@@ -27,7 +27,8 @@ class CFGBuilder(val funcDecl: x86FuncDecl) {
 
             currInsn = instructions.removeFirst()
             val next = when (currInsn) {
-                is Arith, is CMP, is CQO, is Arith.DEC, is Arith.INC, is CALL, is DIV, is ENTER, is IMULSingle, is JumpSet, is LEAVE, is Logic, is MOV, is NOP, is PAD, is POP, is PUSH, is TEST -> {
+                is Arith, is CMP, is CQO, is Arith.DEC, is CALLERSAVEPUSH, is CALLERSAVEPOP, is Arith.INC, is CALL,
+                is DIV, is ENTER, is IMULSingle, is JumpSet, is LEAVE, is Logic, is MOV, is NOP, is PAD, is POP, is PUSH, is TEST -> {
                     CFGNode(currInsn, listOf(pointToNext()))
                 }
 

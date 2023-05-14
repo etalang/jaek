@@ -2,6 +2,7 @@ package assembly.ralloc
 
 import assembly.x86.*
 import typechecker.EtaFunc
+import assembly.x86.Instruction.*
 
 sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
     /** In the current calling conventions, the callee-save registers are rbp, rsp, rbx, and r12–r15. */
@@ -11,6 +12,18 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
         Register.x86(Register.x86Name.R13),
         Register.x86(Register.x86Name.R14),
         Register.x86(Register.x86Name.R15)
+    )
+
+    val callerSavedRegs = listOf(
+        Register.x86(Register.x86Name.RAX),
+        Register.x86(Register.x86Name.RCX),
+        Register.x86(Register.x86Name.RDX),
+        Register.x86(Register.x86Name.RDI),
+        Register.x86(Register.x86Name.RSI),
+        Register.x86(Register.x86Name.R8),
+        Register.x86(Register.x86Name.R9),
+        Register.x86(Register.x86Name.R10),
+        Register.x86(Register.x86Name.R11)
     )
 
     fun allocate(): x86CompUnit {
@@ -25,14 +38,14 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
 
     fun replaceInsnRegisters(insn: Instruction, replaceMap: Map<String, Int>): Instruction {
         return when (insn) {
-            is Instruction.Arith -> {
+            is Arith -> {
                 when (insn) {
-                    is Instruction.Arith.ADD -> Instruction.Arith.ADD(
+                    is Arith.ADD -> Arith.ADD(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Arith.LEA -> Instruction.Arith.LEA(
+                    is Arith.LEA -> Arith.LEA(
                         replaceDestRegister(insn.dest, replaceMap),
                         when (val v = replaceSrcRegister(insn.src, replaceMap)) {
                             is Source.MemorySrc -> v
@@ -40,87 +53,88 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
                         }
                     )
 
-                    is Instruction.Arith.MUL -> Instruction.Arith.MUL(
+                    is Arith.MUL -> Arith.MUL(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Arith.SUB -> Instruction.Arith.SUB(
+                    is Arith.SUB -> Arith.SUB(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
                 }
             }
 
-            is Instruction.CMP -> Instruction.CMP(
+            is CMP -> CMP(
                 replaceDestRegister(insn.dest, replaceMap),
                 replaceSrcRegister(insn.src, replaceMap)
             )
 
-            is Instruction.Logic -> {
+            is Logic -> {
                 when (insn) {
-                    is Instruction.Logic.AND -> Instruction.Logic.AND(
+                    is Logic.AND -> Logic.AND(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Logic.OR -> Instruction.Logic.OR(
+                    is Logic.OR -> Logic.OR(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Logic.SHL -> Instruction.Logic.SHL(
+                    is Logic.SHL -> Logic.SHL(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Logic.SHR -> Instruction.Logic.SHR(
+                    is Logic.SHR -> Logic.SHR(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Logic.XOR -> Instruction.Logic.XOR(
+                    is Logic.XOR -> Logic.XOR(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
 
-                    is Instruction.Logic.SAR -> Instruction.Logic.SAR(
+                    is Logic.SAR -> Logic.SAR(
                         replaceDestRegister(insn.dest, replaceMap),
                         replaceSrcRegister(insn.src, replaceMap)
                     )
                 }
             }
 
-            is Instruction.MOV -> Instruction.MOV(
+            is MOV -> MOV(
                 replaceDestRegister(insn.dest, replaceMap),
                 replaceSrcRegister(insn.src, replaceMap)
             )
-            is Instruction.POP -> Instruction.POP(replaceRegister(insn.dest, replaceMap))
-            is Instruction.PUSH -> Instruction.PUSH(replaceRegister(insn.arg, replaceMap))
-            is Instruction.TEST -> Instruction.TEST(
+            is POP -> POP(replaceRegister(insn.dest, replaceMap))
+            is PUSH -> PUSH(replaceRegister(insn.arg, replaceMap))
+            is TEST -> TEST(
                 replaceRegister(insn.reg1, replaceMap),
                 replaceRegister(insn.reg2, replaceMap)
             )
 
-            is Instruction.JumpSet -> {
+            is JumpSet -> {
                 when (insn) { // need to indicate to replaceRegister that we need the 8 bit versions
-                    is Instruction.JumpSet.SETB -> Instruction.JumpSet.SETB(replaceRegister(insn.reg, replaceMap, 8))
-                    is Instruction.JumpSet.SETG -> Instruction.JumpSet.SETG(replaceRegister(insn.reg, replaceMap, 8))
-                    is Instruction.JumpSet.SETGE -> Instruction.JumpSet.SETGE(replaceRegister(insn.reg, replaceMap, 8))
-                    is Instruction.JumpSet.SETL -> Instruction.JumpSet.SETL(replaceRegister(insn.reg, replaceMap, 8))
-                    is Instruction.JumpSet.SETLE -> Instruction.JumpSet.SETLE(replaceRegister(insn.reg, replaceMap, 8))
-                    is Instruction.JumpSet.SETNZ -> Instruction.JumpSet.SETNZ(replaceRegister(insn.reg, replaceMap, 8))
-                    is Instruction.JumpSet.SETZ -> Instruction.JumpSet.SETZ(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETB -> JumpSet.SETB(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETG -> JumpSet.SETG(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETGE -> JumpSet.SETGE(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETL -> JumpSet.SETL(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETLE -> JumpSet.SETLE(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETNZ -> JumpSet.SETNZ(replaceRegister(insn.reg, replaceMap, 8))
+                    is JumpSet.SETZ -> JumpSet.SETZ(replaceRegister(insn.reg, replaceMap, 8))
                 }
             }
 
-            is Instruction.DIV -> Instruction.DIV(replaceRegister(insn.divisor, replaceMap))
-            is Instruction.IMULSingle -> Instruction.IMULSingle(replaceRegister(insn.factor, replaceMap))
+            is DIV -> DIV(replaceRegister(insn.divisor, replaceMap))
+            is IMULSingle -> IMULSingle(replaceRegister(insn.factor, replaceMap))
 
-            is Instruction.CALL, is Instruction.COMMENT, is Instruction.CQO, is Instruction.ENTER, is Label, is Instruction.LEAVE, is Instruction.NOP, is Instruction.RET, is Instruction.Jump, is Instruction.PAD -> insn
+            is CALL, is COMMENT, is CQO, is ENTER, is Label, is LEAVE, is NOP, is RET, is Jump, is PAD,
+            is CALLERSAVEPUSH, is CALLERSAVEPOP -> insn
 
-            is Instruction.Arith.DEC -> Instruction.Arith.DEC(replaceDestRegister(insn.dest, replaceMap))
-            is Instruction.Arith.INC -> Instruction.Arith.INC(replaceDestRegister(insn.dest, replaceMap))
+            is Arith.DEC -> Arith.DEC(replaceDestRegister(insn.dest, replaceMap))
+            is Arith.INC -> Arith.INC(replaceDestRegister(insn.dest, replaceMap))
         }
     }
 
