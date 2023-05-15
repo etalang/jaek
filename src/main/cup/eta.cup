@@ -99,8 +99,8 @@ precedence left OPEN_PAREN, CLOSE_PAREN;
 start with file;
 file            ::= INTERFACE interface:It                      {: RESULT = It; :}
                     | PROGRAM program:P                         {: RESULT = P;  :};
-interface       ::= imports:Is headers:Hds                      {: if (Is.size() > 0) RESULT = new Interface.EtaInterface(Hds);
-                                                                   else RESULT = new Interface.RhoInterface(Is, Hds); :};
+interface       ::= imports:Is headers:Hds                      {: if (Is.size() > 0) RESULT = new Interface.RhoInterface(Is, Hds);
+                                                                   else RESULT = new Interface.EtaInterface(Hds); :};
 program         ::= imports:Is allDefinitions:Ds                {: if (extension.equals("eta")) RESULT = new Program.EtaProgram(Is, Ds);
                                                                    else RESULT = new Program.RhoModule(Is, Ds); :};
 
