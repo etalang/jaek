@@ -1,5 +1,6 @@
 package assembly.x86
 
+
 class x86FuncDecl(val name : String, val body : List<Instruction>) {
     override fun toString(): String {
         val funcBlock = mutableListOf<String>(

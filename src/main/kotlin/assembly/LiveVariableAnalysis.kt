@@ -1,0 +1,5 @@
+package assembly
+
+class LiveVariableAnalysis {
+
+}

@@ -11,7 +11,6 @@ import ir.mid.IRStmt.IRSeq
 
 class IRLowerer(private val globals: List<String>, private val globalsByFunction: Map<String, Set<String>>) {
     private var freshLowTempCount = 0
-    private var opt = false
 
     private fun freshTemp(): LIRTemp {
         freshLowTempCount++
@@ -76,8 +75,7 @@ class IRLowerer(private val globals: List<String>, private val globalsByFunction
         return exprCommutes(expr)
     }
 
-    fun lowirgen(midIR: IRCompUnit, optimize: Boolean = false): LIRCompUnit {
-        opt = optimize
+    fun lowirgen(midIR: IRCompUnit): LIRCompUnit {
         return lowerCompUnit(midIR)
     }
 

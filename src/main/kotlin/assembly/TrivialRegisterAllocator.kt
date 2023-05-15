@@ -1,5 +1,6 @@
 package assembly
 
+import assembly.LVA.LiveVariableAnalysis
 import assembly.x86.*
 import assembly.x86.Destination.MemoryDest
 import assembly.x86.Destination.RegisterDest
@@ -12,7 +13,7 @@ import assembly.x86.Register.x86Name.*
 import assembly.x86.Source.*
 import typechecker.EtaFunc
 
-class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
+class TrivialRegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String, EtaFunc>) {
     /**
      * default three registers used in trivial register allocation ASSUME: we don't use these registers ANYWHERE in a
      * nontrivial capacity before we allocate
@@ -31,6 +32,7 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
+        val dataflow = LiveVariableAnalysis(n)
         return x86FuncDecl(n.name, allocateRegisters(n.body, n.name))
     }
 
@@ -145,9 +147,9 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
                 }
             }
 
-            is CMP -> insn.copy(
-                dest = replaceDestRegister(insn.dest, replaceMap),
-                src = replaceSrcRegister(insn.src, replaceMap)
+            is CMP -> CMP(
+                replaceDestRegister(insn.dest, replaceMap),
+                replaceSrcRegister(insn.src, replaceMap)
             )
 
             is Logic -> {
@@ -185,11 +187,11 @@ class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map<String
             }
 
             is MOV -> MOV(replaceDestRegister(insn.dest, replaceMap), replaceSrcRegister(insn.src, replaceMap))
-            is POP -> insn.copy(dest = replaceRegister(insn.dest, replaceMap))
-            is PUSH -> insn.copy(arg = replaceRegister(insn.arg, replaceMap))
-            is TEST -> insn.copy(
-                reg1 = replaceRegister(insn.reg1, replaceMap),
-                reg2 = replaceRegister(insn.reg2, replaceMap)
+            is POP -> POP(replaceRegister(insn.dest, replaceMap))
+            is PUSH -> PUSH(replaceRegister(insn.arg, replaceMap))
+            is TEST -> TEST(
+                replaceRegister(insn.reg1, replaceMap),
+                replaceRegister(insn.reg2, replaceMap)
             )
 
             is JumpSet -> {
