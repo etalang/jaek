@@ -38,7 +38,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         help = "Prevents optimizations (e.g. constant folding) from happening."
     ).flag()
     private val oreg: Boolean by option("-Oreg", help = "Enable register allocation and move coalescing.").flag()
-    private val odce: Boolean by option("-Oreg", help = "Enable dead code elimination.").flag()
+    private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
     private val ocopy: Boolean by option("-Ocopy", help = "Enable copy propagation.").flag()
 
     //LOGISTICS
