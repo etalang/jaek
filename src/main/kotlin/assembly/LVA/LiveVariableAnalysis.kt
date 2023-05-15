@@ -2,8 +2,9 @@ package assembly.LVA
 
 import assembly.x86.Register
 import assembly.x86.x86FuncDecl
+import optimize.IROptimizer.Graphable
 
-class LiveVariableAnalysis(val funcDecl: x86FuncDecl) {
+class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
     val liveIn: Map<CFGNode, Set<Register>>
     private val cfg = CFGBuilder(funcDecl).build()
 
@@ -31,7 +32,7 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) {
         liveIn = inVals
     }
 
-    fun graphViz(): String {
+    override fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
         cfg.nodes.forEachIndexed { index, t -> map[t] = "n$index" }
         return buildString {
