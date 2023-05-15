@@ -1,10 +1,5 @@
 
-import ast.Interface
-import ast.Node
-import ast.Program
-import ast.Method
-import ast.RhoRecord
-import ast.Use
+import ast.*
 import ast.Interface.*
 import errors.CompilerError
 import errors.SemanticError
@@ -39,9 +34,70 @@ class Kompiler {
 
                 is Program.RhoModule -> {
                     // NEED CHECK TO MAKE SURE IF A FILE HAS CORRESPONDING INTERFACE, EVERYTHING IN INTERFACE IS DEFINED
-//                    val thisFilePath = File(libpath + inFile.name + ".ri") // need to check this file interface
-//                    if (thisFilePath.exists()) {
-//                    }
+                    val thisFilePath = File(libpath,inFile.nameWithoutExtension + ".ri") // need to check this file interface
+                    if (thisFilePath.exists()) {
+                        val interfaceAST = libraries[inFile.nameWithoutExtension] ?: ASTUtil.getAST(thisFilePath)
+                        if (interfaceAST is RhoInterface) {
+                            // add the imports that are used in the interface into the module's use list
+                            ast.imports.addAll(interfaceAST.imports)
+                            // check that all headers are defined in the Rho Module
+                            interfaceAST.headers.forEach{ header ->
+                                var foundDef = false
+                                when (header){
+                                    is Method -> {
+                                        ast.definitions.forEach{definition ->
+                                            if (definition is Method && definition.id == header.id) { foundDef = true }
+                                        }
+                                        if (!foundDef) {
+                                            throw SemanticError(header.terminal.line,
+                                                header.terminal.column,"Definition ${header.id} not found in Rho Module", inFile)
+                                        }
+                                    }
+                                    is RhoRecord -> {
+                                        ast.definitions.forEach{definition ->
+                                            if (definition is RhoRecord && definition.name == header.name) {
+                                                foundDef = true
+
+                                                // check that the fields match for the record
+                                                val fieldMap = linkedMapOf<String, EtaType.OrdinaryType>()
+                                                for (f in definition.fields) {
+                                                    for (identifier in f.ids) {
+                                                        fieldMap[identifier.name] = EtaType.translateType(f.type)
+                                                    }
+                                                }
+                                                for (f in header.fields) {
+                                                    for (identifier in f.ids) {
+                                                        if (fieldMap[identifier.name] == null) {
+                                                            throw SemanticError(identifier.terminal.line,
+                                                                identifier.terminal.column,"${identifier.name} is not defined in record ${definition.name} in Rho Module", inFile)
+                                                        }
+                                                        val headerIdType = EtaType.translateType(f.type)
+                                                        if (fieldMap[identifier.name] != headerIdType) {
+                                                            throw SemanticError(header.terminal.line,
+                                                                header.terminal.column,"Definition of ${identifier.name} has type ${fieldMap[identifier.name]} but Interface type is $headerIdType", inFile)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (!foundDef) {
+                                            throw SemanticError(header.terminal.line,
+                                                header.terminal.column,"Definition ${header.name} not found in Rho Module", inFile)
+                                        }
+                                    }
+                                    else -> throw SemanticError(header.terminal.line,
+                                        header.terminal.column,"Invalid header type", inFile)
+                                }
+                            }
+                        } else {
+                            throw SemanticError(
+                                ast.terminal.line,
+                                ast.terminal.column,
+                                "${thisFilePath} is not a rho interface",
+                                inFile
+                            )
+                        }
+                    }
                     for (import in ast.imports) {
                         val etaPath = File(libpath, import.lib + ".eti") // needs to use library path
                         val rhoPath = File(libpath, import.lib + ".ri")
@@ -164,8 +220,6 @@ class Kompiler {
                 }
                 val currRecordType = EtaType.ContextType.RecordType(header.name, fieldMap)
                 if (returnGamma.contains(header.name)) { // has to obey subtyping relation
-//                    fieldMap.keys.forEach()
-//                    val fieldOrdering =
                     val existingRecordType = returnGamma.lookup(header.name)
                     if (existingRecordType !is EtaType.ContextType.RecordType) {
                         throw SemanticError(header.terminal.line, header.terminal.column, "recr", inFile)
@@ -173,7 +227,6 @@ class Kompiler {
                     else {
 
                     }
-
                 }
                 else {
                     header.etaType = currRecordType
