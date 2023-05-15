@@ -9,18 +9,3 @@ factorial(i: int): int {
     }
 }
 
-main(args: int[][]) {
-
-    while (!eof()) {
-        print("Number?")
-        input: int[] = readln()
-        num: int, ok: bool = parseInt(input)
-
-        if (ok) {
-            val: int = factorial(num)
-            print(unparseInt(num))
-            print("! is ")
-            println(unparseInt(val))
-        }
-    }
-}

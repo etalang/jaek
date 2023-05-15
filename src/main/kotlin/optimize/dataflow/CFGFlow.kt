@@ -17,16 +17,16 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     abstract class Forward<Lattice : EdgeValues>(cfg: CFG) : CFGFlow<Lattice>(cfg) {
         override fun run() {
             var counter = 0
-            val nodes = cfg.getNodes()
+            val nodes = cfg.reachableNodes()
             val worklist = nodes.toMutableSet()
-            nodes.forEach { it.edges.forEach { values[it] = top } }
-            val predEdges = cfg.getPredEdges()
+            nodes.forEach { cfg.mm.successorEdges(it).forEach { values[it] = top } }
+//            val predEdges = cfg.getPredEdges()
             while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
                 val node = worklist.random()
                 worklist.remove(node)
-                val inInfo = bigMeet(predEdges[node], values)
+                val inInfo = bigMeet(cfg.mm.predecessorEdges(node), values)
                 val newEdges = transition(node, inInfo)
-                node.edges.forEach {
+                cfg.mm.successorEdges(node).forEach {
                     val before = values[it]
                     if (before != newEdges[it]) {
                         values[it] = newEdges[it]!!
@@ -50,7 +50,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     }
 
     override fun graphViz(): String {
-        val nodes = cfg.getNodes()
+        val nodes = cfg.reachableNodes()
         return buildString {
             appendLine("digraph ${cfg.function.drop(1)}_${name.filterNot { it.isWhitespace() }} {")
             appendLine("\trankdir=\"TB\"")
@@ -60,8 +60,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
 
             nodes.forEach { appendLine("\tn${it.index} [shape=rectangle; label=\" ${it.pretty}\"; xlabel=\"${it.index}\";];") }
             nodes.forEach { from ->
-                for (edge in from.edges) {
-//                    println(edge.from == from)
+                for (edge in cfg.mm.successorEdges(from)) {
                     appendLine("\tn${from.index} -> n${edge.node.index} [label=\"    ${values[edge]?.pretty}\"]")
                 }
             }
@@ -70,6 +69,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     }
 
 }
+
 interface PostProc {
     fun postprocess()
 }
