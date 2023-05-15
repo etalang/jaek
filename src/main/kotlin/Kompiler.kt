@@ -7,7 +7,6 @@ import typechecker.Context
 import typechecker.EtaFunc
 import typechecker.EtaType
 import java.io.File
-import java.util.Queue
 
 class Kompiler {
     var libraries : MutableMap<String, Node> = HashMap()
@@ -46,7 +45,10 @@ class Kompiler {
                                 when (header){
                                     is Method -> {
                                         ast.definitions.forEach{definition ->
-                                            if (definition is Method && definition.id == header.id) { foundDef = true }
+                                            if (definition is Method && definition.id == header.id) {
+                                                foundDef = true
+                                                bindInterfaceMethod(inFile, header, returnGamma)
+                                            }
                                         }
                                         if (!foundDef) {
                                             throw SemanticError(header.terminal.line,
@@ -123,7 +125,7 @@ class Kompiler {
             }
             } else {
                 if (ast is Interface) {
-                    returnGamma = bindInterfaceMethods(inFile, ast, returnGamma)
+                    returnGamma = bindInterfaceDefinitions(inFile, ast, returnGamma)
                     libraries[inFile.name] = ast
                     if (ast is RhoInterface) {
                         returnGamma = loadRhoInterfaceDependencies(inFile, libpath, ast.imports, returnGamma, typedFile)
@@ -169,7 +171,7 @@ class Kompiler {
         try {
             if (interfaceAST is Interface) {
                 libraries[import.lib] = interfaceAST
-                return bindInterfaceMethods(importPath, interfaceAST, returnGamma)
+                return bindInterfaceDefinitions(importPath, interfaceAST, returnGamma)
             } else {
                 throw SemanticError(
                     import.terminal.line,
@@ -185,55 +187,63 @@ class Kompiler {
     }
 
 
-    fun bindInterfaceMethods(inFile: File, interfaceAST : Interface, returnGamma : Context) : Context {
+    fun bindInterfaceMethod(inFile:File, header: Method, returnGamma: Context) {
+        var domainList = ArrayList<EtaType.OrdinaryType>()
+        for (decl in header.args) {
+            domainList.add(EtaType.translateType(decl.type))
+        }
+        var codomainList = ArrayList<EtaType.OrdinaryType>()
+        for (t in header.returnTypes) {
+            codomainList.add(EtaType.translateType(t))
+        }
+        val currFunType = EtaFunc(
+            EtaType.ExpandedType(domainList),
+            EtaType.ExpandedType(codomainList),
+            true
+        )
+        if (returnGamma.contains(header.id)) {
+            if (returnGamma.lookup(header.id) != currFunType) {
+                throw SemanticError(
+                    header.terminal.line, header.terminal.column,
+                    "Mismatch in type of function ${header.id} among interfaces", inFile
+                )
+            }
+        } else {
+            header.etaType = currFunType
+            returnGamma.bind(header.id, currFunType)
+        }
+    }
+
+    fun bindInterfaceRecord(inFile:File, header: RhoRecord, returnGamma: Context) {
+        val fieldMap = linkedMapOf<String, EtaType.OrdinaryType>()
+        for (decl in header.fields) {
+            for (id in decl.ids) {
+                fieldMap[id.name] = EtaType.translateType(decl.type)
+            }
+        }
+        val currRecordType = EtaType.ContextType.RecordType(header.name, fieldMap)
+        if (returnGamma.contains(header.name)) { // has to obey subtyping relation
+            val existingRecordType = returnGamma.lookup(header.name)
+            if (existingRecordType !is EtaType.ContextType.RecordType) {
+                throw SemanticError(header.terminal.line, header.terminal.column, "recr", inFile)
+            }
+            else {
+
+            }
+        }
+        else {
+            header.etaType = currRecordType
+            returnGamma.bind(header.name, currRecordType)
+        }
+    }
+
+    fun bindInterfaceDefinitions(inFile: File, interfaceAST: Interface, returnGamma: Context) : Context {
         //deal with interfaces allowing uses and also having interface headers
         for (header in interfaceAST.headers) {
             if (header is Method) {
-                var domainList = ArrayList<EtaType.OrdinaryType>()
-                for (decl in header.args) {
-                    domainList.add(EtaType.translateType(decl.type))
-                }
-                var codomainList = ArrayList<EtaType.OrdinaryType>()
-                for (t in header.returnTypes) {
-                    codomainList.add(EtaType.translateType(t))
-                }
-                val currFunType = EtaFunc(
-                    EtaType.ExpandedType(domainList),
-                    EtaType.ExpandedType(codomainList),
-                    true
-                )
-                if (returnGamma.contains(header.id)) {
-                    if (returnGamma.lookup(header.id) != currFunType) {
-                        throw SemanticError(
-                            header.terminal.line, header.terminal.column,
-                            "Mismatch in type of function ${header.id} among interfaces", inFile
-                        )
-                    }
-                } else {
-                    header.etaType = currFunType
-                    returnGamma.bind(header.id, currFunType)
-                }
+                bindInterfaceMethod(inFile, header, returnGamma)
             } else if (header is RhoRecord){
-                val fieldMap = linkedMapOf<String, EtaType.OrdinaryType>()
-                for (decl in header.fields) {
-                    for (id in decl.ids) {
-                        fieldMap[id.name] = EtaType.translateType(decl.type)
-                    }
-                }
-                val currRecordType = EtaType.ContextType.RecordType(header.name, fieldMap)
-                if (returnGamma.contains(header.name)) { // has to obey subtyping relation
-                    val existingRecordType = returnGamma.lookup(header.name)
-                    if (existingRecordType !is EtaType.ContextType.RecordType) {
-                        throw SemanticError(header.terminal.line, header.terminal.column, "recr", inFile)
-                    }
-                    else {
-
-                    }
-                }
-                else {
-                    header.etaType = currRecordType
-                    returnGamma.bind(header.name, currRecordType)
-                }
+                bindInterfaceRecord(inFile, header, returnGamma)
             }
         }
         return returnGamma
