@@ -43,9 +43,6 @@ class IRTranslator(val AST: Program, val name: String, context : Context) {
     //Assumes that statements are translated in order iteratively
     private var enclosingWhileLabel: IRLabel? = null
 
-
-    /** WHERE IT HAPPENS **/
-    fun irgen(optimize: Boolean = false): LIRCompUnit {
     /** WHERE IT HAPPENS * */
     fun irgen(optimize: Settings.Opt, outputIR: Settings.OutputIR, outputCFG: Settings.OutputCFG): LIRCompUnit {
         val mir = translateCompUnit(AST)
@@ -811,4 +808,5 @@ class IRTranslator(val AST: Program, val name: String, context : Context) {
             else -> IRCJump(translateExpr(n, sourceFn), trueLabel, falseLabel)
         }
     }
+
 }
