@@ -42,8 +42,7 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                         }
                     }
                     stmts.add(
-                        LIRCallStmt(
-                            LIRName(node.name),
+                        LIRCallStmt(LIRName(node.name),
                             node.movIntos.size.toLong(),
                             node.args.map { translateExpr(it) })
                     )
@@ -53,7 +52,11 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
 
                 is If -> {
                     if (toJumpLabels.contains(node)) { // if we have seen the node we're jumping to
-                        stmts.add(LIRTrueJump(translateExpr(node.cond), toJumpLabels[node]!!)) // jump to pre-inserted label
+                        stmts.add(
+                            LIRTrueJump(
+                                translateExpr(node.cond), toJumpLabels[node]!!
+                            )
+                        ) // jump to pre-inserted label
                     } else { // we have not seen the node we're jumping to
                         val trueLabel = freshLabel()
                         node.take?.node?.let { toJumpLabels[it] = trueLabel } // label before whatever the true jump is
@@ -120,10 +123,11 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
         }
     }
 
-    private var freshLabelCount = 0
-
-    private fun freshLabel(): LIRLabel {
-        freshLabelCount++
-        return LIRLabel("\$NI$freshLabelCount")
+    companion object {
+        private var freshLabelCount = 0
+        private fun freshLabel(): LIRLabel {
+            freshLabelCount++
+            return LIRLabel("\$X${freshLabelCount}")
+        }
     }
 }
