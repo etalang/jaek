@@ -64,7 +64,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                             currFunType.fromInterface = false
                                             Gamma.bind(defn.id, currFunType)
                                         } else {
-                                            semanticError(defn,"Redeclared interface function has invalid different type")
+                                            semanticError(defn,"Redeclared imported function has invalid different type")
                                         }
                                     }
                                 }

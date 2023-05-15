@@ -135,6 +135,8 @@ class Kompiler {
 
     fun loadRhoInterfaceDependencies(inFile : File, importPath : String, imports : MutableList<Use>, returnGamma : Context, typedFile : File?) : Context {
         val seenImports = mutableSetOf<String>()
+        // we have already imported the original ri file, so we don't need to do it again
+        seenImports.add(inFile.nameWithoutExtension + ".ri")
         val remainingUses = imports.toMutableList()
         var finalGamma = returnGamma
         while (remainingUses.isNotEmpty()) {
