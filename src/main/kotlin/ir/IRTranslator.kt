@@ -1,7 +1,10 @@
 package ir
 
+import Settings
+import Settings.Opt.Actions.cf
 import ast.*
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp.OpType.*
+import edu.cornell.cs.cs4120.util.CodeWriterSExpPrinter
 import ir.lowered.LIRCompUnit
 import ir.mid.IRCompUnit
 import ir.mid.IRExpr
@@ -10,30 +13,50 @@ import ir.mid.IRFuncDecl
 import ir.mid.IRStmt
 import ir.mid.IRStmt.*
 import ir.optimize.ConstantFolder
+import optimize.IROptimizer
 import typechecker.EtaFunc
 import typechecker.EtaType
+import java.io.PrintWriter
 
 class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String, EtaFunc>) {
     private var mangledFunctionNames = functionTypes.mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
 
-    /** Tracks globals changed by a function call **/
+    /** Tracks globals changed by a function call * */
     private val globalsByFunction: MutableMap<String, MutableSet<String>> = HashMap()
 
-    /** Tracks function calls done by a function **/
+    /** Tracks function calls done by a function * */
     private val functionCalls: MutableMap<String, MutableSet<String>> = HashMap()
 
     private var freshLabelCount = 0
     private var freshTempCount = 0
 
-    /** WHERE IT HAPPENS **/
-    fun irgen(optimize: Boolean = false): LIRCompUnit {
+    /** WHERE IT HAPPENS * */
+    fun irgen(optimize: Settings.Opt, outputIR: Settings.OutputIR, outputCFG: Settings.OutputCFG): LIRCompUnit {
         val mir = translateCompUnit(AST)
         getGlobalsTouched()
 
-        var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir, optimize)
+        var lir = IRLowerer(globals.map { it.name }, globalsByFunction).lowirgen(mir)
         lir.reorderBlocks()
-        if (optimize) lir = ConstantFolder().apply(lir)
+        outputIR.initial?.let {
+            val writer = CodeWriterSExpPrinter(PrintWriter(it))
+            lir.java.printSExp(writer)
+            writer.flush()
+            writer.close()
+        }
+
+        //OPTIMIZE
+        if (optimize.desire(cf)) lir = ConstantFolder().apply(lir)
+        val optFuncs = lir.functions //TODO: apply optimizations
+
+        lir = LIRCompUnit(lir.name, optFuncs, lir.globals)
+
+        outputIR.final?.let {
+            val writer = CodeWriterSExpPrinter(PrintWriter(it))
+            lir.java.printSExp(writer)
+            writer.flush()
+            writer.close()
+        }
         return lir
     }
 
