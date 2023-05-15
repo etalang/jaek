@@ -1,6 +1,5 @@
 package ir.lowered
 
-import assembly.RegisterAllocator
 import assembly.Tile
 import assembly.TileBuilder
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
