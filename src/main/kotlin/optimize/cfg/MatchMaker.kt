@@ -23,9 +23,15 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         predecessors.computeIfAbsent(to) { mutableSetOf() }.add(Pair(from, jump))
     }
 
+    /** if a-b and b-c, connect a-c preserving the jump status of a-b (aka, delete b) */
+    fun translateEdge(abEdge: Edge, bcEdge: Edge) {
+        remove(abEdge.from, bcEdge.from, abEdge.jump)
+        connect(abEdge.from, bcEdge.node, abEdge.jump)
+    }
+
     fun remove(from: CFGNode, to: CFGNode, jump: Boolean) {
         //TODO IDK IF THIS WORKS
-        predecessors[to]?.removeIf { (node, _) -> node == from }
+        predecessors[to]?.removeIf { it.first == from }
         successors[from]?.remove(to)
     }
 
