@@ -81,7 +81,7 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                 }
 
                 is Start -> addFallThrough(node) // does not exist in lir
-                is Cricket -> throw Exception("cease your cricketing")
+                is Cricket -> addFallThrough(node)
             }
         }
 //        if (func.numRets < 1) stmts.add(LIRReturn(listOf()))

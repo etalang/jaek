@@ -69,7 +69,6 @@ class CFGBuilder(val lir: LIRFuncDecl) {
         }
 
         nodes.forEach { it.resolveEdges() }
-        nodes.removeIf { it is CFGNode.Cricket }
     }
 
     fun build(): CFG {
