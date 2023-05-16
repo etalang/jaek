@@ -83,6 +83,7 @@ etac ("Test --parse") ["parser"] "--parse" {
     manyassignments.eta;
     manyfunctions.eta;
     manynegative.eta;
+    multiassign1.rh;
     multiassignment.eta;
     multiassignmentwitharrayinit.eta (Syntax, "Unexpected token 3");
     multideclaration.eta (Syntax, "Unexpected token ]");
