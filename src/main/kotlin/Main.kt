@@ -83,15 +83,12 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         help = "Specify the operating system for which to generate code " + "Default is linux. No other OS is supported."
     ).default("linux")
     private val target: String by targetOpt
-    private val printIROpts: List<String> by option(
-        "--optir", metavar = "<phase>",
-        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\"."
-    ).multiple()
-    private val printCFGOpts: List<String> by option(
+    private val printIROpts : List<String> by option("--optir", metavar = "<phase>",
+        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
+    private val printCFGOpts : List<String> by option(
         "--optcfg",
         metavar = "<phase>",
-        help = "Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\"."
-    ).multiple()
+        help ="Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
 
     /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
@@ -136,7 +133,8 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                     if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
                 val optCFGInitialFile: File? =
                     if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-//                print(it)
+                val optCFGFinalFile : File? =
+                    if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
                 val ast: Node?
@@ -158,7 +156,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                         translator.irgen(
                                             if (disableOpt) Opt.None else Opt.All,
                                             OutputIR(optIRInitialFile, optIRFinalFile),
-                                            Settings.OutputCFG(optCFGInitialFile, null)
+                                            Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
                                         )
                                     val irFileGen = ir.java
                                     irFile?.let {

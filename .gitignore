@@ -8,6 +8,8 @@ src/tests/assembly/*.txt
 *.typed
 *.ir
 *.s
+*.dot
+*.ignored
 
 # Compiled class file
 *.class

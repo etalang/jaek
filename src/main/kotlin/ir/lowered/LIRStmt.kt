@@ -180,6 +180,10 @@ sealed class LIRStmt : LIRNode.TileableNode<Tile.Regular>() {
         override val defaultTile get() = Tile.Regular(listOf(Label(l, true)), 0)
 
         override fun findBestTile() {}
+
+        override fun toString(): String {
+            return "FUCKINGLABEL: $l"
+        }
     }
 
 }
