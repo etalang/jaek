@@ -33,18 +33,39 @@ class Kompiler {
 
                 is Program.RhoModule -> {
                     // NEED CHECK TO MAKE SURE IF A FILE HAS CORRESPONDING INTERFACE, EVERYTHING IN INTERFACE IS DEFINED
+
+                    // We will load the records in our module here first
+                    ast.definitions.forEach{ definition ->
+                        if (definition is RhoRecord) {
+                            if (definition.name in returnGamma.recordTypes()) {
+                                throw SemanticError(definition.terminal.line, definition.terminal.column,"Redeclared record type ${definition.name}", inFile)
+                            }
+                            // when iterating through this in the future, preserves order of adding elts to map
+                            val fieldTypes = linkedMapOf<String, EtaType.OrdinaryType>()
+                            for (f in definition.fields) {
+                                for (identifier in f.ids) {
+                                    fieldTypes[identifier.name] = EtaType.translateType(f.type)
+                                }
+                            }
+                            val recordType = EtaType.ContextType.RecordType(definition.name, fieldTypes)
+                            definition.etaType = recordType
+                            returnGamma.bind(definition.name, recordType)
+                        }
+                    }
+
                     val thisFilePath = File(libpath,inFile.nameWithoutExtension + ".ri") // need to check this file interface
                     if (thisFilePath.exists()) {
                         val interfaceAST = libraries[inFile.nameWithoutExtension] ?: ASTUtil.getAST(thisFilePath)
                         if (interfaceAST is RhoInterface) {
                             // add the imports that are used in the interface into the module's use list
                             ast.imports.addAll(interfaceAST.imports)
-                            // check that all headers are defined in the Rho Module
+
+                            // check that all headers are defined in the Rho Module and that their types/subtypes match
                             interfaceAST.headers.forEach{ header ->
-                                var foundDef = false
                                 when (header){
                                     is Method -> {
-                                        ast.definitions.forEach{definition ->
+                                        var foundDef = false
+                                        ast.definitions.forEach{ definition ->
                                             if (definition is Method && definition.id == header.id) {
                                                 foundDef = true
                                                 bindInterfaceMethod(inFile, header, returnGamma)
@@ -56,35 +77,19 @@ class Kompiler {
                                         }
                                     }
                                     is RhoRecord -> {
-                                        ast.definitions.forEach{definition ->
-                                            if (definition is RhoRecord && definition.name == header.name) {
-                                                foundDef = true
-
-                                                // check that the fields match for the record
-                                                val fieldMap = linkedMapOf<String, EtaType.OrdinaryType>()
-                                                for (f in definition.fields) {
-                                                    for (identifier in f.ids) {
-                                                        fieldMap[identifier.name] = EtaType.translateType(f.type)
-                                                    }
-                                                }
-                                                for (f in header.fields) {
-                                                    for (identifier in f.ids) {
-                                                        if (fieldMap[identifier.name] == null) {
-                                                            throw SemanticError(identifier.terminal.line,
-                                                                identifier.terminal.column,"${identifier.name} is not defined in record ${definition.name} in Rho Module", inFile)
-                                                        }
-                                                        val headerIdType = EtaType.translateType(f.type)
-                                                        if (fieldMap[identifier.name] != headerIdType) {
-                                                            throw SemanticError(header.terminal.line,
-                                                                header.terminal.column,"Definition of ${identifier.name} has type ${fieldMap[identifier.name]} but Interface type is $headerIdType", inFile)
-                                                        }
-                                                    }
-                                                }
+                                        val recordDefinition = returnGamma.lookup(header.name)
+                                        if (returnGamma.contains(header.name)){
+                                            if (recordDefinition !is EtaType.ContextType.RecordType) {
+                                                throw SemanticError(header.terminal.line,
+                                                    header.terminal.column,"Definition ${header.name} is not a record type in Rho Module", inFile)
+                                            } else {
+                                                checkRecordSubtyping(header, recordDefinition, inFile)
+                                                //TODO: not exactly correct
+                                                header.etaType = recordDefinition
                                             }
-                                        }
-                                        if (!foundDef) {
+                                        } else {
                                             throw SemanticError(header.terminal.line,
-                                                header.terminal.column,"Definition ${header.name} not found in Rho Module", inFile)
+                                                header.terminal.column,"Definition ${header.name} in Interface but not found in Rho Module", inFile)
                                         }
                                     }
                                     else -> throw SemanticError(header.terminal.line,
@@ -133,6 +138,26 @@ class Kompiler {
                 }
             }
             return returnGamma
+    }
+
+    fun checkRecordSubtyping(header : RhoRecord, recordtype : EtaType.ContextType.RecordType, inFile: File) {
+       header.fields.forEach{ field ->
+          for (identifier in field.ids) {
+              if (recordtype.fields[identifier.name] == null) {
+                  throw SemanticError(identifier.terminal.line, identifier.terminal.column,"${identifier.name} is not defined in record ${recordtype.name} in Rho Module", inFile)
+              } else {
+                  val headerFieldType = EtaType.translateType(field.type)
+                  val recordFieldType = recordtype.fields[identifier.name]
+                  if (headerFieldType != recordFieldType) {
+                      throw SemanticError(
+                          identifier.terminal.line,
+                          identifier.terminal.column,
+                          "${identifier.name} is defined as ${headerFieldType} in header but ${recordFieldType} in record ${recordtype.name} in Rho Module",
+                          inFile)
+                  }
+              }
+          }
+       }
     }
 
     fun loadRhoInterfaceDependencies(inFile : File, importPath : String, imports : MutableList<Use>, returnGamma : Context, typedFile : File?) : Context {
@@ -188,11 +213,11 @@ class Kompiler {
 
 
     fun bindInterfaceMethod(inFile:File, header: Method, returnGamma: Context) {
-        var domainList = ArrayList<EtaType.OrdinaryType>()
+        val domainList = ArrayList<EtaType.OrdinaryType>()
         for (decl in header.args) {
             domainList.add(EtaType.translateType(decl.type))
         }
-        var codomainList = ArrayList<EtaType.OrdinaryType>()
+        val codomainList = ArrayList<EtaType.OrdinaryType>()
         for (t in header.returnTypes) {
             codomainList.add(EtaType.translateType(t))
         }
@@ -222,13 +247,14 @@ class Kompiler {
             }
         }
         val currRecordType = EtaType.ContextType.RecordType(header.name, fieldMap)
+
         if (returnGamma.contains(header.name)) { // has to obey subtyping relation
             val existingRecordType = returnGamma.lookup(header.name)
             if (existingRecordType !is EtaType.ContextType.RecordType) {
-                throw SemanticError(header.terminal.line, header.terminal.column, "recr", inFile)
+                throw SemanticError(header.terminal.line, header.terminal.column, "Conflicting record definition in Interface and Rho Module", inFile)
             }
             else {
-
+                checkRecordSubtyping(header, existingRecordType, inFile)
             }
         }
         else {

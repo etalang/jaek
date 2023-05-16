@@ -44,7 +44,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             if (Gamma.contains(defn.id)) {
                                 val currFunType = Gamma.lookup(defn.id)
                                 if (currFunType !is FunType) {
-                                    semanticError(defn,"Invalid function shadowing an existing variable")
+                                    semanticError(defn,"Invalid function shadowing an existing variable or record")
                                 }
                                 else {
                                     if (!(currFunType.fromInterface)) {
@@ -84,19 +84,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                         }
                         is RhoRecord -> {
-                            if (defn.name in Gamma.recordTypes()) {
-                                semanticError(defn, "Redeclared record type")
-                            }
-                            // when iterating through this in the future, preserves order of adding elts to map
-                            val fieldTypes = linkedMapOf<String, OrdinaryType>()
-                            for (f in defn.fields) {
-                                for (identifier in f.ids) {
-                                    fieldTypes[identifier.name] = translateType(f.type)
-                                }
-                            }
-                            val recordType = ContextType.RecordType(defn.name, fieldTypes)
-                            defn.etaType = recordType
-                            Gamma.bind(defn.name, recordType)
+                            //Typechecking done in Kompiler
                         }
                     }
                 }
