@@ -32,7 +32,7 @@ class TrivialRegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
     }
 
     private fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
-        val dataflow = LiveVariableAnalysis(n)
+//        val dataflow = LiveVariableAnalysis(n)
         return x86FuncDecl(n.name, allocateRegisters(n.body, n.name))
     }
 

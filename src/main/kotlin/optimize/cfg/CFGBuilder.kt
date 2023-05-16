@@ -8,7 +8,7 @@ class CFGBuilder(val lir: LIRFuncDecl) {
     private val nodes: MutableList<CFGNode>
     private var pointingTo: String? = null
     val start: CFGNode.Start
-
+    private val matchMaker : MatchMaker
     init {
         start = CFGNode.Start(lir.name, pointToNext())
         nodes = mutableListOf(start)
@@ -32,16 +32,16 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 is LIRStmt.LIRCJump -> throw Exception("honestly shout out to charles for somehow sneaking a CJUMP in this far after block reordering")
 
                 is LIRStmt.LIRJump -> {
-                    CFGNode.Cricket(Edge.Lazy(targets, currStmt.address.l))
+                    CFGNode.Cricket(currStmt.address.l)
                 }
 
                 is LIRReturn -> {
                     pointingTo = null
-                    CFGNode.Return(currStmt.valList.map { translateExpr(it) }, Edge.Lazy(targets, null))
+                    CFGNode.Return(currStmt.valList.map { translateExpr(it) } )
                 }
 
                 is LIRStmt.LIRTrueJump -> CFGNode.If(
-                    translateExpr(currStmt.guard), Edge.Lazy(targets, currStmt.trueBranch.l), pointToNext()
+                    translateExpr(currStmt.guard), currStmt.trueBranch.l, pointToNext()
                 )
 
                 is LIRCallStmt -> {
@@ -67,12 +67,12 @@ class CFGBuilder(val lir: LIRFuncDecl) {
                 if (target == null) targets[it] = next
             }
         }
-
-        nodes.forEach { it.resolveEdges() }
+        matchMaker = MatchMaker(start,targets)
+        nodes.forEach { it.resolveEdges(matchMaker) }
     }
 
     fun build(): CFG {
-        return CFG(start, lir.name)
+        return CFG(start, lir.name, matchMaker)
     }
 
     private fun translateMove(currStmt: LIRMove): CFGNode.Mov {
@@ -100,10 +100,10 @@ class CFGBuilder(val lir: LIRFuncDecl) {
     }
 
     private var freshLabelCount = 0
-    private fun pointToNext(): Edge.Lazy {
+    private fun pointToNext(): String {
         freshLabelCount++
         pointingTo = "\$G$freshLabelCount"
-        return Edge.Lazy(targets, pointingTo)
+        return pointingTo!!
     }
 
 }

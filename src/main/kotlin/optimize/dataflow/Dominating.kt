@@ -34,7 +34,7 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg) {
             }
         }
         val outInfo = Info(out)
-        return n.edges.associateWith { outInfo }
+        return cfg.mm.successorEdges(n).associateWith { outInfo }
     }
 
     /** the nodes that dominate this edge */

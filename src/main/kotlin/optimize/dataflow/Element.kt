@@ -15,14 +15,15 @@ sealed class Element {
             override fun toString() = "⊥"
         }
 
-        class Data(val t: Long) : Definition() {
+        data class Data(val t: Long) : Definition() {
             override fun toString() = t.toString()
         }
 
         class DesignatedMeeter : Definition()
 
         override val meet: Meet<Definition> = object : RealMeet<Definition, Data>(Top, Bottom) {
-            override fun meetData(e1: Data, e2: Data): Definition = Bottom // multiple definitions means we don't know what it is
+            override fun meetData(e1: Data, e2: Data): Definition =
+                Bottom // multiple definitions means we don't know what it is
         }
     }
 
