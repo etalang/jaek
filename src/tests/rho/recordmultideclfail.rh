@@ -1,0 +1,18 @@
+use io
+use conv
+
+swap(p: Point) {
+    t:int = p.x
+    p.x, _ = p.y, 0
+    p.y = t
+}
+
+record Point {
+    x, y: int
+}
+
+main(args: int[][]) {
+    p, p1 : Point
+    p, p1 = Point(1, 2)
+
+}

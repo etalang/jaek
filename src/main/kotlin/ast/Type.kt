@@ -14,4 +14,11 @@ sealed class Type : Node() {
         }
     }
 
+    class RecordType(val t : String, override val terminal: Terminal) : Type() {
+        override fun write (printer : SExpPrinter){
+            printer.printAtom(t)
+        }
+
+    }
+
 }

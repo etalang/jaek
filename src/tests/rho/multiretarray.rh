@@ -1,0 +1,23 @@
+use io
+use conv
+
+main(args:int[][]) {
+   a : int[][] = {"kate", "tia", "bryan", "noah"}
+   a[1][1], b: bool = f()
+   printStringArray(a)
+}
+
+f() : int, bool {
+    return 'u', false
+}
+
+printStringArray(strArr: int[][]) {
+    print("{")
+    i : int = 0
+    while (i < length(strArr)) {
+        print(strArr[i])
+        if (i < length(strArr) - 1) print(" ")
+        i = i+1
+    }
+    print("}")
+}

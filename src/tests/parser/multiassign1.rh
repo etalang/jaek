@@ -1,0 +1,12 @@
+//this is a valid multiassignment
+
+foo () {
+    j : int, k : int = 2, 3
+    j, k, l : int, x = f()
+    j, k, l : int, _ = f()
+    _, j, k, l : int = f()
+    j, k : int, l: int = f()
+    i : int, j, k, l: int = f()
+    _, j, k : int, _ = f()
+
+}

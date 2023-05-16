@@ -1,0 +1,20 @@
+use io
+use conv
+
+swap(p: Point) {
+    t:int = p.x
+    p.x, _ = p.y, 0
+    p.y = t
+}
+
+record Point {
+    x, y: int
+}
+
+p0 : Point
+
+main(args: int[][]) {
+    p0 = Point(1, 2)
+    println(unparseInt(p0.x))
+    println(unparseInt(p0.y))
+}

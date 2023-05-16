@@ -1,0 +1,8 @@
+// A 2D Point with integer coordinates (x,y).
+record Point {}
+// Create the point (x,y).
+createPoint(x: int, y: int): Point
+
+// Get the X and Y coordinates of the point
+pointX(p: Point): int
+pointY(p: Point): int

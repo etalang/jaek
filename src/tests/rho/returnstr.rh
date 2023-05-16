@@ -1,0 +1,12 @@
+use io
+
+main(args:int[][]) {
+    ret:int[] = f()
+    ret[0] = 'L'
+    print(ret + "\n")
+    print(f())
+}
+
+f() : int[] {
+    return "Hello World"
+}

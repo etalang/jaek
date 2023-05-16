@@ -17,9 +17,11 @@ import optimize.IROptimizer
 import typechecker.EtaFunc
 import typechecker.EtaType
 import java.io.PrintWriter
+import typechecker.Context
+import typechecker.EtaType.ContextType
 
-class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String, EtaFunc>) {
-    private var mangledFunctionNames = functionTypes.mapValues { mangleMethodName(it.key, it.value) }
+class IRTranslator(val AST: Program, val name: String, context : Context) {
+    private var mangledFunctionNames = context.functionMap().mapValues { mangleMethodName(it.key, it.value) }
     private val globals: MutableList<IRData> = ArrayList()
 
     /** Tracks globals changed by a function call * */
@@ -28,8 +30,18 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     /** Tracks function calls done by a function * */
     private val functionCalls: MutableMap<String, MutableSet<String>> = HashMap()
 
+    /** Tracks the records defined in the program **/
+    private val records = context.recordTypes().mapValues{ createRecordMap(it.key, it.value) }
+
+    /** Null Reference **/
+    private val nullRef = IRConst(0)
+
     private var freshLabelCount = 0
     private var freshTempCount = 0
+
+    /** Tracks where the false label of the while loop that you are currently in**/
+    //Assumes that statements are translated in order iteratively
+    private var enclosingWhileLabel: IRLabel? = null
 
     /** WHERE IT HAPPENS * */
     fun irgen(optimize: Settings.Opt, outputIR: Settings.OutputIR, outputCFG: Settings.OutputCFG): LIRCompUnit {
@@ -77,7 +89,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
             visit(startFunc)
         }
-        functions.forEach() { function ->
+        functions.forEach { function ->
             bfs(function)
         }
     }
@@ -97,6 +109,7 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is EtaType.OrdinaryType.ArrayType -> "a" + mangleType(t.t)
             is EtaType.OrdinaryType.BoolType -> "b"
             is EtaType.OrdinaryType.IntType -> "i"
+            is EtaType.OrdinaryType.RecordType -> "r" + t.t.length + t.t
             else -> "Charles Sherk <3"
         }
     }
@@ -114,11 +127,17 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     "_", "__"
                 ) + "_" + retType + type.domain.lst.fold("") { acc, e -> acc + mangleType(e) }
             }
-
             else -> {
                 "i love cs 4120 ta charles sherk"
             }
         }
+    }
+
+    fun createRecordMap(name: String, type : ContextType.RecordType): LinkedHashMap<String, Int> {
+        val map = LinkedHashMap<String, Int>()
+        var counter = 0
+        type.fields.forEach { field -> map[field.key] = counter; counter++; }
+        return map
     }
 
     private fun translateCompUnit(p: Program): IRCompUnit {
@@ -127,13 +146,11 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         p.definitions.forEach {
             when (it) {
                 is GlobalDecl -> {
-                    globals.add(translateData(it))
+                    globals.addAll(translateData(it))
                 }
-
                 else -> {}
             }
         }
-
 
         p.definitions.forEach {
             when (it) {
@@ -141,11 +158,13 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 else -> {}
             }
         }
+
         return IRCompUnit(name, functions, globals)
     }
 
     // TODO: Arrays in global data should also have their length? how does this affect pointers to their info?
-    private fun translateData(n: GlobalDecl): IRData {
+    private fun translateData(n: GlobalDecl): List<IRData> {
+        if (n.ids.size != 1 && n.value != null) throw Exception("Multiple ids in global assignment")
         val data: LongArray = when (val v = n.value) {
             is Literal.ArrayLit -> v.list.map { translateExpr(it, "_globals").java.constant() }
                 .toLongArray() //let's hope this doesn't throw
@@ -153,15 +172,21 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             is Literal.CharLit -> longArrayOf(v.char.toLong())
             is Literal.IntLit -> longArrayOf(v.num)
             is Literal.StringLit -> longArrayOf(v.text.length.toLong()) + v.text.codePoints().asLongStream().toArray()
+            is Literal.NullLit -> longArrayOf(0)
             null -> longArrayOf(0)
         }
-        return IRData(n.id, data)
+        val irDataList = mutableListOf<IRData>()
+        for (i in 0 until n.ids.size) {
+            irDataList.add(IRData(n.ids[i], data))
+        }
+        return irDataList
     }
 
     private fun translateFuncDecl(n: Method): IRFuncDecl {
         val funcMoves: MutableList<IRStmt> = mutableListOf()
         for (i in 0 until n.args.size) {
-            funcMoves.add(IRMove(IRTemp(n.args[i].id), IRTemp("_ARG${i + 1}")))
+            if (n.args[i].ids.size != 1) throw Exception("Multiple ids in arg")
+            funcMoves.add(IRMove(IRTemp(n.args[i].ids[0].name), IRTemp("_ARG${i + 1}")))
         }
 
         globalsByFunction[mangledFunctionNames[n.id]!!] = mutableSetOf()
@@ -179,9 +204,14 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
     private fun translateAssignTarget(n: AssignTarget, sourceFn: String): IRExpr {
         return when (n) {
             is AssignTarget.ArrayAssign -> translateExpr(n.arrayAssign, sourceFn)
-            is AssignTarget.DeclAssign -> IRTemp(n.decl.id)
+            is AssignTarget.DeclAssign -> if (n.decl.ids.size != 1) {
+                throw Exception("Multiple ids in declaration assignment target")
+            } else {
+                IRTemp(n.decl.ids[0].name)
+            }
             is AssignTarget.IdAssign -> IRTemp(n.idAssign.name)
             is AssignTarget.Underscore -> freshTemp()
+            is AssignTarget.FieldAssign -> translateExpr(n.fieldAssign, sourceFn)
         }
 
     }
@@ -243,21 +273,43 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                     // DO THE CALL IN HERE DO NOT PASS IT DOWN
                     // assuming that the number of returns must match the number of targets, checked in typecheck
 
-                    functionCalls[sourceFn]?.add(mangledFunctionNames[first.fn]!!)
+                    // TODO: record initialization
 
-                    stmts.add(
-                        IRCallStmt(IRName(
-                            mangledFunctionNames[first.fn]!!
-                        ),
-                            n.targets.size.toLong(),
-                            first.args.map { translateExpr(it, sourceFn) }
-                        ))
-                    val returnTemps: MutableList<IRTemp> = mutableListOf()
-                    for (i in 1..n.targets.size) {
-                        returnTemps.add(IRTemp("_RV$i"))
+                    if (first.fn in records) {
+                        val dimension = records[first.fn]!!.size.toLong()
+                        val tempM = freshTemp()
+                        val moves = arrayListOf(IRMove(tempM, IRCall(IRName("_eta_alloc"), listOf(IROp(MUL, IRConst(dimension), IRConst(8))))))
+                        for (i in 0 until dimension) {
+                            moves.add(
+                                IRMove(
+                                    IRMem(IROp(ADD, tempM, IRConst((8 * i)))),
+                                    translateExpr(first.args[i.toInt()], sourceFn)
+                                )
+                            )
+                        }
+                        stmts.addAll(moves)
+                        //TODO: should this be allowed?
+                        if (targetList.size != 1){
+                            throw Exception("Record constructor used for multiple targets")
+                        }
+                        stmts.add(multiAssignMove(Pair(targetList[0], tempM)))
+                        IRSeq(stmts)
+                    } else {
+                        functionCalls[sourceFn]?.add(mangledFunctionNames[first.fn]!!)
+                        stmts.add(
+                            IRCallStmt(IRName(
+                                mangledFunctionNames[first.fn]!!
+                            ),
+                                n.targets.size.toLong(),
+                                first.args.map { translateExpr(it, sourceFn) }
+                            ))
+                        val returnTemps: MutableList<IRTemp> = mutableListOf()
+                        for (i in 1..n.targets.size) {
+                            returnTemps.add(IRTemp("_RV$i"))
+                        }
+                        stmts.addAll((targetList zip returnTemps).map { multiAssignMove(it) })
+                        IRSeq(stmts)
                     }
-                    stmts.addAll((targetList zip returnTemps).map { multiAssignMove(it) })
-                    IRSeq(stmts)
                 } else {
                     val translatedExprs: List<IRExpr> = n.vals.map { translateExpr(it, sourceFn) } // rhs first
                     val exprTempList: MutableList<IRExpr> = mutableListOf()
@@ -312,22 +364,43 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 )
             }
 
-            is VarDecl.RawVarDecl -> IRMove(IRTemp(n.id), IRConst(0)) //INIT 0
+            is VarDecl.RawVarDeclList -> {
+                val defaultType = when (n.type){
+                    is Type.Array, is Type.RecordType -> { nullRef }
+                    is Primitive.BOOL, is Primitive.INT  -> IRConst(0)
+                }
+                if (n.ids.size == 1){
+                    IRMove(IRTemp(n.ids[0].name), defaultType)
+                } else {
+                    val moves = mutableListOf<IRStmt>()
+                    n.ids.forEach {
+                        moves.add(IRMove(IRTemp(it.name), defaultType))
+                    }
+                    IRSeq(moves)
+                }
+            }
             is Statement.While -> {
                 val trueLabel = freshLabel()
                 val falseLabel = freshLabel()
                 val startLabel = freshLabel()
+                val oldWhileLabel = enclosingWhileLabel
+                enclosingWhileLabel = falseLabel
+                val guard = translateControl(n.guard, trueLabel, falseLabel, sourceFn)
+                val body = translateStatement(n.body, sourceFn)
+                enclosingWhileLabel = oldWhileLabel
                 IRSeq(
                     listOf(
                         startLabel,
-                        translateControl(n.guard, trueLabel, falseLabel, sourceFn),
+                        guard,
                         trueLabel,
-                        translateStatement(n.body, sourceFn),
+                        body,
                         IRJump(IRName(startLabel.l)),
                         falseLabel
                     )
                 )
             }
+            //If there is no enclosing while label then it shouldn't have typed checked...
+            is Statement.Break -> IRJump(IRName(enclosingWhileLabel!!.l))
         }
     }
 
@@ -572,8 +645,24 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
 
             is Expr.FunctionCall -> {
-                functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
-                IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
+                //Record initialization allocates an array of constant size
+                if (n.fn in records){
+                    val dimension = records[n.fn]!!.size.toLong()
+                    val tempM = freshTemp()
+                    val moves = arrayListOf(IRMove(tempM, IRCall(IRName("_eta_alloc"), listOf(IROp(MUL, IRConst(dimension), IRConst(8))))))
+                    for (i in 0 until dimension) {
+                        moves.add(
+                            IRMove(
+                                IRMem(IROp(ADD, tempM, IRConst((8 * i)))),
+                                translateExpr(n.args[i.toInt()], sourceFn)
+                            )
+                        )
+                    }
+                    IRESeq(IRSeq(moves), tempM)
+                } else {
+                    functionCalls[sourceFn]?.add(mangledFunctionNames[n.fn]!!)
+                    IRCall(IRName(mangledFunctionNames[n.fn]!!), n.args.map { translateExpr(it, sourceFn) })
+                }
             }
 
             is Expr.Identifier -> {
@@ -646,6 +735,23 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
                 UnaryOp.Operation.NOT -> IROp(XOR, IRConst(1), translateExpr(n.arg, sourceFn))
                 UnaryOp.Operation.NEG -> IROp(SUB, IRConst(0), translateExpr(n.arg, sourceFn))
             }
+
+            is Expr.Field -> {
+                val type = n.record.etaType
+                if (type is EtaType.OrdinaryType.RecordType){
+                    val fieldNumber = records[type.t]!![n.name]
+                    val record = translateExpr(n.record, sourceFn)
+                    if (fieldNumber != null) {
+                        IRMem(IROp(ADD, record, IRConst((8 * fieldNumber).toLong())))
+                    } else {
+                        throw Exception("Field access on field not in record type (should have been done in type checking)")
+                    }
+                } else {
+                    throw Exception("Field access on non-record type (should have been done in type checking)")
+                }
+            }
+            is Literal.NullLit -> {
+                nullRef }
         }
     }
 
@@ -705,4 +811,5 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             else -> IRCJump(translateExpr(n, sourceFn), trueLabel, falseLabel)
         }
     }
+
 }

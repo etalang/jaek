@@ -1,0 +1,17 @@
+use io
+use conv
+
+a : int[]
+b : int[]
+
+main(args:int[][]) {
+    a = {3,4}
+    b = {5,6}
+    c : int[] = a+b
+    println(unparseInt(c[3]))
+
+    d : int[] = {7,8}
+    e : int[] = {9,10}
+    f : int[] = d+e
+    print(unparseInt(f[3]))
+}

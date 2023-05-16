@@ -113,7 +113,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         folderFiles.forEach {
             val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
-            if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
+            if (it.exists() && (it.extension == "eta" || it.extension == "eti" || it.extension == "rh" || it.extension == "ri")) {
                 // TODO: pull out it, absDisgnosticPath
                 val lexedFile: File? =
                     if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
@@ -150,12 +150,11 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     val translator = IRTranslator(
                                         ast,
                                         it.nameWithoutExtension,
-                                        context.functionMap()
+                                        context
                                     )
                                     val ir =
                                         translator.irgen(
-                                            if (disableOpt) Opt.None else
-                                                Opt.All,
+                                            if (disableOpt) Opt.None else Opt.All,
                                             OutputIR(optIRInitialFile, optIRFinalFile),
                                             Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
                                         )
@@ -243,7 +242,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
     @Throws(LexicalError::class)
     private fun lex(inFile: File, lexedFile: File?) {
-        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile)
+        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
         while (true) {
             try {
                 val t: Symbol = (jFlexLexer.next_token() ?: break)

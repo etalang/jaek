@@ -1,0 +1,18 @@
+use io
+use conv
+    
+main(args : int[][]){
+    print("return is " + unparseInt(fmanyarg(6,7,8,9,10,11,12,13)))
+}
+
+fmanyarg(arg1:int,arg2: int, arg3: int,arg4: int, arg5:int,arg6: int, arg7: int, arg8:int) : int {
+    println(unparseInt(arg1))
+    println(unparseInt(arg2))
+    println(unparseInt(arg3))
+    println(unparseInt(arg4))
+    println(unparseInt(arg5))
+    println(unparseInt(arg6))
+    println(unparseInt(arg7))
+    println(unparseInt(arg8))
+    return 17
+}
