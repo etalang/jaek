@@ -18,7 +18,7 @@ class Kompiler {
                     for (import in ast.imports) {
                         val importPath = File(libpath, import.lib + ".eti") // needs to use library path
                         if (importPath.exists()) {
-                            val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(importPath)
+                            val interfaceAST = libraries[import.lib] ?: tryGetAst(importPath, typedFile)
                             returnGamma = checkAndLoadInterface(inFile, importPath, interfaceAST, import, returnGamma, typedFile)
                         } else {
                             throw SemanticError(
@@ -55,7 +55,7 @@ class Kompiler {
 
                     val thisFilePath = File(libpath,inFile.nameWithoutExtension + ".ri") // need to check this file interface
                     if (thisFilePath.exists()) {
-                        val interfaceAST = libraries[inFile.nameWithoutExtension] ?: ASTUtil.getAST(thisFilePath)
+                        val interfaceAST = libraries[inFile.nameWithoutExtension] ?: tryGetAst(thisFilePath, typedFile)
                         if (interfaceAST is RhoInterface) {
                             // add the imports that are used in the interface into the module's use list
                             ast.imports.addAll(interfaceAST.imports)
@@ -109,11 +109,11 @@ class Kompiler {
                         val etaPath = File(libpath, import.lib + ".eti") // needs to use library path
                         val rhoPath = File(libpath, import.lib + ".ri")
                         if (etaPath.exists()) {
-                            val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(etaPath)
+                            val interfaceAST = libraries[import.lib] ?: tryGetAst(etaPath, typedFile)
                             returnGamma = checkAndLoadInterface(inFile, etaPath, interfaceAST, import, returnGamma, typedFile)
                         }
                         else if (rhoPath.exists()) {
-                            val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(rhoPath)
+                            val interfaceAST = libraries[import.lib] ?: tryGetAst(rhoPath, typedFile)
                             returnGamma = checkAndLoadInterface(inFile, rhoPath, interfaceAST, import, returnGamma, typedFile)
                             returnGamma = loadRhoInterfaceDependencies(inFile, libpath, ast.imports, returnGamma, typedFile)
                         }
@@ -175,12 +175,12 @@ class Kompiler {
             val rhopath = File(importPath, import.lib + ".ri")
             if (etapath.exists()) {
                 seenImports.add(import.lib + ".eti")
-                val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(etapath)
+                val interfaceAST = libraries[import.lib] ?: tryGetAst(etapath, typedFile)
                 finalGamma = checkAndLoadInterface(inFile, etapath, interfaceAST, import, returnGamma, typedFile)
             }
             if (rhopath.exists()) {
                 seenImports.add(import.lib + ".ri")
-                val interfaceAST = libraries[import.lib] ?: ASTUtil.getAST(rhopath)
+                val interfaceAST = libraries[import.lib] ?: tryGetAst(rhopath, typedFile)
                 if (interfaceAST is RhoInterface) {
                     remainingUses.addAll(interfaceAST.imports)
                 }
@@ -259,8 +259,7 @@ class Kompiler {
             else {
                 checkRecordSubtyping(header, existingRecordType, inFile)
             }
-        }
-        else {
+        } else {
             header.etaType = currRecordType
             returnGamma.bind(header.name, currRecordType)
         }
@@ -276,5 +275,14 @@ class Kompiler {
             }
         }
         return returnGamma
+    }
+
+    fun tryGetAst(importPath: File, typedFile: File?) : Node{
+        try {
+            return ASTUtil.getAST(importPath)
+        } catch (e: CompilerError) {
+            typedFile?.appendText(e.mini)
+            throw e
+        }
     }
 }
