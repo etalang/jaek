@@ -35,17 +35,5 @@ sealed class Settings {
                 funcFile
             } else null
         }
-
-        fun getOutFinal(name : String) : File? {
-            return if (final != null){
-                val funcFile =
-                    File(final.parent, final.nameWithoutExtension + "_${name}_final.dot")
-                if (funcFile.exists() && !funcFile.isDirectory) {
-                    funcFile.delete()
-                }
-                funcFile.createNewFile()
-                funcFile
-            } else null
-        }
     }
 }

@@ -124,7 +124,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                 val optIRFinalFile = if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
                 val optCFGInitialFile : File? = if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
                 val optCFGFinalFile : File? = if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-//                print(it)
+
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
                 val ast: Node?

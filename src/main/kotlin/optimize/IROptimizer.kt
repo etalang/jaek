@@ -40,7 +40,7 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
 //        File("maindataflowpreproc.dot").writeText(o.graphViz())
 
 //            File("maindataflowpostproc.dot").writeText(o.graphViz())
-//        }
+        }
 
     }
 
