@@ -20,7 +20,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun nodesWithJumpInto(): Set<CFGNode> {
-        return predecessors.entries.filter { entry -> entry.value.filter { edgesIn -> edgesIn.second }.isNotEmpty() }.map { it.key }
+        return predecessors.entries.filter { entry -> entry.value.filter { edgesIn -> edgesIn.second }.isNotEmpty() }
+            .map { it.key }
             .toSet()
     }
 
@@ -41,6 +42,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         } else if (jumpingTo(a) == b) {
             removeConnection(a, b, true)
             connect(a, c, true)
+        } else {
+            throw Exception("CALL SOMEONE CALL ANYONE CALL NOAH")
         }
     }
 
@@ -63,7 +66,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     fun removeConnection(from: CFGNode, to: CFGNode, jump: Boolean) {
         predecessors[to]?.remove(Pair(from, jump))
         if (predecessors[to]?.isEmpty() == true) predecessors.remove(to)
-        successors[from]?.remove(to)
+        successors[from]?.remove(to, jump)
         if (successors[from]?.useless() == true) successors.remove(from)
     }
 
@@ -115,6 +118,11 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 translate(pred, node, jumpTo)
             }
             return true
+        } else if (jumpTo != null && fallThrough != null && jumpTo == fallThrough) {
+            predecessors(node).forEach { pred ->
+                translate(pred, node, fallThrough)
+            }
+            return true
         }
         return false
     }
@@ -136,9 +144,12 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
             }
         }
 
-        fun remove(node: CFGNode) {
-            if (jumpNode == node) jumpNode = null
-            if (fallThrough == node) fallThrough = null
+        fun remove(node: CFGNode, jump: Boolean) {
+            if (jump && jumpNode == node) jumpNode = null
+            else if (!jump && fallThrough == node) fallThrough = null
+            else {
+                throw Exception("WHY ARE YOU REMOVING THIS MY GOOD SIR? ping noah")
+            }
         }
 
         fun successors(): Set<CFGNode> {

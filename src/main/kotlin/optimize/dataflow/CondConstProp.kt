@@ -157,7 +157,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 
     private fun removeLonelyIfs(): Boolean {
         var changed = false
-        mm.fastNodesWithPredecessors().filterIsInstance<CFGNode.If>().forEach {
+        mm.fastNodesWithPredecessors().filter { it is CFGNode.If && mm.successors(it).size<=1 }.forEach {
             changed = mm.removeAndLink(it)
             if (changed) return changed
         }
