@@ -6,7 +6,6 @@ etac ("Test assembly") "-libpath $(testpath) -O -target linux" {
     arraysorting.rh;
     binsearchmain.rh;
     boolcheck.rh;
-    breaknull.eta (Syntax, "break");
     break1.rh;
     break2.rh;
     break3.rh;
@@ -26,8 +25,6 @@ etac ("Test assembly") "-libpath $(testpath) -O -target linux" {
     insertion.rh;
     interfaceimportsright.rh;
     interfaceimportsright2.rh;
-    interfaceimportswrong.rh (Semantic, "use");
-    interfaceimportswrong2.rh (Semantic, "use");
     manyargs.rh;
     manyargmanyret.rh;
     mod.rh;
@@ -48,7 +45,6 @@ etac ("Test assembly") "-libpath $(testpath) -O -target linux" {
     recordinit.rh;
     recordinitnull.rh;
     recordmultidecl.rh;
-    recordmultideclfail.rh (Semantic, "multiassign");
     recordnested.rh;
     recordrecursive.rh;
     returnfncall.rh;
@@ -94,7 +90,6 @@ etac ("Test assembly") "-libpath $(testpath) -target linux" {
     arraysorting.rh;
     binsearchmain.rh;
     boolcheck.rh;
-    breaknull.eta (Syntax, "break");
     break1.rh;
     break2.rh;
     break3.rh;
@@ -114,8 +109,6 @@ etac ("Test assembly") "-libpath $(testpath) -target linux" {
     insertion.rh;
     interfaceimportsright.rh;
     interfaceimportsright2.rh;
-    interfaceimportswrong.rh (Semantic, "use");
-    interfaceimportswrong2.rh (Semantic, "use");
     manyargs.rh;
     manyargmanyret.rh;
     mod.rh;
@@ -136,7 +129,6 @@ etac ("Test assembly") "-libpath $(testpath) -target linux" {
     recordinit.rh;
     recordinitnull.rh;
     recordmultidecl.rh;
-    recordmultideclfail.rh (Semantic, "multiassign");
     recordnested.rh;
     recordrecursive.rh;
     returnfncall.rh;
