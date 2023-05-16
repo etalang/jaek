@@ -66,7 +66,6 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     }
 
     fun destroy(): LIRFuncDecl {
-        println("DEATH")
         return LIRFuncDecl(cfg.function, body)
     }
 

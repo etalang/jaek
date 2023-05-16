@@ -19,12 +19,12 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
             var counter = 0
             val nodes = cfg.reachableNodes()
             val worklist = nodes.toMutableSet()
-            nodes.forEach { cfg.mm.successorEdges(it).forEach { values[it] = top } }
+            nodes.forEach { cfg.mm.successorEdges(it).forEach { if(!values.contains(it)) values[it] = top } }
 //            val predEdges = cfg.getPredEdges()
             while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
                 val node = worklist.random()
                 worklist.remove(node)
-                val inInfo = bigMeet(cfg.mm.predecessorEdges(node), values)
+                val inInfo = bigMeet(cfg.mm.predecessorEdges(node))
                 val newEdges = transition(node, inInfo)
                 cfg.mm.successorEdges(node).forEach {
                     val before = values[it]
@@ -38,12 +38,16 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
             println("it took $counter to terminate $name")
         }
 
-        private fun bigMeet(predEdges: Set<Edge>?, values: Map<Edge, Lattice>): Lattice {
+         fun bigMeet(predEdges: Set<Edge>?): Lattice {
             var out: Lattice? = null
             predEdges?.forEach {
-                val edgeVal = values[it]!! // every edge should have a value
-                val _out = out
-                out = if (_out == null) edgeVal else meet(_out, edgeVal)
+                val edgeVal = values[it] // every edge should have a value
+                if (edgeVal==null ) {
+                    println("BIG WARNING!")
+                } else {
+                    val _out = out
+                    out = if (_out == null) edgeVal else meet(_out, edgeVal)
+                }
             }
             return out ?: top
         }

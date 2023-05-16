@@ -123,6 +123,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                 val optIRInitialFile = if (printIROpts.contains("initial")) getOutFileName(it, absDiagnosticPath, "_initial.ir") else null
                 val optIRFinalFile = if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
                 val optCFGInitialFile : File? = if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
+                val optCFGFinalFile : File? = if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
 //                print(it)
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
@@ -143,7 +144,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     )
                                     val ir =
                                         translator.irgen(if (disableOpt) Opt.None else
-                                            Opt.All, OutputIR(optIRInitialFile,optIRFinalFile), Settings.OutputCFG(optCFGInitialFile, null))
+                                            Opt.All, OutputIR(optIRInitialFile,optIRFinalFile), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile))
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))

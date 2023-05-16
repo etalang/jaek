@@ -19,13 +19,14 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
         // construct the file_f_phase.dot name
         val funcFile = outputCFG.getOutInit(lir.name)
         funcFile?.writeText(cfg.graphViz())
+        Dominating(cfg).run()
         val o = CondConstProp(cfg)
         o.run()
-//        if (lir.name == "_Imain_paai") File("preproc.dot").writeText(o.graphViz())
+        if (lir.name.contains("f")) File("shit/preproc.dot").writeText(o.graphViz())
         o.postprocess()
-//        if (lir.name == "_Imain_paai") File("postproc.dot").writeText(o.graphViz())
-
-
+        if (lir.name.contains("f")) File("shit/postproc.dot").writeText(o.graphViz())
+        val outfuncFile = outputCFG.getOutFinal(lir.name)
+        outfuncFile?.writeText(cfg.graphViz())
 //        if (lir.name == "_Imain_paai") {
 //        val o = Dominating(cfg)
 //        o.run()
