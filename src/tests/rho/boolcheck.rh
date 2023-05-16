@@ -1,0 +1,23 @@
+use io
+use conv
+
+main(args : int[][]) {
+    six : int = 6 // to prevent constant folding
+    truee : bool = true
+    falsee : bool = false
+    andthing : bool = truee & false
+    boolcheck(six == 7, "equality")
+    boolcheck(six < 7, "less than")
+    boolcheck(six <= 7, "less than or equal to")
+    boolcheck(six > 7, "greater than")
+    boolcheck(six != 7, "not equal")
+    boolcheck(six >= 7, "greater than or equal to")
+    boolcheck(truee & false, "true anded with false")
+    boolcheck(truee & true, "true anded with true")
+    boolcheck(truee | false, "true ored with false")
+    boolcheck(falsee | false, "false ored with false")
+}
+
+boolcheck(cond : bool, str : int[]) {
+    if (cond) println(str + " true") else println(str + " false")
+}

@@ -1,0 +1,14 @@
+use io
+use conv
+
+record Point {
+}
+
+main(args: int[][]) {
+    p0 : Point = Point()
+    if (p0 == null){
+        print("p0 is null")
+    } else {
+        print("p0 is not null")
+    }
+}

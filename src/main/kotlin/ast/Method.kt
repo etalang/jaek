@@ -4,7 +4,7 @@ import edu.cornell.cs.cs4120.util.SExpPrinter
 
 class Method(
     val id: String,
-    val args: ArrayList<VarDecl.RawVarDecl>,
+    val args: ArrayList<VarDecl.RawVarDeclList>,
     val returnTypes: ArrayList<Type>,
     override val terminal: Terminal
 ) : Definition() {

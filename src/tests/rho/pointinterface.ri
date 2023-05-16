@@ -1,0 +1,7 @@
+use io
+use conv
+swap(p: Point)
+
+record Point {
+    x, y: int
+}

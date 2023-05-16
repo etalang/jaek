@@ -1,0 +1,17 @@
+use io
+use conv
+
+record Point {
+    x, y: Value
+}
+
+record Value {
+    x : int
+    y : bool
+}
+
+main(args: int[][]) {
+    p, p1 : Point
+    p = Point(Value(1, true), Value(2, false))
+    println(unparseInt(p.x.x))
+}

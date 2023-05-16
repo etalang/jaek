@@ -1,0 +1,21 @@
+use io
+use conv
+
+main(args:int[][]) {
+    a : bool = true | error()
+    if (a) {
+        println(unparseInt(1))
+    } else {
+        println(unparseInt(0))
+    }
+    if(false & error()) {
+        print("failed")
+    } else {
+        print("succeeded")
+    }
+}
+
+error() : bool {
+    zero : int = 0
+    return 1/zero == 0
+}

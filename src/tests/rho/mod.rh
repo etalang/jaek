@@ -1,0 +1,8 @@
+use io
+use conv
+
+main(args : int[][]){
+    x : int = 5
+    y : int = 2
+    println(unparseInt(x % y))
+}

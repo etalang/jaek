@@ -1,0 +1,13 @@
+use io
+
+main(args:int[][]) {
+  x:int[5][]
+  i:int = 0
+
+  while (i < 5) {
+    x[i] = "Hello World"
+    i = i + 1
+  }
+  x[0][0] = 'J'
+  print(x[1])
+}
