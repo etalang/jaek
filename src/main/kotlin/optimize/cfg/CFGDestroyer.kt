@@ -26,7 +26,6 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                 addToStack(fallThrough)
             } else {
                 val node = stack.removeFirst()
-                println(node)
                 if (!visited.contains(node)) {
                     visited.add(node)
 

@@ -143,12 +143,9 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     override fun postprocess() {
         var checkUnreach = true
         var checkIf = true
-        var checkConst = true
-
         while (checkUnreach) {
             checkUnreach = removeUnreachables()
             run()
-            println("KFSJD")
         }
         while (checkIf) {
             checkIf = removeLonelyIfs()
@@ -156,7 +153,6 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         }
         run()
         constantPropogate()
-        println()
     }
 
     private fun removeLonelyIfs(): Boolean {
@@ -168,18 +164,6 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         }
         return changed
     }
-
-    /* returns false when no change */
-//    private fun deleteConstAssigns(): Boolean {
-//        val remove = mm.fastNodesWithPredecessors().firstOrNull { curNode ->
-//            curNode is CFGNode.Gets && curNode.expr is CFGExpr.Const
-//        };
-//        if (remove != null) {
-//            mm.removeAndLink(remove)
-//            return true
-//        }
-//        return false
-//    }
 
     private fun constantPropogate() {
         mm.fastNodesWithPredecessors().forEach { curNode ->
