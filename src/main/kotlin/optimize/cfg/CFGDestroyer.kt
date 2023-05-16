@@ -16,7 +16,7 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     private val mm = cfg.mm
 
     init {
-        mm.fastNodesWithPredecessors().forEach { jumpLabels[it] = freshLabel() }
+        mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
         stack.addFirst(cfg.start)
         while (stack.isNotEmpty()) {
             val node = stack.removeFirst()
@@ -30,7 +30,8 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                             is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
                         }
                     }
-                    stmts.add(
+                    addStmt(
+                        node,
                         LIRCallStmt(
                             LIRName(node.name),
                             node.movIntos.size.toLong(),
@@ -39,13 +40,14 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                     stmts.addAll(retMoves)
                 }
 
-                is If -> mm.jumpingTo(node)?.let { stmts.add(LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!)) }
+                is If -> mm.jumpingTo(node)
+                    ?.let { addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!)) }
 
-                is Gets -> stmts.add(LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
+                is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
 
-                is CFGNode.Mem -> stmts.add(LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
+                is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
 
-                is Return -> stmts.add(LIRReturn(node.rets.map { translateExpr(it) }))
+                is Return -> addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
 
                 is Start -> {}
 
@@ -63,6 +65,11 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
         mm.jumpingTo(node)?.let {
             stmts.add(LIRJump(LIRName(jumpLabels[it]!!.l)))
         }
+    }
+
+    private fun addStmt(node: CFGNode, stmt: FlatStmt) {
+        jumpLabels[node]?.let { stmts.add(it) }
+        stmts.add(stmt)
     }
 
     fun destroy(): LIRFuncDecl {

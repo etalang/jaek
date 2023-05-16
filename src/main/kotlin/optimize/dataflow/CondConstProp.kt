@@ -175,11 +175,11 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         }
         run()
         constantPropogate()
-        while (checkConst) {
-            checkConst = deleteConstAssigns()
-            run()
-            println("gsdjkdkjJDSF")
-        }
+//        while (checkConst) {
+//            checkConst = deleteConstAssigns()
+//            run()
+//            println("gsdjkdkjJDSF")
+//        }
         println()
     }
 
@@ -194,16 +194,16 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     }
 
     /* returns false when no change */
-    private fun deleteConstAssigns(): Boolean {
-        val remove = mm.fastNodesWithPredecessors().firstOrNull { curNode ->
-            curNode is CFGNode.Gets && curNode.expr is CFGExpr.Const
-        };
-        if (remove != null) {
-            mm.removeAndLink(remove)
-            return true
-        }
-        return false
-    }
+//    private fun deleteConstAssigns(): Boolean {
+//        val remove = mm.fastNodesWithPredecessors().firstOrNull { curNode ->
+//            curNode is CFGNode.Gets && curNode.expr is CFGExpr.Const
+//        };
+//        if (remove != null) {
+//            mm.removeAndLink(remove)
+//            return true
+//        }
+//        return false
+//    }
 
 
     private fun constantPropogate() {

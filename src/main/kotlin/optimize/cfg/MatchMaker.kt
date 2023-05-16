@@ -19,6 +19,10 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         return predecessors.keys
     }
 
+    fun nodesWithJumpInto(): Set<CFGNode> {
+        return predecessors.keys.filter { predecessors[it]?.filter { it.second }?.isNotEmpty() == true }.toSet()
+    }
+
     fun build(from: CFGNode, to: String, jump: Boolean) {
         constructionMap[to]?.let { connect(from, it, jump) }
     }
