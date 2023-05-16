@@ -62,24 +62,6 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
                             } else throw Exception("guard value is neither 0 nor 1, should not typecheck")
                         }
 
-
-//
-//                            if (guardAbs.t == 0L) { // false edge TAKEN
-//                                if (cond is CFGExpr.BOp && cond.op == NEQ && cond.left is CFGExpr.Var) {
-//                                    // add extra info to map based on condition info
-//                                    outInfo.varVals[cond.left.name] =
-//                                        abstractInterpretation(cond.right, varVals = outInfo.varVals)
-//                                }
-//                                return mapOf(trueEdge to unreachableInfo, falseEdge to outInfo)
-//                            } else if (guardAbs.t == 1L) { // true edge TAKEN
-//                                if (cond is CFGExpr.BOp && cond.op == EQ && cond.left is CFGExpr.Var) {
-//                                    outInfo.varVals[cond.left.name] =
-//                                        abstractInterpretation(cond.right, varVals = outInfo.varVals)
-//                                }
-//                                return mapOf(trueEdge to outInfo, falseEdge to unreachableInfo)
-//                            } else throw Exception("guard value is neither 0 nor 1, should not typecheck")
-
-
                         Definition.Top -> { // this means we have not yet processed node (random ordering!!)
                             return mm.successorEdges(n).associateWith { outInfo }
                         }
@@ -199,7 +181,6 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 //        return false
 //    }
 
-
     private fun constantPropogate() {
         mm.fastNodesWithPredecessors().forEach { curNode ->
             val met = bigMeet(mm.predecessorEdges(curNode))
@@ -237,20 +218,20 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 
     }
 
-    //
     private fun replaceVar(expr: CFGExpr, varName: String, varVal: Long): CFGExpr {
         return when (expr) {
-            is CFGExpr.BOp ->
-                if (expr.op == DIV) { //TODO: @kate please fix this so the CODE is smart
+            is CFGExpr.BOp -> {
+                val rightVal = replaceVar(expr.right, varName, varVal)
+                if (expr.op == DIV && rightVal is CFGExpr.Const && rightVal.value == 0L) {
                     expr
                 } else {
                     CFGExpr.BOp(
                         replaceVar(expr.left, varName, varVal),
-                        replaceVar(expr.right, varName, varVal),
+                        rightVal,
                         expr.op
                     )
                 }
-
+            }
             is CFGExpr.Const -> expr
             is CFGExpr.Label -> expr
             is CFGExpr.Mem -> CFGExpr.Mem(replaceVar(expr.loc, varName, varVal))
