@@ -171,15 +171,9 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         while (checkIf) {
             checkIf = removeLonelyIfs()
             run()
-            println("WHOOP")
         }
         run()
         constantPropogate()
-//        while (checkConst) {
-//            checkConst = deleteConstAssigns()
-//            run()
-//            println("gsdjkdkjJDSF")
-//        }
         println()
     }
 

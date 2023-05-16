@@ -22,9 +22,9 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
         Dominating(cfg).run()
         val o = CondConstProp(cfg)
         o.run()
-        if (lir.name.contains("f")) File("shit/preproc.dot").writeText(o.graphViz())
+//        if (lir.name.contains("f")) File("shit/preproc.dot").writeText(o.graphViz())
         o.postprocess()
-        if (lir.name.contains("f")) File("shit/postproc.dot").writeText(o.graphViz())
+//        if (lir.name.contains("f")) File("shit/postproc.dot").writeText(o.graphViz())
         val outfuncFile = outputCFG.getOutFinal(lir.name)
         outfuncFile?.writeText(cfg.graphViz())
 //        if (lir.name == "_Imain_paai") {
