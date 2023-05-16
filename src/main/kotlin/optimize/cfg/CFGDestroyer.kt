@@ -80,7 +80,7 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     }
 
     private fun addToStack(node: CFGNode) {
-        if (!visited.contains(node))
+        if (!visited.contains(node) && !stack.contains(node))
             stack.addFirst(node)
     }
 
