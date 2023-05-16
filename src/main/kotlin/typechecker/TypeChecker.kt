@@ -916,7 +916,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                             n.etaType = fieldType
                         }
                         else {
-                            semanticError(n, "Field not found in record type")
+                            semanticError(n, "Field ${n.name} not found in record type")
                         }
                     }
                     else {
