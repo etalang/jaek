@@ -115,32 +115,32 @@ sealed class LIRStmt : LIRNode.TileableNode<Tile.Regular>() {
                 val builder = TileBuilder.Regular(2, this)
                 if (guard.op == IRBinOp.OpType.EQ) {
                     if (guard.left is LIRExpr.LIRConst && guard.left.value == 0L) {
-                        val leftTile = guard.left.optimalTile()
-                        builder.consume(leftTile)
-                        builder.add(Instruction.CMP(RegisterDest(leftTile.outputRegister), ConstSrc(0L)))
+                        val rightTile = guard.right.optimalTile()
+                        builder.consume(rightTile)
+                        builder.add(Instruction.CMP(RegisterDest(rightTile.outputRegister), ConstSrc(0L)))
                         builder.add(Instruction.Jump.JZ(Location(Label(trueBranch.l, false))))
                         return builder.build()
                     }
                     else if (guard.right is LIRExpr.LIRConst && guard.right.value == 0L) {
-                        val rightTile = guard.right.optimalTile()
-                        builder.consume(rightTile)
-                        builder.add(Instruction.CMP(RegisterDest(rightTile.outputRegister), ConstSrc(0L)))
+                        val leftTile = guard.right.optimalTile()
+                        builder.consume(leftTile)
+                        builder.add(Instruction.CMP(RegisterDest(leftTile.outputRegister), ConstSrc(0L)))
                         builder.add(Instruction.Jump.JZ(Location(Label(trueBranch.l, false))))
                         return builder.build()
                     }
                 }
                 else if (guard.op == IRBinOp.OpType.NEQ) {
                     if (guard.left is LIRExpr.LIRConst && guard.left.value == 0L) {
-                        val leftTile = guard.left.optimalTile()
-                        builder.consume(leftTile)
-                        builder.add(Instruction.CMP(RegisterDest(leftTile.outputRegister), ConstSrc(0L)))
+                        val rightTile = guard.right.optimalTile()
+                        builder.consume(rightTile)
+                        builder.add(Instruction.CMP(RegisterDest(rightTile.outputRegister), ConstSrc(0L)))
                         builder.add(Instruction.Jump.JNZ(Location(Label(trueBranch.l, false))))
                         return builder.build()
                     }
                     else if (guard.right is LIRExpr.LIRConst && guard.right.value == 0L) {
-                        val rightTile = guard.right.optimalTile()
-                        builder.consume(rightTile)
-                        builder.add(Instruction.CMP(RegisterDest(rightTile.outputRegister), ConstSrc(0L)))
+                        val leftTile = guard.left.optimalTile()
+                        builder.consume(leftTile)
+                        builder.add(Instruction.CMP(RegisterDest(leftTile.outputRegister), ConstSrc(0L)))
                         builder.add(Instruction.Jump.JNZ(Location(Label(trueBranch.l, false))))
                         return builder.build()
                     }
