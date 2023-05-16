@@ -167,7 +167,6 @@ sealed class LIRStmt : LIRNode.TileableNode<Tile.Regular>() {
                 return builder.build()
             }
             return null
-
         }
 
 
