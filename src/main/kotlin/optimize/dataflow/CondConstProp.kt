@@ -14,13 +14,13 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     override val name: String = "Conditional Constant Propogation"
     private val mm = cfg.mm
 
-    override fun transition(n: CFGNode, inInfo: Info): Map<Edge, Info> {
-        val outInfo = inInfo.copy()
+    override fun transition(n: CFGNode, argumentInfo: Info): Map<Edge, Info> {
+        val outInfo = argumentInfo.copy()
         val allVarsTop = outInfo.varVals.mapValues { Definition.Top }
         val unreachableInfo = Info(Unreachability.Top, allVarsTop.toMutableMap())
         if (n is CFGNode.Start) return mm.successorEdges(n)
-            .associateWith { Info(Unreachability.Bottom, inInfo.varVals) } // start must be reachable
-        if (inInfo.unreachability == Unreachability.Bottom) { // if reachable
+            .associateWith { Info(Unreachability.Bottom, argumentInfo.varVals) } // start must be reachable
+        if (argumentInfo.unreachability == Unreachability.Bottom) { // if reachable
             when (n) {
                 is CFGNode.If -> {
                     when (val guardAbs = abstractInterpretation(n.cond, varVals = outInfo.varVals)) {
