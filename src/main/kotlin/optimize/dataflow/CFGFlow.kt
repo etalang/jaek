@@ -22,7 +22,7 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
             nodes.forEach { n-> cfg.mm.successorEdges(n).forEach { if(!values.contains(it)) values[it] = top } }
 //            val predEdges = cfg.getPredEdges()
             while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
-                val node = worklist.random()
+                val node = worklist.first()
                 worklist.remove(node)
                 val inInfo = bigMeet(cfg.mm.predecessorEdges(node))
                 val newEdges = transition(node, inInfo)

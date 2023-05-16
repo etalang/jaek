@@ -20,7 +20,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun nodesWithJumpInto(): Set<CFGNode> {
-        return predecessors.keys.filter { predecessors[it]?.filter { it.second }?.isNotEmpty() == true }.toSet()
+        return predecessors.entries.filter { entry -> entry.value.filter { edgesIn -> edgesIn.second }.isNotEmpty() }.map { it.key }
+            .toSet()
     }
 
     fun build(from: CFGNode, to: String, jump: Boolean) {
@@ -30,13 +31,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
         successors.computeIfAbsent(from) { Successors() }.set(to, jump)
         predecessors.computeIfAbsent(to) { mutableSetOf() }.add(Pair(from, jump))
-    }
-
-    /** if a-b and b-c, connect a-c preserving the jump status of a-b (aka, delete b) */
-    fun translateEdge(abEdge: Edge, bcEdge: Edge) {
-        require(abEdge.node == bcEdge.from)
-        removeConnection(abEdge.from, bcEdge.from, abEdge.jump)
-        connect(abEdge.from, bcEdge.node, abEdge.jump)
     }
 
     /** Given a -> b -> c. Removes b and connects a to c, preserving jump status of (a,b) */

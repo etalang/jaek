@@ -16,8 +16,12 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     private val mm = cfg.mm
 
     init {
+        if (func.name == "_Iisprime_bi") {
+            println()
+        }
         mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
-        stack.addFirst(cfg.start)
+        println(jumpLabels)
+        addToStack(cfg.start)
         while (stack.isNotEmpty()) {
             val node = stack.removeFirst()
             visited.add(node)
@@ -41,35 +45,43 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                 }
 
                 is If -> mm.jumpingTo(node)
-                    ?.let { addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!)) }
+                    ?.let {
+                        addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!))
+                        addToStack(it)
+                    }
 
                 is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
 
                 is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
 
-                is Return -> addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
+                is Return -> {
+                    addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
+                }
 
                 is Start -> {}
 
-                is Cricket -> {}
+                is Cricket -> {
+                    mm.jumpingTo(node)?.let {
+                        addStmt(node,LIRJump(LIRName(jumpLabels[it]!!.l)))
+                        addToStack(it)
+                    }
+                }
             }
-            handleNext(node)
+            mm.fallThrough(node)?.let {
+                addToStack(it)
+            }
         }
         body = LIRSeq(stmts)
-    }
-
-    private fun handleNext(node: CFGNode) {
-        mm.fallThrough(node)?.let {
-            stack.addFirst(it)
-        }
-        mm.jumpingTo(node)?.let {
-            stmts.add(LIRJump(LIRName(jumpLabels[it]!!.l)))
-        }
     }
 
     private fun addStmt(node: CFGNode, stmt: FlatStmt) {
         jumpLabels[node]?.let { stmts.add(it) }
         stmts.add(stmt)
+    }
+
+    private fun addToStack(node: CFGNode) {
+        if (!visited.contains(node))
+            stack.addFirst(node)
     }
 
     fun destroy(): LIRFuncDecl {
