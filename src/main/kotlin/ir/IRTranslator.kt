@@ -50,8 +50,9 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
         val optFuncs = lir.functions.map {
             IROptimizer(it, optimize, outputCFG).destroy()
         }
-
         lir = LIRCompUnit(lir.name, optFuncs, lir.globals) // use post-cfg functions
+
+        if (optimize.desire(cf)) lir = ConstantFolder().apply(lir)
 
         outputIR.final?.let {
             val writer = CodeWriterSExpPrinter(PrintWriter(it))

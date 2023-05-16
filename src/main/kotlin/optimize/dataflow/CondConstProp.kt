@@ -240,11 +240,16 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     //
     private fun replaceVar(expr: CFGExpr, varName: String, varVal: Long): CFGExpr {
         return when (expr) {
-            is CFGExpr.BOp -> CFGExpr.BOp(
-                replaceVar(expr.left, varName, varVal),
-                replaceVar(expr.right, varName, varVal),
-                expr.op
-            )
+            is CFGExpr.BOp ->
+                if (expr.op == DIV) { //TODO: @kate please fix this so the CODE is smart
+                    expr
+                } else {
+                    CFGExpr.BOp(
+                        replaceVar(expr.left, varName, varVal),
+                        replaceVar(expr.right, varName, varVal),
+                        expr.op
+                    )
+                }
 
             is CFGExpr.Const -> expr
             is CFGExpr.Label -> expr
