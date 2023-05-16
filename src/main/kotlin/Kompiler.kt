@@ -195,6 +195,9 @@ class Kompiler {
     fun checkAndLoadInterface(inFile : File, importPath : File, interfaceAST: Node, import : Use, returnGamma : Context, typedFile : File?) : Context {
         try {
             if (interfaceAST is Interface) {
+                if (inFile.extension == "eta" && interfaceAST is RhoInterface){
+                    throw SemanticError(import.terminal.line, import.terminal.column, "Rho interface used by eta file", inFile)
+                }
                 libraries[import.lib] = interfaceAST
                 return bindInterfaceDefinitions(importPath, interfaceAST, returnGamma)
             } else {
@@ -251,7 +254,7 @@ class Kompiler {
         if (returnGamma.contains(header.name)) { // has to obey subtyping relation
             val existingRecordType = returnGamma.lookup(header.name)
             if (existingRecordType !is EtaType.ContextType.RecordType) {
-                throw SemanticError(header.terminal.line, header.terminal.column, "Conflicting record definition in Interface and Rho Module", inFile)
+                throw SemanticError(header.terminal.line, header.terminal.column, "Conflicting record definition in Interface", inFile)
             }
             else {
                 checkRecordSubtyping(header, existingRecordType, inFile)
