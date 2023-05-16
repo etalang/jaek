@@ -23,9 +23,11 @@ import errors.*;
 %eofval}
 
 %ctorarg File file
+%ctorarg String extension
 
 %init{
   this.file = file;
+  this.extension = extension;
 %init}
 
 %pack
@@ -33,6 +35,7 @@ import errors.*;
 %{
     private LexUtil.StringTokenBuilder currentString;
     private File file;
+    private String extension;
 
     /** Returns the line number the lexer head is currently at in the file, numbered from 1. */
     public int lineNumber() {
@@ -53,7 +56,9 @@ Identifier = {Letter}({Digit}|{Letter}|_|')*
 Integer = "0"|[1-9]{Digit}*
 Character = [^"\\""'"]|"\\"("\\"|"\""|"'"|"n"|"t"|"r")|{Unicode}
 Symbol = "-"|"!"|"*"|"*>>"|"/"|"%"|"+"|"_"|"<"|"<="|">="|","|">"|"=="|"!="|"="|"&"|"|"|"("|")"|"["|"]"|"{"|"}"|":"|";"
+RhoSymbol = "."
 Reserved = "if"|"return"|"else"|"use"|"while"|"length"|"int"|"bool"|"true"|"false"
+RhoReserved = "break"|"null"|"record"
 CharLiteral = "'"({Character}|"\"")"'"
 MinInteger = "-"([ \t])*"9223372036854775808"
 
@@ -65,11 +70,13 @@ MinInteger = "-"([ \t])*"9223372036854775808"
 <YYINITIAL> {
     {Whitespace}      { /* ignore */ }
     {Reserved}        { return new Token.KeywordToken(yytext(), lineNumber(), column()); }
+    {RhoReserved}     { if (extension.equals("eta") || extension.equals("eti")) { return new Token.IdToken(yytext(), lineNumber(), column()); } else { return new Token.KeywordToken(yytext(), lineNumber(), column()); }}
     {Identifier}      { return new Token.IdToken(yytext(), lineNumber(), column()); }
     {MinInteger}      { return new Token.IntegerToken(yytext(), lineNumber(), column(),file);}
     {Symbol}          { return new Token.SymbolToken(yytext(), lineNumber(), column()); }
+    {RhoSymbol}       { if (extension.equals("eta") || extension.equals("eti")) { throw new LexicalError(LexicalError.errType.InvalidId, lineNumber(), column(), file); } else {  return new Token.SymbolToken(yytext(), lineNumber(), column()); }}
     {Integer}         { return new Token.IntegerToken(yytext(), lineNumber(), column(),file); }
-    {CharLiteral}     {yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(),file); }
+    {CharLiteral}     { yycolumn -= LexUtil.unicodeAdjustment(yytext().substring(1, yytext().length() - 1)); return new Token.CharacterToken(yytext(), lineNumber(), column(),file); }
     "\""              { currentString = new LexUtil.StringTokenBuilder(lineNumber(), column()); yybegin(STRING); }
     "//"              { yybegin(COMMENT); }
     "'"([^"\n"])      { throw new LexicalError(LexicalError.errType.CharWrong, lineNumber(), column(), file);}

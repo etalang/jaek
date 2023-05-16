@@ -1,0 +1,21 @@
+use io
+use conv
+
+str:int[];
+a: int;
+
+main(args:int[][]) {
+    str = "Hello World";
+    a = 5;
+    f(1)
+    f(1)
+    print(unparseInt(a))
+}
+
+f (n:int) {
+    a = a + str[n];
+}
+
+g (n:int) {
+    a = a + 1;
+}

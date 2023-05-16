@@ -31,18 +31,20 @@ class TypeChecker(topGamma: Context, val file: File) {
                 for (defn in n.definitions) {
                     when (defn) {
                         is GlobalDecl -> {
-                            if (Gamma.contains(defn.id)) {
-                                semanticError(defn,"Invalid global variable shadowing")
-                            }
-                            else {
-                                Gamma.bind(defn.id, VarBind(translateType(defn.type)))
+                            defn.ids.forEach {id ->
+                                if (Gamma.contains(id)) {
+                                    semanticError(defn,"Invalid global variable shadowing")
+                                }
+                                else {
+                                    Gamma.bind(id, VarBind(translateType(defn.type)))
+                                }
                             }
                         }
                         is Method -> {
                             if (Gamma.contains(defn.id)) {
                                 val currFunType = Gamma.lookup(defn.id)
                                 if (currFunType !is FunType) {
-                                    semanticError(defn,"Invalid function shadowing an existing variable")
+                                    semanticError(defn,"Invalid function shadowing an existing variable or record")
                                 }
                                 else {
                                     if (!(currFunType.fromInterface)) {
@@ -62,7 +64,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                             currFunType.fromInterface = false
                                             Gamma.bind(defn.id, currFunType)
                                         } else {
-                                            semanticError(defn,"Redeclared interface function has invalid different type")
+                                            semanticError(defn,"Redeclared imported function has invalid different type")
                                         }
                                     }
                                 }
@@ -81,6 +83,9 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 Gamma.bind(defn.id, funType)
                             }
                         }
+                        is RhoRecord -> {
+                            //Typechecking done in Kompiler
+                        }
                     }
                 }
 
@@ -88,24 +93,26 @@ class TypeChecker(topGamma: Context, val file: File) {
                 for (defn in n.definitions) {
                     when (defn) {
                         is GlobalDecl -> {
-                            val vartype = Gamma.lookup(defn.id)
-                            if (vartype == null) {
-                                semanticError(defn,"Variable not found in second parse pass")
-                            }
-                            else {
-                                if (defn.value != null) {
-                                    typeCheck(defn.value)
-                                    val t = defn.value.etaType
-                                    if (vartype !is VarBind) {
-                                        semanticError(defn,"Global declaration is not for variable")
-                                    }
-                                    else {
-                                        if (t != vartype.item) {
-                                            semanticError(defn, "global declaration expression type mismatch")
+                            defn.ids.forEach{id ->
+                                val vartype = Gamma.lookup(id)
+                                if (vartype == null) {
+                                    semanticError(defn,"Variable not found in second parse pass")
+                                }
+                                else {
+                                    if (defn.value != null) {
+                                        typeCheck(defn.value)
+                                        val t = defn.value.etaType
+                                        if (vartype !is VarBind) {
+                                            semanticError(defn,"Global declaration is not for variable")
                                         }
+                                        else {
+                                            if (t != vartype.item) {
+                                                semanticError(defn, "global declaration expression type mismatch")
+                                            }
+                                        }
+                                        // already enforced that it has to be a literal
+                                        // OK, PASS THROUGH
                                     }
-                                    // already enforced that it has to be a literal
-                                    // OK, PASS THROUGH
                                 }
                             }
                         }
@@ -113,11 +120,15 @@ class TypeChecker(topGamma: Context, val file: File) {
                             // check if names are not bound in global scope
                             Gamma.enterScope()
                             for (decl in defn.args) {
-                                val argName = decl.id
-                                if (Gamma.contains(argName)) {
+                                // assuming we can't have arguments in the form x,y : int
+                                if (decl.ids.size != 1) {
+                                    semanticError(decl, "declaration must have exactly one variable assigned")
+                                }
+                                val argName = decl.ids[0]
+                                if (Gamma.contains(argName.name)) {
                                     semanticError(decl, "function parameter $argName shadows variable in global scope")
                                 }
-                                Gamma.bind(argName, VarBind(translateType(decl.type)))
+                                Gamma.bind(argName.name, VarBind(translateType(decl.type)))
                             }
 
                             // INVARIANT: "@" is the name of the return context varaiable
@@ -134,12 +145,27 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 typeCheck(s)
                                 if (defn.returnTypes.size != 0) {
                                     if (s.etaType !is VoidType) {
-                                        semanticError(s, "function body does not return") //TODO
+                                        semanticError(s, "function body does not return")
                                     }
                                 }
                                 // OK, PASS THROUGH
                             }
                             Gamma.leaveScope()
+                        }
+                        is RhoRecord -> {
+                            val fields = mutableSetOf<String>()
+                            for (f in defn.fields) {
+                                val fieldType = translateType(f.type)
+                                if (fieldType is OrdinaryType.RecordType && fieldType.t !in Gamma.recordTypes()) {
+                                    semanticError(defn, "field type $fieldType is record type but not present")
+                                }
+                                f.ids.forEach{id ->
+                                    if (id.name in fields) {
+                                        semanticError(defn, "field $id is declared multiple times/shadowed")
+                                    }
+                                    fields.add(id.name)
+                                }
+                            }
                         }
                     }
                 }
@@ -168,7 +194,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                 is AssignTarget.ArrayAssign -> {
                     typeCheck(n.arrayAssign.arr)
                     typeCheck(n.arrayAssign.idx)
-                    if (n.arrayAssign.arr.etaType !is ArrayType) {
+                    if (n.arrayAssign.arr.etaType !is ArrayType && n.arrayAssign.arr.etaType !is NullType) {
                         semanticError(n.arrayAssign.arr, "Indexed expression is not an array")
                     }
                     else {
@@ -184,6 +210,9 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 }
                                 n.etaType = arrType.t
                             }
+                            else if (arrType is NullType) {
+                                n.etaType = UnknownType(true) // don't know what type the array is
+                            }
                             else {
                                 semanticError(n.arrayAssign, "Array assign is not assigning to an array")
                             }
@@ -191,15 +220,18 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
                 }
                 is AssignTarget.DeclAssign -> {
-                    if (Gamma.contains(n.decl.id) || gammai.containsKey(n.decl.id)) {
-                        semanticError(n.decl, "Shadowing old variable ${n.decl.id} in multiassignment")
+                    if (n.decl.ids.size != 1) {
+                        semanticError(n.decl, "declaration must have exactly one variable assigned")
+                    }
+                    if (Gamma.contains(n.decl.ids[0].name) || gammai.containsKey(n.decl.ids[0].name)) {
+                        semanticError(n.decl, "Shadowing old variable ${n.decl.ids[0]} in multiassignment")
                     }
                     val t = translateType(n.decl.type)
                     if (t != expectedType) {
                         semanticError(n.decl, "Type mismatch on declaration assignment")
                     }
                     n.etaType = t
-                    gammai[n.decl.id] = VarBind(t)
+                    gammai[n.decl.ids[0].name] = VarBind(t)
                 }
                 is AssignTarget.IdAssign -> {
                     val t = Gamma.lookup(n.idAssign.name)
@@ -215,13 +247,21 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
                 }
                 is AssignTarget.Underscore -> { n.etaType = UnknownType(true) }
+                is AssignTarget.FieldAssign -> {
+                    typeCheck(n.fieldAssign)
+                    val t = n.fieldAssign.etaType
+                    if (t != null && expectedType != t) {
+                        semanticError(n, "cannot assign value of type $expectedType to field of type $t")
+                    }
+                    n.etaType = t
+                }
             }
             return gammai
         }
         throw Exception("not sure how this happened")
     }
 
-    private fun typeCheckStmt(n:Statement) {
+    private fun typeCheckStmt(n: Statement) {
         when (n) {
             is Statement.Block -> {
                 if (n.stmts.isEmpty()) {
@@ -313,8 +353,11 @@ class TypeChecker(topGamma: Context, val file: File) {
                     if (n.targets.size == 1) { // single assignment rules
                         when (val target = n.targets.first()) {
                             is AssignTarget.DeclAssign -> { // VarInit rule
-                                if (Gamma.contains(target.decl.id)) {
-                                    semanticError(target.decl,"Identifier ${target.decl.id} already exists in scope")
+                                if (target.decl.ids.size != 1) {
+                                    semanticError(target.decl, "declaration must have exactly one variable assigned")
+                                }
+                                if (Gamma.contains(target.decl.ids[0].name)) {
+                                    semanticError(target.decl,"Identifier ${target.decl.ids[0]} already exists in scope")
                                 }
                                 else {
                                     typeCheck(n.vals.first())
@@ -326,7 +369,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                                         if (t != translateType(target.decl.type)) {
                                             semanticError(target.decl,"Assigned expression type does not match expected type ${translateType(target.decl.type)}")
                                         }
-                                        Gamma.bind(target.decl.id, VarBind(t))
+                                        Gamma.bind(target.decl.ids[0].name, VarBind(t))
                                         n.etaType = UnitType()
                                     }
                                 }
@@ -337,19 +380,24 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 typeCheck(target.arrayAssign.arr)
                                 typeCheck(target.arrayAssign.idx)
                                 val expectedType = target.arrayAssign.arr.etaType
-                                if (expectedType !is ArrayType) {
+                                if (!(expectedType is ArrayType || expectedType is NullType)) {
                                     semanticError(target.arrayAssign.idx,"Type of indexed expression is not an array")
                                 }
                                 else if (target.arrayAssign.idx.etaType !is IntType){
                                     semanticError(target.arrayAssign.idx,"Type of indexing expression is not an integer")
                                 }
                                 else {
-                                    val expected = expectedType.t
-                                    if (t != expected) {
-                                        semanticError(target.arrayAssign,"Cannot assign to array of type ${expected}[]")
+                                    if (expectedType is ArrayType) {
+                                        val expected = expectedType.t
+                                        if (t != expected) {
+                                            semanticError(target.arrayAssign,"Cannot assign to array of type ${expected}[]")
+                                        }
+                                        n.etaType = UnitType()
                                     }
-                                    n.etaType = UnitType()
-
+                                    else {
+//                                        target.arrayAssign.arr.etaType = ArrayType(t)
+                                        n.etaType = UnitType() // nothing to do, but the
+                                    }
                                 }
                             }
                             is AssignTarget.IdAssign -> {
@@ -371,6 +419,18 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 typeCheck(n.vals.first())
                                 n.etaType = UnitType()
 //                                throw SemanticError(0,0,"Underscore not permitted in single assignment")
+                            }
+
+                            is AssignTarget.FieldAssign -> {
+
+                                typeCheck(n.vals.first())
+                                typeCheck(target.fieldAssign)
+                                val t = n.vals.first().etaType
+                                val expected = target.fieldAssign.etaType
+                                if (t != null && expected != t) {
+                                    semanticError(target, "cannot assign value of type $t to field of type $expected")
+                                }
+                                n.etaType = UnitType()
                             }
                         }
                     }
@@ -482,25 +542,39 @@ class TypeChecker(topGamma: Context, val file: File) {
                 Gamma.bind(n.id, VarBind(boundType))
                 n.etaType = UnitType()
             }
-            is VarDecl.RawVarDecl -> { // VarDecl
-                if (Gamma.contains(n.id)) {
-                    semanticError(n,"Identifier ${n.id} already exists")
-                }
-                else {
-                    Gamma.bind(n.id, VarBind(translateType(n.type)))
-                    n.etaType = UnitType()
+            is VarDecl.RawVarDeclList -> { // VarDecl
+                n.ids.forEach{id ->
+                    if (Gamma.contains(id.name)) {
+                        semanticError(n,"Identifier ${n.ids[0]} already exists")
+                    }
+                    else {
+                        if (n.type is Type.RecordType && !Gamma.recordTypes().contains(n.type.t)) {
+                            semanticError(n,"Record type ${n.type.t} not defined")
+                        }
+                        Gamma.bind(id.name, VarBind(translateType(n.type)))
+                        n.etaType = UnitType()
+                    }
                 }
             }
             is Statement.While -> {
                 typeCheck(n.guard)
                 val t = n.guard.etaType
                 if (t is BoolType) {
+                    Gamma.enterLoop()
                     typeCheckStmt(n.body)
+                    Gamma.leaveLoop()
                     n.etaType = UnitType()
                 }
                 else {
                     semanticError(n.guard,"While statement guard must be type boolean")
                 }
+            }
+
+            is Statement.Break -> {
+                if (!Gamma.inLoop()) {
+                    semanticError(n, "Break statement not enclosed by while loop")
+                }
+                n.etaType = VoidType()
             }
         }
     }
@@ -521,7 +595,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                         semanticError(n.idx,"Index must be an integer")
                     }
                 }
-                else if (arrt is UnknownType) {
+                else if (arrt is UnknownType || arrt is NullType) {
                     if (idxt is IntType) {
                         n.etaType = UnknownType(true)
                     }
@@ -585,6 +659,12 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                             else {
                                 semanticError(n,"Binop ${n.op} attempted with arrays with mismatched types")
+                            }
+                        } else if (rtype is NullType) {
+                            if (n.op in listOf(EQB, NEQB))
+                                n.etaType = BoolType()
+                            else {
+                                semanticError(n,"Arrays cannot be used with ${n.op}")
                             }
                         } else {
                             semanticError(n,"Binop ${n.op} attempted with array and non-array")
@@ -652,6 +732,35 @@ class TypeChecker(topGamma: Context, val file: File) {
                             }
                         }
                     }
+                    is OrdinaryType.RecordType -> {
+                        if ((rtype is OrdinaryType.RecordType && rtype.t == ltype.t) || rtype is NullType) {
+                            if (n.op in listOf(EQB, NEQB)) {
+                                n.etaType = BoolType()
+                            }
+                            else {
+                                semanticError(n,"Records cannot be used with ${n.op}")
+                            }
+                        }
+                        else {
+                            semanticError(n,"Binop ${n.op} attempted with records with mismatched types")
+                        }
+                    }
+                    is NullType -> {
+                        if (rtype is OrdinaryType.RecordType || rtype is ArrayType || rtype is NullType) {
+                            if (n.op in listOf(EQB, NEQB)) {
+                                n.etaType = BoolType()
+                            }
+                            else if (n.op == PLUS && rtype is ArrayType) {
+                                n.etaType = rtype
+                            }
+                            else {
+                                semanticError(n,"Null type cannot be used with ${n.op}")
+                            }
+                        }
+                        else {
+                            semanticError(n,"Binop ${n.op} attempted with nulls with mismatched types")
+                        }
+                    }
                     else -> {
                         semanticError(n,"Operation ${n.op} attempted with impossible type")
                     }
@@ -683,9 +792,37 @@ class TypeChecker(topGamma: Context, val file: File) {
                                 " received ${n.args.size}")
                     }
                     n.etaType = ft.codomain.lst[0] // first (and only) type in list
-                } else {
-                    semanticError(n,"${n.fn} is not a defined function")
                 }
+                else {
+                    val rType = Gamma.lookup(n.fn)
+                    if (rType !is ContextType.RecordType) {
+                        semanticError(n, "found type is not a record type")
+                    } else {
+                    val rt = rType.fields
+                    if (rt != null) {
+                        if (n.args.size == rt.size) {
+                            val fieldtypes = ArrayList(rt.values)
+                            for (i in 0 until n.args.size) {
+                                typeCheck(n.args[i])
+                                val argtype = n.args[i].etaType
+                                val fieldtype = fieldtypes[i]
+                                if (fieldtype != argtype) {
+                                    semanticError(n,"Record ${n.fn} expected $fieldtype as input" +
+                                            " at position $i, received $argtype")
+                                }
+                            }
+                            n.etaType = OrdinaryType.RecordType(n.fn)
+                        } else {
+                            semanticError(n,"Record constructor for ${n.fn} expected ${rt.size} fields," +
+                                    " received ${n.args.size}")
+                        }
+                    }
+                    else {
+                        semanticError(n,"${n.fn} is not a defined function or record type")
+                    }
+                    }
+                }
+
             }
 
             is Expr.Identifier -> {
@@ -700,7 +837,7 @@ class TypeChecker(topGamma: Context, val file: File) {
             is LengthFn -> {
                 typeCheck(n.arg)
                 val t = n.arg.etaType
-                if (t is ArrayType) {
+                if (t is ArrayType || t is NullType) {
                     n.etaType = IntType()
                 } else {
                     semanticError(n,"Length function must be applied to an array")
@@ -738,6 +875,7 @@ class TypeChecker(topGamma: Context, val file: File) {
                     is CharLit -> n.etaType = IntType()
                     is IntLit -> n.etaType = IntType()
                     is StringLit -> n.etaType = ArrayType(IntType())
+                    is NullLit -> n.etaType = NullType() // It can be compared against any array or record type
                 }
             }
 
@@ -764,6 +902,35 @@ class TypeChecker(topGamma: Context, val file: File) {
                     }
                 }
             }
+
+            is Expr.Field -> {
+                typeCheckExpr(n.record)
+                val rect = n.record.etaType
+                if (rect is OrdinaryType.RecordType) {
+                    val rType = Gamma.lookup(rect.t)
+                    if (rType is ContextType.RecordType) {
+                    val fieldMap = rType.fields
+                    if (fieldMap != null) {
+                        val fieldType = fieldMap[n.name]
+                        if (fieldType != null) {
+                            n.etaType = fieldType
+                        }
+                        else {
+                            semanticError(n, "Field not found in record type")
+                        }
+                    }
+                    else {
+                        semanticError(n, "Undefined record type")
+                    }
+                }
+                else {
+                    semanticError(n, "Cannot find label for non-record object")
+                }}
+                else {
+                    semanticError(n, "Char")
+                }
+            }
+
         }
     }
 }

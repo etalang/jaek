@@ -5,9 +5,10 @@ import typechecker.EtaType.ContextType
 class Context {
     /** INVARIANT: "@" is always the name of the return variable. */
     var stack: ArrayList<MutableMap<String, ContextType>> = ArrayList()
-
+    var whileDepth : Int
     init {
         stack.add(HashMap())
+        whileDepth = 0
     }
 
     fun enterScope() { // add a scope onto the stack
@@ -16,6 +17,18 @@ class Context {
 
     fun leaveScope() { // delete a scope from the stack
         stack.removeLast()
+    }
+
+    fun enterLoop() {
+        whileDepth++
+    }
+
+    fun leaveLoop() {
+        whileDepth--
+    }
+
+    fun inLoop() : Boolean {
+        return (whileDepth > 0)
     }
 
     fun bind(id: String, type: ContextType) {
@@ -32,6 +45,18 @@ class Context {
         return null
     }
 
+    fun recordTypes() : MutableMap<String, ContextType.RecordType> {
+        val recordSet = mutableMapOf<String, ContextType.RecordType>()
+        for (i in stack.size -1 downTo 0) {
+            for (key in stack[i].keys) {
+                val contextType = stack[i][key]
+                if (contextType is ContextType.RecordType) {
+                    recordSet[contextType.name] = contextType
+                }
+            }
+        }
+        return recordSet
+    }
     fun contains(id: String): Boolean {
         return (lookup(id) != null)
     }

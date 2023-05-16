@@ -1,0 +1,9 @@
+use io
+use conv
+
+main(args:int[][]) {
+    a : int = 2
+    if (a != 0) {
+        print("TWO IS NOT ZERO")
+    } else print("two is, in fact, zero")
+}

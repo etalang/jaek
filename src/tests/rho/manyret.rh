@@ -1,0 +1,13 @@
+use io
+use conv
+
+main(args : int[][]){
+    ret1:int, ret2:int, ret3:int = fmanyargmanyret()
+    println(unparseInt(ret1))
+    println(unparseInt(ret2))
+    println(unparseInt(ret3))
+}
+
+fmanyargmanyret() : int,int,int {
+    return 8,9,10
+}

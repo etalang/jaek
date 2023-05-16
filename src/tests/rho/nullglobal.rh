@@ -1,0 +1,32 @@
+use io
+use conv
+
+a,b : int[]
+
+main(args: int[][]) {
+// this is our main function
+
+    if (a == null) {
+    // this is a comment
+        println("a initialized to null")
+    }
+
+    if (b == null) {
+        println("b initialized to null")
+    }
+
+    g : int[] = {1,2,3,4,5}
+    a = g
+    b = g
+    b = null
+
+    if (a == null) {
+        // this is a comment
+       println("a still null after assignment")
+    }
+
+    if (b == null) {
+        println("b null after assign to null")
+    }
+
+}
