@@ -5,6 +5,7 @@ import optimize.cfg.CFG
 import optimize.cfg.CFGNode
 import optimize.cfg.Edge
 
+const val THRESHOLD: Int = 10000
 
 sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     val values: MutableMap<Edge, Lattice> = mutableMapOf()
@@ -21,9 +22,9 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
             var counter = 0
             val nodes = cfg.mm.allNodes()
             val worklist = nodes.toMutableSet()
-            nodes.forEach { n-> cfg.mm.successorEdges(n).forEach { if(!values.contains(it)) values[it] = top } }
+            nodes.forEach { n -> cfg.mm.successorEdges(n).forEach { if (!values.contains(it)) values[it] = top } }
 //            val predEdges = cfg.getPredEdges()
-            while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
+            while (worklist.isNotEmpty() && counter < THRESHOLD) {
                 val node = worklist.first()
                 worklist.remove(node)
                 val inInfo = bigMeet(cfg.mm.predecessorEdges(node))
@@ -31,12 +32,11 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 cfg.mm.successorEdges(node).forEach {
                     val before = values[it]
                     if (before != newEdges[it]) {
-                        if (counter > 10000-10){
+                        if (counter > THRESHOLD - 10) {
                             val after = newEdges[it]
                             if (before is CondConstProp.Info && after is CondConstProp.Info) {
-                                require(before.unreachability==after.unreachability)
-                                require(before.varVals==after.varVals)
-
+                                require(before.unreachability == after.unreachability)
+                                require(before.varVals == after.varVals)
                             }
 //                            println("${before} IS NOT ${newEdges[it]}")
                         }
@@ -47,7 +47,8 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 counter++
             }
             println("it took $counter to terminate $name")
-            if (counter==10000) {
+            if (counter == THRESHOLD) {
+                println("TOOK TOO MANY!")
                 println(values)
             }
         }
@@ -58,8 +59,8 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
             var counter = 0
             val nodes = cfg.mm.allNodes()
             val worklist = nodes.toMutableSet()
-            nodes.forEach { n-> cfg.mm.successorEdges(n).forEach { if(!values.contains(it)) values[it] = top } }
-            while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
+            nodes.forEach { n -> cfg.mm.successorEdges(n).forEach { if (!values.contains(it)) values[it] = top } }
+            while (worklist.isNotEmpty() && counter < THRESHOLD) { // TODO: let it go later
                 val node = worklist.first()
                 worklist.remove(node)
                 val inInfo = bigMeet(cfg.mm.successorEdges(node))
@@ -67,11 +68,11 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 cfg.mm.predecessorEdges(node).forEach {
                     val before = values[it]
                     if (before != newEdges[it]) {
-                        if (counter > 10000-10){
+                        if (counter > THRESHOLD - 10) {
                             val after = newEdges[it]
                             if (before is CondConstProp.Info && after is CondConstProp.Info) {
-                                require(before.unreachability==after.unreachability)
-                                require(before.varVals==after.varVals)
+                                require(before.unreachability == after.unreachability)
+                                require(before.varVals == after.varVals)
 
                             }
 //                            println("${before} IS NOT ${newEdges[it]}")
@@ -83,7 +84,8 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 counter++
             }
             println("it took $counter to terminate $name")
-            if (counter==10000) {
+            if (counter == 10000) {
+                println("TOOK TOO MANY!")
                 println(values)
             }
         }
@@ -94,13 +96,10 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     fun bigMeet(predEdges: Set<Edge>?): Lattice {
         var out: Lattice? = null
         predEdges?.forEach {
-            val edgeVal = values[it] // every edge should have a value
-            if (edgeVal==null ) {
-                println("BIG WARNING!")
-            } else {
-                val _out = out
-                out = if (_out == null) edgeVal else meet(_out, edgeVal)
-            }
+            val edgeVal = values[it]!! // every edge should have a value
+            val outCopy = out
+            out = if (outCopy == null) edgeVal else meet(outCopy, edgeVal)
+
         }
         return out ?: top
     }

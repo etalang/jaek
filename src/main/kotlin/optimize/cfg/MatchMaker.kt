@@ -35,7 +35,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
 
     /** Given a -> b -> c. Removes b and connects a to c, preserving jump status of (a,b) */
     fun translate(a: CFGNode, b: CFGNode, c: CFGNode) {
-        println("TRANSLATE")
         if (fallThrough(a) == b) {
             removeConnection(a, b, false)
             connect(a, c, false)
@@ -138,7 +137,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         }
 
         fun remove(node: CFGNode) {
-            println()
             if (jumpNode == node) jumpNode = null
             if (fallThrough == node) fallThrough = null
         }

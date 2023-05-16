@@ -134,7 +134,6 @@ class IRTranslator(val AST: Program, val name: String, functionTypes: Map<String
             }
         }
 
-//        globals.forEach { println(it.name) }
 
         p.definitions.forEach {
             when (it) {
