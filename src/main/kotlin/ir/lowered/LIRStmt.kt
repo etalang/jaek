@@ -122,7 +122,7 @@ sealed class LIRStmt : LIRNode.TileableNode<Tile.Regular>() {
                         return builder.build()
                     }
                     else if (guard.right is LIRExpr.LIRConst && guard.right.value == 0L) {
-                        val leftTile = guard.right.optimalTile()
+                        val leftTile = guard.left.optimalTile()
                         builder.consume(leftTile)
                         builder.add(Instruction.CMP(RegisterDest(leftTile.outputRegister), ConstSrc(0L)))
                         builder.add(Instruction.Jump.JZ(Location(Label(trueBranch.l, false))))
