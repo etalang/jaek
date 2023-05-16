@@ -13,6 +13,8 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     abstract val top: Lattice
     abstract fun run()
     abstract val name: String
+    private val mm = cfg.mm
+
 
     abstract class Forward<Lattice : EdgeValues>(cfg: CFG) : CFGFlow<Lattice>(cfg) {
         override fun run() {
@@ -49,20 +51,58 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 println(values)
             }
         }
+    }
 
-         fun bigMeet(predEdges: Set<Edge>?): Lattice {
-            var out: Lattice? = null
-            predEdges?.forEach {
-                val edgeVal = values[it] // every edge should have a value
-                if (edgeVal==null ) {
-                    println("BIG WARNING!")
-                } else {
-                    val _out = out
-                    out = if (_out == null) edgeVal else meet(_out, edgeVal)
+    abstract class Backward<Lattice : EdgeValues>(cfg: CFG) : CFGFlow<Lattice>(cfg) {
+        override fun run() {
+            var counter = 0
+            val nodes = cfg.mm.allNodes()
+            val worklist = nodes.toMutableSet()
+            nodes.forEach { n-> cfg.mm.successorEdges(n).forEach { if(!values.contains(it)) values[it] = top } }
+            while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
+                val node = worklist.first()
+                worklist.remove(node)
+                val inInfo = bigMeet(cfg.mm.successorEdges(node))
+                val newEdges = transition(node, inInfo)
+                cfg.mm.predecessorEdges(node).forEach {
+                    val before = values[it]
+                    if (before != newEdges[it]) {
+                        if (counter > 10000-10){
+                            val after = newEdges[it]
+                            if (before is CondConstProp.Info && after is CondConstProp.Info) {
+                                require(before.unreachability==after.unreachability)
+                                require(before.varVals==after.varVals)
+
+                            }
+//                            println("${before} IS NOT ${newEdges[it]}")
+                        }
+                        values[it] = newEdges[it]!!
+                        worklist.add(it.node)
+                    }
                 }
+                counter++
             }
-            return out ?: top
+            println("it took $counter to terminate $name")
+            if (counter==10000) {
+                println(values)
+            }
         }
+
+
+    }
+
+    fun bigMeet(predEdges: Set<Edge>?): Lattice {
+        var out: Lattice? = null
+        predEdges?.forEach {
+            val edgeVal = values[it] // every edge should have a value
+            if (edgeVal==null ) {
+                println("BIG WARNING!")
+            } else {
+                val _out = out
+                out = if (_out == null) edgeVal else meet(_out, edgeVal)
+            }
+        }
+        return out ?: top
     }
 
     override fun graphViz(): String {
