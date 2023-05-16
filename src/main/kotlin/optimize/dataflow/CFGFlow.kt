@@ -29,6 +29,15 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 cfg.mm.successorEdges(node).forEach {
                     val before = values[it]
                     if (before != newEdges[it]) {
+                        if (counter > 10000-10){
+                            val after = newEdges[it]
+                            if (before is CondConstProp.Info && after is CondConstProp.Info) {
+                                require(before.unreachability==after.unreachability)
+                                require(before.varVals==after.varVals)
+
+                            }
+//                            println("${before} IS NOT ${newEdges[it]}")
+                        }
                         values[it] = newEdges[it]!!
                         worklist.add(it.node)
                     }
@@ -36,6 +45,9 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 counter++
             }
             println("it took $counter to terminate $name")
+            if (counter==10000) {
+                println(values)
+            }
         }
 
          fun bigMeet(predEdges: Set<Edge>?): Lattice {
