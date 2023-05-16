@@ -17,9 +17,9 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
     abstract class Forward<Lattice : EdgeValues>(cfg: CFG) : CFGFlow<Lattice>(cfg) {
         override fun run() {
             var counter = 0
-            val nodes = cfg.reachableNodes()
+            val nodes = cfg.mm.allNodes()
             val worklist = nodes.toMutableSet()
-            nodes.forEach { cfg.mm.successorEdges(it).forEach { if(!values.contains(it)) values[it] = top } }
+            nodes.forEach { n-> cfg.mm.successorEdges(n).forEach { if(!values.contains(it)) values[it] = top } }
 //            val predEdges = cfg.getPredEdges()
             while (worklist.isNotEmpty() && counter < 10000) { // TODO: let it go later
                 val node = worklist.random()

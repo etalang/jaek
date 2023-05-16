@@ -11,6 +11,10 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         return predecessors.keys union successors.keys
     }
 
+    fun relevantNodes(): Set<CFGNode> {
+        return predecessors.keys.plus(start)
+    }
+
     fun fastNodesWithPredecessors(): Set<CFGNode> {
         return predecessors.keys
     }
@@ -92,6 +96,26 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
 
     fun predecessorEdges(node: CFGNode): Set<Edge> {
         return predecessors[node]?.map { Edge(it.first, node, it.second) }?.toSet() ?: emptySet()
+    }
+
+    fun removeAndLink(node: CFGNode): Boolean {
+        val fallThrough = fallThrough(node)
+        val jumpTo = jumpingTo(node)
+        if (jumpTo == null && fallThrough == null) {
+            removeNode(node)
+            return true
+        } else if (fallThrough != null && jumpTo == null) {
+            predecessors(node).forEach { pred ->
+                translate(pred, node, fallThrough)
+            }
+            return true
+        } else if (jumpTo != null && fallThrough == null) {
+            predecessors(node).forEach { pred ->
+                translate(pred, node, jumpTo)
+            }
+            return true
+        }
+        return false
     }
 
     class Successors {

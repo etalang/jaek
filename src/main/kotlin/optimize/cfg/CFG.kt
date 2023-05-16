@@ -51,7 +51,7 @@ class CFG(val start: CFGNode.Start, val function: String, val mm: MatchMaker) : 
 
     override fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
-        reachableNodes().forEach { t -> map[t] = "n${t.index}" }
+        mm.relevantNodes().forEach { t -> map[t] = "n${t.index}" }
         return buildString {
             appendLine("digraph $function {")
             appendLine("\trankdir=\"TB\"")

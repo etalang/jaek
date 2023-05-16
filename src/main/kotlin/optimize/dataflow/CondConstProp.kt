@@ -27,24 +27,58 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
                         Definition.Bottom -> return mm.successorEdges(n)
                             .associateWith { outInfo } // can't predict anything here
                         is Definition.Data -> {
-                            val falseEdge = Edge(n, mm.fallThrough(n)!!, false)
-                            val trueEdge = Edge(n, mm.jumpingTo(n)!!, true)
+                            val falseEdge = mm.fallThrough(n)?.let { Edge(n, it, false) }
+                            val trueEdge = mm.jumpingTo(n)?.let { Edge(n, it, true) }
                             val cond = n.cond
+
                             if (guardAbs.t == 0L) { // false edge TAKEN
                                 if (cond is CFGExpr.BOp && cond.op == NEQ && cond.left is CFGExpr.Var) {
                                     // add extra info to map based on condition info
                                     outInfo.varVals[cond.left.name] =
                                         abstractInterpretation(cond.right, varVals = outInfo.varVals)
                                 }
-                                return mapOf(trueEdge to unreachableInfo, falseEdge to outInfo)
+                                falseEdge?.let {
+                                    trueEdge?.let {
+                                        return mapOf(trueEdge to unreachableInfo, falseEdge to outInfo)
+                                    }
+                                    return mapOf(falseEdge to outInfo)
+                                }
+                                trueEdge?.let { return mapOf(trueEdge to unreachableInfo) }
+                                return mapOf()
                             } else if (guardAbs.t == 1L) { // true edge TAKEN
                                 if (cond is CFGExpr.BOp && cond.op == EQ && cond.left is CFGExpr.Var) {
+                                    // add extra info to map based on condition info
                                     outInfo.varVals[cond.left.name] =
                                         abstractInterpretation(cond.right, varVals = outInfo.varVals)
                                 }
-                                return mapOf(trueEdge to outInfo, falseEdge to unreachableInfo)
+                                falseEdge?.let {
+                                    trueEdge?.let {
+                                        return mapOf(trueEdge to outInfo, falseEdge to unreachableInfo)
+                                    }
+                                    return mapOf(falseEdge to unreachableInfo)
+                                }
+                                trueEdge?.let { return mapOf(trueEdge to outInfo) }
+                                return mapOf()
                             } else throw Exception("guard value is neither 0 nor 1, should not typecheck")
                         }
+
+
+//
+//                            if (guardAbs.t == 0L) { // false edge TAKEN
+//                                if (cond is CFGExpr.BOp && cond.op == NEQ && cond.left is CFGExpr.Var) {
+//                                    // add extra info to map based on condition info
+//                                    outInfo.varVals[cond.left.name] =
+//                                        abstractInterpretation(cond.right, varVals = outInfo.varVals)
+//                                }
+//                                return mapOf(trueEdge to unreachableInfo, falseEdge to outInfo)
+//                            } else if (guardAbs.t == 1L) { // true edge TAKEN
+//                                if (cond is CFGExpr.BOp && cond.op == EQ && cond.left is CFGExpr.Var) {
+//                                    outInfo.varVals[cond.left.name] =
+//                                        abstractInterpretation(cond.right, varVals = outInfo.varVals)
+//                                }
+//                                return mapOf(trueEdge to outInfo, falseEdge to unreachableInfo)
+//                            } else throw Exception("guard value is neither 0 nor 1, should not typecheck")
+
 
                         Definition.Top -> { // this means we have not yet processed node (random ordering!!)
                             return mm.successorEdges(n).associateWith { outInfo }
@@ -125,63 +159,53 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     }
 
     override fun postprocess() {
-        var unreachablesExist = true
-        while (unreachablesExist) {
-            println("removing an unreachable")
-            unreachablesExist = removeUnreachables()
-//            run()
+        var checkUnreach = true
+        var checkIf = true
+        var checkConst = true
+
+        while (checkUnreach) {
+            checkUnreach = removeUnreachables()
+            run()
+            println("KFSJD")
         }
-        var lonelyIfsExist = true
-        while (lonelyIfsExist) {
-            println("removing lonely if")
-            lonelyIfsExist = removeLonelyIfs()
-//            run()
+        while (checkIf) {
+            checkIf = removeLonelyIfs()
+            run()
+            println("WHOOP")
         }
         run()
         constantPropogate()
-//        deleteConstAssigns()
+        while (checkConst) {
+            checkConst = deleteConstAssigns()
+            run()
+            println("gsdjkdkjJDSF")
+        }
+        println()
     }
 
     private fun removeLonelyIfs(): Boolean {
         var changed = false
         mm.fastNodesWithPredecessors().filterIsInstance<CFGNode.If>().forEach {
-            val falseEdge = mm.fallThrough(it)
-            val trueEdge = mm.jumpingTo(it)
-            if (trueEdge == null && falseEdge == null) {
-                mm.removeNode(it)
-                changed = true
-            } else if (falseEdge != null && trueEdge == null) {
-                mm.predecessors(it).forEach { pred ->
-                    mm.translate(pred, it, falseEdge)
-                }
-                changed = true
-            } else if (trueEdge != null && falseEdge == null) {
-                mm.predecessors(it).forEach { pred ->
-                    mm.translate(pred, it, trueEdge)
-                }
-                changed = true
-            }
+            println(it.pretty)
+            changed = mm.removeAndLink(it)
+            if (changed) return changed
         }
         return changed
     }
 
-    //
-//    private fun deleteConstAssigns() {
-//        var predEdges = cfg.getPredEdges()
-//        cfg.getNodes().forEach { curNode ->
-//            if (curNode is CFGNode.Gets && curNode.expr is CFGExpr.Const) {
-//                curNode.edges.forEach { outEdge -> // a gets should always only have one
-//                    val nodePreds = predEdges.getOrDefault(curNode, emptySet())
-//                    nodePreds.forEach { inEdge ->
-//                        inEdge.node = outEdge.node // delete gets const node
-//                    }
-//                    predEdges = cfg.getPredEdges()
-////                    File("delet${curNode.pretty.filterNot { it.isWhitespace() }}.dot").writeText(graphViz())
-//                }
-//            }
-//        }
-//    }
-//
+    /* returns false when no change */
+    private fun deleteConstAssigns(): Boolean {
+        val remove = mm.fastNodesWithPredecessors().firstOrNull { curNode ->
+            curNode is CFGNode.Gets && curNode.expr is CFGExpr.Const
+        };
+        if (remove != null) {
+            mm.removeAndLink(remove)
+            return true
+        }
+        return false
+    }
+
+
     private fun constantPropogate() {
         mm.fastNodesWithPredecessors().forEach { curNode ->
             val met = bigMeet(mm.predecessorEdges(curNode))
