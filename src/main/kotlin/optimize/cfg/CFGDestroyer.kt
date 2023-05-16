@@ -16,59 +16,65 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     private val mm = cfg.mm
 
     init {
-        if (func.name == "_Iisprime_bi") {
-            println()
-        }
         mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
-        println(jumpLabels)
         addToStack(cfg.start)
         while (stack.isNotEmpty()) {
-            val node = stack.removeFirst()
-            visited.add(node)
+            val peek = stack.first()
+            val fallThrough = mm.fallThroughsInto(peek)
+            if (fallThrough?.let { visited.contains(it) } == false) {
+                //ENSURE WE DO FALL-THROUGHS FIRST
+                addToStack(fallThrough)
+            } else {
+                val node = stack.removeFirst()
+                println(node)
+                if (!visited.contains(node)) {
+                    visited.add(node)
 
-            when (node) {
-                is Funcking -> {
-                    val retMoves = node.movIntos.map {
-                        when (it) {
-                            is Gets -> LIRMove(LIRTemp(it.varName), translateExpr(it.expr))
-                            is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
+                    when (node) {
+                        is Funcking -> {
+                            val retMoves = node.movIntos.map {
+                                when (it) {
+                                    is Gets -> LIRMove(LIRTemp(it.varName), translateExpr(it.expr))
+                                    is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
+                                }
+                            }
+                            addStmt(
+                                node,
+                                LIRCallStmt(
+                                    LIRName(node.name),
+                                    node.movIntos.size.toLong(),
+                                    node.args.map { translateExpr(it) })
+                            )
+                            stmts.addAll(retMoves)
+                        }
+
+                        is If -> mm.jumpingTo(node)
+                            ?.let {
+                                addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!))
+                                addToStack(it)
+                            }
+
+                        is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
+
+                        is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
+
+                        is Return -> {
+                            addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
+                        }
+
+                        is Start -> {}
+
+                        is Cricket -> {
+                            mm.jumpingTo(node)?.let {
+                                addStmt(node, LIRJump(LIRName(jumpLabels[it]!!.l)))
+                                addToStack(it)
+                            }
                         }
                     }
-                    addStmt(
-                        node,
-                        LIRCallStmt(
-                            LIRName(node.name),
-                            node.movIntos.size.toLong(),
-                            node.args.map { translateExpr(it) })
-                    )
-                    stmts.addAll(retMoves)
-                }
-
-                is If -> mm.jumpingTo(node)
-                    ?.let {
-                        addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!))
-                        addToStack(it)
-                    }
-
-                is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
-
-                is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
-
-                is Return -> {
-                    addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
-                }
-
-                is Start -> {}
-
-                is Cricket -> {
-                    mm.jumpingTo(node)?.let {
-                        addStmt(node,LIRJump(LIRName(jumpLabels[it]!!.l)))
+                    mm.fallThrough(node)?.let {
                         addToStack(it)
                     }
                 }
-            }
-            mm.fallThrough(node)?.let {
-                addToStack(it)
             }
         }
         body = LIRSeq(stmts)
@@ -80,7 +86,7 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     }
 
     private fun addToStack(node: CFGNode) {
-        if (!visited.contains(node) && !stack.contains(node))
+        if (!visited.contains(node))
             stack.addFirst(node)
     }
 

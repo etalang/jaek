@@ -92,6 +92,10 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         return predecessors[node]?.filter { it.second }?.map { it.first }?.toSet() ?: emptySet()
     }
 
+    fun fallThroughsInto(node: CFGNode): CFGNode? {
+        return predecessors[node]?.filter { !it.second }?.map { it.first }?.firstOrNull()
+    }
+
     fun predecessorEdges(node: CFGNode): Set<Edge> {
         return predecessors[node]?.map { Edge(it.first, node, it.second) }?.toSet() ?: emptySet()
     }
