@@ -31,11 +31,18 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         help = "Input files to compiler.", name = "<source files>"
     ).file(canBeDir = false).multiple()
 
-    private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
+    //OPTIMIZATIONS
+    //TODO: actually use values
     private val disableOpt: Boolean by option(
         "-O",
         help = "Prevents optimizations (e.g. constant folding) from happening."
     ).flag()
+    private val oreg: Boolean by option("-Oreg", help = "Enable register allocation and move coalescing.").flag()
+    private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
+    private val ocopy: Boolean by option("-Ocopy", help = "Enable copy propagation.").flag()
+
+    //LOGISTICS
+    private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
     private val initOutputIR: Boolean by option(
@@ -120,11 +127,14 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                 // TODO: test output assembly file to new -d path
                 val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, ".s") else null
 
-                val optIRInitialFile = if (printIROpts.contains("initial")) getOutFileName(it, absDiagnosticPath, "_initial.ir") else null
-                val optIRFinalFile = if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
-                val optCFGInitialFile : File? = if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-                val optCFGFinalFile : File? = if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-
+                val optIRInitialFile =
+                    if (printIROpts.contains("initial")) getOutFileName(it, absDiagnosticPath, "_initial.ir") else null
+                val optIRFinalFile =
+                    if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
+                val optCFGInitialFile: File? =
+                    if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
+                val optCFGFinalFile : File? =
+                    if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
                 val ast: Node?
@@ -143,8 +153,12 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                         context.functionMap()
                                     )
                                     val ir =
-                                        translator.irgen(if (disableOpt) Opt.None else
-                                            Opt.All, OutputIR(optIRInitialFile,optIRFinalFile), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile))
+                                        translator.irgen(
+                                            if (disableOpt) Opt.None else
+                                                Opt.All,
+                                            OutputIR(optIRInitialFile, optIRFinalFile),
+                                            Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
+                                        )
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
