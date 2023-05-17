@@ -92,134 +92,133 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
     /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
-        for (i in 1..1) {
-            // the irrun flag should also generate the IR, just like irgen
-            val outputIR = if (runIR) true else initOutputIR
-            if (target != "linux") {
-                throw BadParameterValue("The only supported OS is linux", targetOpt)
-            }
-            val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
-            val absSourcepath = processDirPath(sourcepath, sourceOpt)
-            val absLibpath = processDirPath(libpath, libOpt)
-            val absAssemPath = processDirPath(assemblyRelPath, assemOpt)
+        // the irrun flag should also generate the IR, just like irgen
+        val outputIR = if (runIR) true else initOutputIR
+        if (target != "linux") {
+            throw BadParameterValue("The only supported OS is linux", targetOpt)
+        }
+        val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
+        val absSourcepath = processDirPath(sourcepath, sourceOpt)
+        val absLibpath = processDirPath(libpath, libOpt)
+        val absAssemPath = processDirPath(assemblyRelPath, assemOpt)
 
-            val expandedFiles = files.map {
-                File(expandPath(it.path).toString())
-            }
+        val expandedFiles = files.map {
+            File(expandPath(it.path).toString())
+        }
 
-            val folderFiles = expandedFiles.map {
-                if (it.isAbsolute) it else File(absSourcepath.toString(), it.path)
-            }
+        val folderFiles = expandedFiles.map {
+            if (it.isAbsolute) it else File(absSourcepath.toString(), it.path)
+        }
 
-            folderFiles.forEach {
-                val kompiler = Kompiler()
-                //the only files accepts must exist at sourcepath & be eta/eti files
-                if (it.exists() && (it.extension == "eta" || it.extension == "eti" || it.extension == "rh" || it.extension == "ri")) {
-                    // TODO: pull out it, absDisgnosticPath
-                    val lexedFile: File? =
-                        if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
-                    val parsedFile: File? =
-                        if (outputParse && !disableOutput) getOutFileName(it, absDiagnosticPath, ".parsed") else null
-                    val typedFile: File? =
-                        if (outputTyping && !disableOutput) getOutFileName(it, absDiagnosticPath, ".typed") else null
-                    val irFile: File? =
-                        if (outputIR && !disableOutput) getOutFileName(it, absDiagnosticPath, ".ir") else null
-                    // adding assembly file -- might be unsafe LOL
-                    // TODO: test output assembly file to new -d path
-                    val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, "$i.s") else null
+        folderFiles.forEach {
+            val kompiler = Kompiler()
+            //the only files accepts must exist at sourcepath & be eta/eti files
+            if (it.exists() && (it.extension == "eta" || it.extension == "eti" || it.extension == "rh" || it.extension == "ri")) {
+                // TODO: pull out it, absDisgnosticPath
+                val lexedFile: File? =
+                    if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
+                val parsedFile: File? =
+                    if (outputParse && !disableOutput) getOutFileName(it, absDiagnosticPath, ".parsed") else null
+                val typedFile: File? =
+                    if (outputTyping && !disableOutput) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                val irFile: File? =
+                    if (outputIR && !disableOutput) getOutFileName(it, absDiagnosticPath, ".ir") else null
+                // adding assembly file -- might be unsafe LOL
+                // TODO: test output assembly file to new -d path
+                val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, ".s") else null
 
-                    val optIRInitialFile =
-                        if (printIROpts.contains("initial")) getOutFileName(
-                            it,
-                            absDiagnosticPath,
-                            "_initial.ir"
-                        ) else null
-                    val optIRFinalFile =
-                        if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
-                    val optCFGInitialFile: File? =
-                        if (printCFGOpts.contains("initial")) getOutFileName(
-                            it,
-                            absDiagnosticPath,
-                            ".ignored"
-                        ) else null
-                    val optCFGFinalFile: File? =
-                        if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-                    // TODO: output path for these three pending response to my Ed post since seems weird
+                val optIRInitialFile =
+                    if (printIROpts.contains("initial")) getOutFileName(
+                        it,
+                        absDiagnosticPath,
+                        "_initial.ir"
+                    ) else null
+                val optIRFinalFile =
+                    if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
+                val optCFGInitialFile: File? =
+                    if (printCFGOpts.contains("initial")) getOutFileName(
+                        it,
+                        absDiagnosticPath,
+                        ".ignored"
+                    ) else null
+                val optCFGFinalFile: File? =
+                    if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
+                // TODO: output path for these three pending response to my Ed post since seems weird
 
-                    val ast: Node?
+                val ast: Node?
+                try {
+                    lex(it, lexedFile)
                     try {
-                        lex(it, lexedFile)
+                        ast = parse(it, parsedFile)
                         try {
-                            ast = parse(it, parsedFile)
-                            try {
-                                val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
 
-                                when (ast) {
-                                    is Program -> {
-                                        val translator = IRTranslator(
-                                            ast, it.nameWithoutExtension, context
-                                        )
-                                        val optConfig = if (disableOpt) Opt.None else {
-                                            if (!ocopy && !odce && !oreg) Opt.All else {
-                                                val include = mutableListOf<Opt.Actions>()
-                                                if (ocopy) include.add(Opt.Actions.copy)
-                                                if (odce) include.add(Opt.Actions.dce)
-                                                if (oreg) include.add(Opt.Actions.reg)
-                                                Opt.Of(include)
-                                            }
+                            when (ast) {
+                                is Program -> {
+                                    val translator = IRTranslator(
+                                        ast, it.nameWithoutExtension, context
+                                    )
+                                    val optConfig = if (disableOpt) Opt.None else {
+                                        if (!ocopy && !odce && !oreg) Opt.All else {
+                                            val include = mutableListOf<Opt.Actions>()
+                                            if (ocopy) include.add(Opt.Actions.copy)
+                                            if (odce) include.add(Opt.Actions.dce)
+                                            if (oreg) include.add(Opt.Actions.reg)
+                                            Opt.Of(include)
                                         }
-                                        val ir = translator.irgen(
-                                            optConfig, OutputIR(
-                                                optIRInitialFile, optIRFinalFile
-                                            ), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
-                                        )
-                                        val irFileGen = ir.java
-                                        irFile?.let {
-                                            val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
-                                            irFileGen.printSExp(writer)
-                                            writer.flush()
-                                            writer.close()
-                                        }
-
-                                        try {
-                                            val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
-                                            val assemblyAssembler = AssemblyGenerator(ir, funcMap)
-                                            // print to file.s
-                                            val assembly = assemblyAssembler.generate()
-                                            assemblyFile?.writeText(assembly)
-                                        } catch (e: Throwable) {
-                                            assemblyFile?.writeText("Failed to generate assembly for " + it.name)
-                                            if (!disableOutput) println("Failed to generate assembly for " + it.name)
-                                        }
-
+                                    }
+                                    val ir = translator.irgen(
+                                        optConfig, OutputIR(
+                                            optIRInitialFile, optIRFinalFile
+                                        ), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
+                                    )
+                                    val irFileGen = ir.java
+                                    irFile?.let {
+                                        val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
+                                        irFileGen.printSExp(writer)
+                                        writer.flush()
+                                        writer.close()
                                     }
 
-                                    is Interface -> {
-                                        irFile?.appendText("Cannot generate IR for an eti file.")
+                                    try {
+                                        val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
+                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
+                                        // print to file.s
+                                        val assembly = assemblyAssembler.generate()
+                                        assemblyFile?.writeText(assembly)
+                                    } catch (e: Throwable) {
+                                        assemblyFile?.writeText("Failed to generate assembly for " + it.name)
+                                        if (!disableOutput) println("Failed to generate assembly for " + it.name)
                                     }
 
-                                    else -> {}
                                 }
-                                // we are sticking with the class IR rep, and do not implement irrun
-                                if (runIR) throw ProgramResult(2)
-                            } catch (e: CompilerError) {
-                                if (!disableOutput) println(e.log)
+
+                                is Interface -> {
+                                    irFile?.appendText("Cannot generate IR for an eti file.")
+                                }
+
+                                else -> {}
                             }
-                        } catch (e: ParseError) {
+                            // we are sticking with the class IR rep, and do not implement irrun
+                            if (runIR) throw ProgramResult(2)
+                        } catch (e: CompilerError) {
                             if (!disableOutput) println(e.log)
-                            parsedFile?.appendText(e.mini)
-                            typedFile?.appendText(e.mini)
                         }
-                    } catch (e: LexicalError) {
+                    } catch (e: ParseError) {
                         if (!disableOutput) println(e.log)
                         parsedFile?.appendText(e.mini)
                         typedFile?.appendText(e.mini)
                     }
-                } else {
-                    echo("Skipping $it due to invalid file.")
+                } catch (e: LexicalError) {
+                    if (!disableOutput) println(e.log)
+                    parsedFile?.appendText(e.mini)
+                    typedFile?.appendText(e.mini)
                 }
+            } else {
+                echo("Skipping $it due to invalid file.")
             }
         }
+
     }
 }
 

@@ -49,6 +49,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
+        repOp()
         if (!jump && predecessors[to]?.any { !it.second } == true) {
             val dummy = CFGNode.NOOP()
             connect(from, dummy, false)
@@ -62,6 +63,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 it.add(Pair(from, jump))
             }
         }
+        repOp()
     }
 
     /**

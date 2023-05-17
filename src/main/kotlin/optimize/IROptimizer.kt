@@ -6,6 +6,7 @@ import optimize.cfg.CFG
 import optimize.cfg.CFGBuilder
 import optimize.cfg.CFGDestroyer
 import optimize.dataflow.CondConstProp
+import optimize.dataflow.DeadCodeRem
 
 class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Settings.OutputCFG) {
     var cfg: CFG
@@ -22,17 +23,15 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
                 ccp.run()
                 ccp.postprocess()
             }
+
+            if (optimize.desire(Settings.Opt.Actions.dce)) {
+                val dce = DeadCodeRem(cfg)
+                dce.run()
+                dce.postprocess()
+                val lir = CFGDestroyer(cfg, lir).destroy()
+                cfg = CFGBuilder(lir).build()
+            }
         }
-
-//            if (optimize.desire(Settings.Opt.Actions.dce)) {
-//                val dce = DeadCodeRem(cfg)
-//                dce.run()
-//                dce.postprocess()
-//                val lir = CFGDestroyer(cfg, lir).destroy()
-//                cfg = CFGBuilder(lir).build()
-//            }
-//        }
-
 
         val postFile = outputCFG.getOutFile(lir.name, "final")
         postFile?.writeText(cfg.graphViz())
