@@ -160,13 +160,11 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 
     /* MAIN HELPERS APPEARING IN THE FUNCTION */
     private fun simplify(worklist: Worklist) {
-        val reg = worklist.simplifyWorkList.elementAt(0)
-        worklist.simplifyWorkList.remove(reg)
-        worklist.selectStack.add(reg)
-        val adjs = worklist.adjacent(reg)
-        for (neighbor in adjs) {
-//            if (neighbor is Abstract)
-            worklist.decrementDegree(neighbor)
+        val n = worklist.simplifyWorkList.elementAt(0)
+        worklist.simplifyWorkList.remove(n)
+        worklist.selectStack.push(n)
+        for (m in worklist.adjacent(n)) {
+            if (m !is x86) worklist.decrementDegree(m)
         }
     }
 

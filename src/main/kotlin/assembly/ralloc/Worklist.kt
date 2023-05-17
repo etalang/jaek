@@ -78,9 +78,9 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     /* REQUIRED FOR SIMPLIFY */
     fun decrementDegree(m: Register) {
         val d = ig.degrees[m]
-        ig.degrees[m] = d?.minus(1) ?: 0
-        if (d != null && d == K) {
-            enableMoves(adjacent(m) union setOf(m))
+        ig.degrees[m] = d!!.minus(1)
+        if (d == K) {
+            enableMoves(setOf(m) union adjacent(m))
             spillWorkList.remove(m)
             if (moveRelated(m)) {
                 freezeWorkList.add(m)
@@ -122,8 +122,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     fun conservative(nodes: Set<Register>): Boolean {
         var k = 0
         for (n in nodes) {
-            val dn = ig.degrees[n]
-            if (dn != null && dn >= K) k++
+            if (ig.degrees[n]!! >= K) k++
         }
         return k < K
     }
@@ -177,7 +176,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
 
     fun assignColors() {
         while (selectStack.isNotEmpty()) {
-            val n = selectStack.removeLast()
+            val n = selectStack.pop()
 //            selectStack = selectStack.removeLast
             if (n is x86) {
                 coloredNodes.add(n)
@@ -190,8 +189,8 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
 //                }
             }
 //            okColors.addAll(0 until K)
-            val nNeighbors = ig.adjList[n] ?: emptySet()
-            for (w in nNeighbors) {
+//            val nNeighbors = ig.adjList[n] ?: emptySet()
+            for (w in ig.adjList[n]!!) {
                 val r = getAlias(w)
                 if (coloredNodes.contains(r) || r is x86) {
                     ig.colors[r].let { okColors.remove(it) }
