@@ -72,9 +72,7 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         val d = ig.degrees[m]
         ig.degrees[m] = d?.minus(1) ?: 0
         if (d != null && d == K) {
-            val neighborhood = adjacent(m)
-            neighborhood.add(m)
-            enableMoves(neighborhood)
+            enableMoves(adjacent(m) union setOf(m))
             spillWorkList.remove(m)
             if (moveRelated(m)) {
                 freezeWorkList.add(m)
