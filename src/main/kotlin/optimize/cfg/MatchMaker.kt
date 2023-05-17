@@ -13,8 +13,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 if (jump) require(jumpingTo(pred) == it)
                 else require(fallThrough(pred) == it)
             }
-            require((predecessors[it]?.filter { it.second }?.size ?: 0) < 2)
-            require((predecessors[it]?.filter { !it.second }?.size ?: 0) < 2)
+            require((predecessors[it]?.filter { !it.second }?.size ?: 0) < 2) //fall-throughs In
             successors[it]?.let { l ->
                 l.fallThrough?.let { succ -> require(predecessors[succ]?.contains(Pair(it, false)) ?: false) }
                 l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
