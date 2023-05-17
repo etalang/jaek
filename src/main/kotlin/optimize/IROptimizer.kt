@@ -8,7 +8,6 @@ import optimize.cfg.CFGDestroyer
 import optimize.dataflow.CondConstProp
 import optimize.dataflow.CopyProp
 import optimize.dataflow.DeadCodeRem
-import java.io.File
 
 class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, val outputCFG: Settings.OutputCFG) {
     var cfg: CFG

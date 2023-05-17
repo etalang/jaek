@@ -38,17 +38,19 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
     }
 
     private fun kill(n: CFGNode): Set<Copy> {
-        if (n is CFGNode.Gets) {
+        if (n is CFGNode.Start) {
+            return top.copies
+        } else{
             val allVars = allVars()
             val killSet = mutableSetOf<Copy>()
-            for (v in allVars) {
-                killSet.add(Copy(n.varName, v))
-                killSet.add(Copy(v, n.varName))
-            }
-        } else if (n is CFGNode.Start) {
-            return top.copies
+            for (kill in def(n))
+                for (v in allVars) {
+                    killSet.add(Copy(kill, v))
+                    killSet.add(Copy(v, kill))
+                }
+            return killSet
         }
-        return emptySet()
+//        return emptySet()
     }
 
     private fun gen(n: CFGNode): Set<Copy> {
@@ -78,17 +80,102 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
     }
 
     override fun postprocess() {
-        var propagateCopies = true
-        while (propagateCopies) {
-            propagateCopies = propagateEqualVars()
-            run()
+        var propagateCopies = propagateEqualVars()
+        while (propagateCopies.isNotEmpty()) {
             mm.repOk()
+            propagateCopies = propagateEqualVars()
+            runWithWorklist(propagateCopies)
         }
     }
 
-    /** idk what to do here */
-    private fun propagateEqualVars(): Boolean {
-        return false
+    private fun propagateEqualVars(): Set<CFGNode> {
+        val changed = mutableSetOf<CFGNode>()
+        mm.fastNodesWithPredecessors().forEach { curNode ->
+            val met = bigMeet(mm.predecessorEdges(curNode))
+            when (curNode) {
+                is CFGNode.Funcking -> {
+                    var changeTest = false
+                    curNode.args = curNode.args.map { arg ->
+                        val (e, c) = replaceVar(arg, met)
+                        changeTest = changeTest || c
+                        e
+                    }
+                    if (changeTest) changed.add(curNode)
+                }
+
+                is CFGNode.If -> {
+                    val (e, c) = replaceVar(curNode.cond, met)
+                    curNode.cond = e
+                    if (c) changed.add(curNode)
+                }
+
+                is CFGNode.Gets -> {
+                    val (e, c) = replaceVar(curNode.expr, met)
+                    curNode.expr = e
+                    if (c) changed.add(curNode)
+                }
+
+                is CFGNode.Mem -> {
+                    val (el, cl) = replaceVar(curNode.loc, met)
+                    val (ee, ce) = replaceVar(curNode.expr, met)
+                    curNode.loc = el
+                    curNode.expr = ee
+                    if (cl || ce) changed.add(curNode)
+                }
+
+                is CFGNode.Return -> {
+                    var changeTest = false
+
+                    val old = curNode.rets
+                    curNode.rets = curNode.rets.map { ret ->
+                        val (e, c) = replaceVar(ret, met)
+                        changeTest = changeTest || c
+                        e
+                    }
+                    if (changeTest) changed.add(curNode)
+                }
+
+                is CFGNode.Start, is CFGNode.Cricket, is CFGNode.NOOP -> {}
+            }
+        }
+        return changed
     }
 
+    private fun replaceVar(expr: CFGExpr, pairs: CopyProp.Info): Pair<CFGExpr, Boolean> {
+        return when (expr) {
+            is CFGExpr.BOp -> {
+                val (leftE, leftC) = replaceVar(expr.left, pairs)
+                val (rightE, rightC) = replaceVar(expr.right, pairs)
+                Pair(
+                    CFGExpr.BOp(
+                        leftE, rightE, expr.op
+                    ), leftC || rightC
+                )
+            }
+
+            is CFGExpr.Const -> Pair(expr, false)
+            is CFGExpr.Label -> Pair(expr, false)
+            is CFGExpr.Mem -> {
+                val (e, changed) = replaceVar(expr.loc, pairs)
+                Pair(CFGExpr.Mem(e), changed)
+            }
+
+            is CFGExpr.Var -> {
+                val earliest = pairs.copies.find { it.late == expr.name }?.early
+                if (earliest != null && earliest != expr.name) {
+                    Pair(CFGExpr.Var(earliest), true)
+                } else Pair(expr, false)
+            }
+        }
+    }
+
+//    fun earliest(late: String, info: CopyProp.Info): String? {
+//        val earlier = info.copies.find { it.late == late }?.early
+//        if (earlier != null) {
+//            val tryAgain = earliest(earlier, Info(info.copies.minus(Copy(late, earlier))))
+//            if (tryAgain != null) return tryAgain
+//        }
+//        println("earliest for $late is $earlier")
+//        return earlier
+//    }
 }
