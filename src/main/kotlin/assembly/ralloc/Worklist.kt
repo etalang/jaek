@@ -48,7 +48,8 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         // unless workListMoves is like ordered it's fine
         for (insn in insns) {
             if (insn is Instruction.MOV)
-                if (insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc)
+                if (insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc
+                    && !(insn.dest.r is x86 && insn.src.r is x86))
                     worklistMoves.add(Move(insn.dest.r, insn.src.r))
         }
     }
@@ -179,8 +180,10 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         while (selectStack.isNotEmpty()) {
             val n = selectStack.removeLast()
 //            selectStack = selectStack.removeLast
-//            if (n is x86) // TODO: still a bandaid fix but maybe more plausible
-//                coloredNodes.add(n)
+            if (n is x86) {
+                coloredNodes.add(n)
+                continue
+            }
             val okColors = mutableSetOf<Int>()
             for (idx in 0 until K) {
                 if (!reservedColors.contains(idx)) {

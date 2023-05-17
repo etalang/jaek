@@ -34,10 +34,14 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 //        val callerTemps: Map<x86, Abstract> = callerSavedRegs.associateWith { callerSpill() }
         val saveCallees =
             calleeSavedRegs.map { MOV(Destination.RegisterDest(calleeTemps[it]!!), Source.RegisterSrc(it)) }
-//        val saveCallers = callerSavedRegs.map{ MOV(Destination.RegisterDest(callerTemps[it]!!),
+        val saveCallers : MutableList<Instruction> = callerSavedRegs.map{ PUSH(it) }.toMutableList()
+        saveCallers.add(0, PAD())
+            // callerSavedRegs.map{ MOV(Destination.RegisterDest(callerTemps[it]!!),
 //            Source.RegisterSrc(it)) }
-//        val popCallers = callerSavedRegs.map{ MOV(Destination.RegisterDest(it),
-//            Source.RegisterSrc(callerTemps[it]!!)) }.reversed()
+        val popCallers : MutableList<Instruction> = callerSavedRegs.reversed().map{ POP(it) }.toMutableList()
+        popCallers.add(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8)))
+        //callerSavedRegs.map{ MOV(Destination.RegisterDest(it),
+        //    Source.RegisterSrc(callerTemps[it]!!)) }.reversed()
 
 
         val withCalleeSaved: MutableList<Instruction> = saveCallees.toMutableList()
@@ -63,11 +67,11 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 })
             }
             if (insn is CALLERSAVEPUSH) {
-//                withCalleeSaved.addAll(saveCallers)
+                withCalleeSaved.addAll(saveCallers)
                 continue
             }
             if (insn is CALLERSAVEPOP) {
-//                withCalleeSaved.addAll(popCallers)
+                withCalleeSaved.addAll(popCallers)
                 continue
             }
 //            if (insn is CALL) {
@@ -166,7 +170,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             worklist.constrainedMoves.add(m)
             worklist.addWorkList(u)
             worklist.addWorkList(v)
-        } else if (u is x86) {
+        } else if (u is x86 && v is Abstract) { // TODO: CHECK IF THIS IS OK TO ENFORCE
             var isOK = true
             val vNeighbors = worklist.adjacent(v)
             for (t in vNeighbors) {

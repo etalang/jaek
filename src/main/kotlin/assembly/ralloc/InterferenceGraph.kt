@@ -96,7 +96,9 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val cfg : CFG
         }
 
         for (insn in insns) {
-            if (insn is Instruction.MOV && insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc) {
+            if (insn is Instruction.MOV
+                && insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc
+                && !(insn.dest.r is x86 && insn.src.r is x86)) {
                 for (reg in insn.involved) {
                     if (moveList.keys.contains(reg)) {
                         moveList[reg]?.add(Move(insn.dest.r, insn.src.r))
