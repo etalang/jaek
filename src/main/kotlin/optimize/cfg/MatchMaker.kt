@@ -107,6 +107,9 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         aboutToScrewWith?.let {
             it.forEach { (pred, jump) ->
                 removeConnection(pred, node, jump)
+                if (pred is CFGNode.If) {
+                    removeAndLink(pred)
+                }
             }
         }
         //REMOVE CONNECTIONS OUT
