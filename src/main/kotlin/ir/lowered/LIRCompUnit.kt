@@ -10,15 +10,9 @@ import edu.cornell.cs.cs4120.etac.ir.IRCompUnit as JIRCompUnit
 class LIRCompUnit(
     val name: String, val functions: List<LIRFuncDecl>, val globals: List<IRData>
 ) : LIRNode() {
-    private var freshLabelCount = 0
 
     fun reorderBlocks() {
-        functions.forEach { it.reorderBlocks(this::freshLabel) }
-    }
-
-    private fun freshLabel(): String {
-        freshLabelCount++
-        return "\$B$freshLabelCount"
+        functions.forEach { it.reorderBlocks() }
     }
 
     fun abstractAssembly(): x86CompUnit {

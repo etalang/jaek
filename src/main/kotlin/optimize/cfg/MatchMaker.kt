@@ -33,6 +33,10 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         return predecessors.keys
     }
 
+    fun nodesWithPredecessorEdges(): Set<Edge> {
+        return predecessors.keys.map { predecessorEdges(it) }.flatten().toSet()
+    }
+
     fun nodesWithJumpInto(): Set<CFGNode> {
         return predecessors.entries.filter { entry -> entry.value.any { edgesIn -> edgesIn.second } }.map { it.key }
             .toSet()

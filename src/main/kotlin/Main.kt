@@ -38,7 +38,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     private val oreg: Boolean by option("-Oreg", help = "Enable register allocation and move coalescing.").flag()
     private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
     private val ocopy: Boolean by option("-Ocopy", help = "Enable copy propagation.").flag()
-    private val ocp: Boolean by option("-Odce", help = "Enable conditional constant propagation.").flag()
+    private val ocp: Boolean by option("-Ocp", help = "Enable conditional constant propagation.").flag()
 
     //LOGISTICS
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
