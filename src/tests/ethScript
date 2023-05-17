@@ -287,6 +287,75 @@ etac ("Test assembly") ["assembly"] "-libpath $(testpath) -O -target linux" {
     manyret.eta;
 }
 
+etac ("Test assembly") ["assembly"] "-libpath $(testpath) -Ocopy -Ocp -Odce -target linux" {
+    arrayalloc1.eta;
+    arrayfuntimes.eta;
+    arraysorting.eta;
+    binsearchmain.eta;
+    boolcheck.eta;
+    changeglobalstwice.eta;
+    commutey.eta;
+    complextile.eta;
+    crazyinout.eta;
+    edarray1.eta;
+    enigma.eta;
+    fibonacci.eta;
+    globalstr1.eta;
+    helloworld.eta;
+    idxarrconcat.eta;
+    idxfnret.eta;
+    insertion.eta;
+    manyargs.eta;
+    manyargmanyret.eta;
+    mod.eta;
+    multiretarray.eta;
+    mutualrecursion.eta;
+    operatorprecedence.eta;
+    operatorprecedencevar.eta;
+    passbyrefarrs.eta;
+    primes.eta;
+    raggedarrays.eta;
+    recursive.eta;
+    returnfncall.eta;
+    ratadduse.eta;
+    returnfncall.eta;
+    returnstr.eta;
+    shortcircuit.eta;
+    swap.eta;
+    swaparr.eta;
+    twoiszero.eta;
+    fibonacci.eta;
+    globalstr1.eta;
+    helloworld.eta;
+    idxarrconcat.eta;
+    idxfnret.eta;
+    idxfnret.eta;
+    insertion.eta;
+    manyargs.eta;
+    manyargmanyret.eta;
+    manyargmanyret2.eta;
+    manyret.eta;
+    multiretarray.eta;
+    mutualrecursion.eta;
+    operatorprecedence.eta;
+    passbyrefarrs.eta;
+    primes.eta;
+    raggedarrays.eta;
+    recursive.eta;
+    returnfncall.eta;
+    ratadduse.eta;
+    returnfncall.eta;
+    returnstr.eta;
+    shortcircuit.eta;
+    swap.eta;
+    swaparr.eta;
+    twoiszero.eta;
+    complextile.eta;
+    crazyinout.eta;
+    manyargmanyret2.eta;
+    manyret.eta;
+}
+
 etac ("Test assembly") ["assembly"] "-libpath $(testpath) -target linux" {
     arrayalloc1.eta;
     arrayfuntimes.eta;
