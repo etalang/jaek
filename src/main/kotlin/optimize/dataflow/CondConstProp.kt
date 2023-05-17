@@ -142,8 +142,10 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 
     override fun postprocess() {
         var checkUnreach = true
-        while (checkUnreach) {
-            checkUnreach = removeUnreachables()
+        var checkIf = true
+        var unreachables = values.filter { it.value.unreachability is Unreachability.Top }.toMutableMap()
+        while (unreachables.isNotEmpty()) {
+            removeUnreachables(unreachables)
             run()
             mm.repOk()
         }
@@ -211,15 +213,35 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     }
 
     /* returns false when no change */
-    private fun removeUnreachables(): Boolean {
-        val remove = mm.fastNodesWithPredecessors().firstOrNull {
-            it !is CFGNode.Start && bigMeet(mm.predecessorEdges(it)).unreachability is Unreachability.Top
-        };
-        if (remove != null) {
-            mm.removeNode(remove)
-            println("removing ${remove.pretty}")
-            return true
+
+    private fun removeUnreachables(remaining : MutableMap<Edge, Info>) {
+        remaining.forEach {
+            val unreachedEdge = it.key
+            when (val lastReachedNode = unreachedEdge.from) {
+                is CFGNode.If -> {
+                    val preIfEdges = mm.predecessorEdges(lastReachedNode)
+                    if (unreachedEdge.jump) {
+                        preIfEdges.forEach {
+                            mm.translate(it.from, lastReachedNode, mm.fallThrough(lastReachedNode)!!)
+                        }
+                    } else {
+                        preIfEdges.forEach {
+                            mm.translate(it.from, lastReachedNode, mm.jumpingTo(lastReachedNode)!!)
+                        }
+                    }
+                }
+                else -> {
+                    mm.removeNode(unreachedEdge.node)
+                }
+            }
         }
-        return false
+//        val remove = mm.fastNodesWithPredecessors().firstOrNull {
+//            it !is CFGNode.Start && bigMeet(mm.predecessorEdges(it)).unreachability is Unreachability.Top
+//        }
+//        if (remove != null) {
+//            mm.removeNode(remove)
+//            return true
+//        }
+//        return false
     }
 }
