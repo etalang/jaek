@@ -7,7 +7,7 @@ import optimize.cfg.Edge
 class DeadCodeRem(cfg: CFG) : CFGFlow.Backward<DeadCodeRem.Info>(cfg), Properties.Use, Properties.Def, PostProc {
     private val mm = cfg.mm
 
-    data class Info(val live : Set<String>) : EdgeValues() {
+    data class Info(val live: Set<String>) : EdgeValues() {
         override val pretty: String get() = live.toString()
     }
 
@@ -28,25 +28,26 @@ class DeadCodeRem(cfg: CFG) : CFGFlow.Backward<DeadCodeRem.Info>(cfg), Propertie
     override val top: Info = Info(emptySet<String>())
     override val name: String = "Dead Code Removal"
     override fun postprocess() {
-        var deleteDead = true
-        while (deleteDead) {
+        var deleteDead = deleteDeadAssigns()
+        while (deleteDead.isNotEmpty()) {
+            runWithWorklist(deleteDead)
             deleteDead = deleteDeadAssigns()
-            run()
             mm.repOk()
         }
     }
 
-    private fun deleteDeadAssigns(): Boolean {
+    private fun deleteDeadAssigns(): Set<CFGNode> {
         // if a variable is defined and is not live-out, delete the thing
         val remove = mm.fastNodesWithPredecessors().firstOrNull {
             it !is CFGNode.Start &&
                     (it is CFGNode.Gets && !bigMeet(mm.successorEdges(it)).live.contains(it.varName)) // TODO: consider adding func gets - would be hard
         }
         if (remove != null) {
+            val changing = mm.predecessors(remove)
             mm.removeAndLink(remove)
-            return true
+            return changing
         }
-        return false
+        return emptySet()
     }
 
 
