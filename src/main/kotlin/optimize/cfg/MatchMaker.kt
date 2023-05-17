@@ -25,7 +25,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun nodesWithNoFallThroughsMinusStart(): List<CFGNode> {
-        println(predecessors)
         return predecessors.entries.filter { entry ->
             entry.key !is CFGNode.Start && entry.value.none { edgesIn -> !edgesIn.second }
         }.map { it.key }

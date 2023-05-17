@@ -32,10 +32,8 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     ).file(canBeDir = false).multiple()
 
     //OPTIMIZATIONS
-    //TODO: actually use values
     private val disableOpt: Boolean by option(
-        "-O",
-        help = "Prevents optimizations (e.g. constant folding) from happening."
+        "-O", help = "Prevents optimizations (e.g. constant folding) from happening."
     ).flag()
     private val oreg: Boolean by option("-Oreg", help = "Enable register allocation and move coalescing.").flag()
     private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
@@ -46,12 +44,10 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     private val outputParse: Boolean by option("--parse", help = "Generate output from parser").flag()
     private val outputTyping: Boolean by option("--typecheck", help = "Generate output from typechecking").flag()
     private val initOutputIR: Boolean by option(
-        "--irgen",
-        help = "Generate intermediate representation as SExpr"
+        "--irgen", help = "Generate intermediate representation as SExpr"
     ).flag()
     private val runIR: Boolean by option(
-        "--irrun",
-        help = "Generate and interpret intermediate representation (not fully supported)"
+        "--irrun", help = "Generate and interpret intermediate representation (not fully supported)"
     ).flag()
     private val dOpt = option(
         "-D",
@@ -83,12 +79,16 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         help = "Specify the operating system for which to generate code " + "Default is linux. No other OS is supported."
     ).default("linux")
     private val target: String by targetOpt
-    private val printIROpts : List<String> by option("--optir", metavar = "<phase>",
-        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
-    private val printCFGOpts : List<String> by option(
+    private val printIROpts: List<String> by option(
+        "--optir",
+        metavar = "<phase>",
+        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\"."
+    ).multiple()
+    private val printCFGOpts: List<String> by option(
         "--optcfg",
         metavar = "<phase>",
-        help ="Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
+        help = "Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\"."
+    ).multiple()
 
     /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
@@ -133,7 +133,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                     if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
                 val optCFGInitialFile: File? =
                     if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-                val optCFGFinalFile : File? =
+                val optCFGFinalFile: File? =
                     if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
@@ -148,16 +148,22 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                             when (ast) {
                                 is Program -> {
                                     val translator = IRTranslator(
-                                        ast,
-                                        it.nameWithoutExtension,
-                                        context
+                                        ast, it.nameWithoutExtension, context
                                     )
-                                    val ir =
-                                        translator.irgen(
-                                            if (disableOpt) Opt.None else Opt.All,
-                                            OutputIR(optIRInitialFile, optIRFinalFile),
-                                            Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
-                                        )
+                                    val optConfig = if (disableOpt) Opt.None else {
+                                        if (!ocopy && !odce && !oreg) Opt.All else {
+                                            val include = mutableListOf<Opt.Actions>()
+                                            if (ocopy) include.add(Opt.Actions.copy)
+                                            if (odce) include.add(Opt.Actions.dce)
+                                            if (oreg) include.add(Opt.Actions.reg)
+                                            Opt.Of(include)
+                                        }
+                                    }
+                                    val ir = translator.irgen(
+                                        optConfig, OutputIR(
+                                            optIRInitialFile, optIRFinalFile
+                                        ), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
+                                    )
                                     val irFileGen = ir.java
                                     irFile?.let {
                                         val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
@@ -269,11 +275,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
     @Throws(SemanticError::class)
     private fun typeCheck(
-        inFile: File,
-        ast: Node,
-        typedFile: File?,
-        libpath: String,
-        kompiler: Kompiler
+        inFile: File, ast: Node, typedFile: File?, libpath: String, kompiler: Kompiler
     ): typechecker.Context {
         try {
             val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
