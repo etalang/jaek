@@ -3,20 +3,20 @@ use conv
 
 main(args : int[][]){
     ret1:int[], ret2:int[], ret3:int[], ret4:int[], ret5:int[] = fmanyargmanyret(6,7,8,9,10,11,12)
-    println(unparseInt(ret1[0]))
-    println(unparseInt(ret2[0]))
-    println(unparseInt(ret3[0]))
-    println(unparseInt(ret4[0]))
-    println(unparseInt(ret5[0]))
+//    println(unparseInt(ret1[0]))
+//    println(unparseInt(ret2[0]))
+//    println(unparseInt(ret3[0]))
+//    println(unparseInt(ret4[0]))
+//    println(unparseInt(ret5[0]))
 }
 
 fmanyargmanyret(arg1:int,arg2: int, arg3: int,arg4: int, arg5:int,arg6: int, arg7: int) : int[],int[],int[],int[],int[] {
     println(unparseInt(arg1))
     println(unparseInt(arg2))
-    println(unparseInt(arg3))
-    println(unparseInt(arg4))
-    println(unparseInt(arg5))
-    println(unparseInt(arg6))
-    println(unparseInt(arg7))
+//    println(unparseInt(arg3))
+//    println(unparseInt(arg4))
+//    println(unparseInt(arg5))
+//    println(unparseInt(arg6))
+//    println(unparseInt(arg7))
     return {8,324},{9,3043,304040},{10},{11,-1203},{12,555}
 }

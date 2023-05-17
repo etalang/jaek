@@ -101,9 +101,19 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 freeze(worklist)
             else if (worklist.spillWorkList.isNotEmpty())
                 selectSpill(worklist)
-        } while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
-            || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()
-        )
+        }
+//        do {
+//            if (worklist.simplifyWorkList.isNotEmpty())
+//                simplify(worklist)
+//            else if (worklist.worklistMoves.isNotEmpty())
+//                coalesce(worklist)
+//            else if (worklist.freezeWorkList.isNotEmpty())
+//                freeze(worklist)
+//            else if (worklist.spillWorkList.isNotEmpty())
+//                selectSpill(worklist)
+//        } while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
+//            || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()
+//        )
 
         // COLORING
         worklist.assignColors()

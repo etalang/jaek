@@ -58,19 +58,25 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val cfg : CFG
         }
         for (p in precolored) {
             adjList[p] = mutableSetOf()
-            degrees[p] = 0
+            degrees[p] = Int.MAX_VALUE
             colors[p] = p.name.ordinal
+        }
+
+        for (p1 in precolored) {
+            for (p2 in precolored) {
+                addEdge(p1, p2)
+                addEdge(p2, p1)
+            }
         }
 
         for (conflictSet in liveIns.values) {
             for (u in conflictSet) { // more elegant way to iterate over all pairs?
                 for (v in conflictSet) {
-                    if (u != v) {
 //                        if (u is Abstract)
-                        addEdge(u, v)
+                    addEdge(u, v)
 //                        if (v is Abstract)
-                        addEdge(v, u)
-                    }
+                    addEdge(v, u)
+
                 }
             }
         }
