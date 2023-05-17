@@ -8,7 +8,7 @@ import assembly.x86.Register.*
 import assembly.x86.Source
 import java.util.*
 
-class Worklist(val ig: InterferenceGraph, val K: Int, val insns: List<Instruction>) {
+class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>, m: Set<Move>) {
     // WORKLISTS/DATA STRUCTURE DECLARATIONS
     val initial = mutableSetOf<Abstract>()
 
@@ -24,7 +24,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int, val insns: List<Instructio
     /// MOVE INSTRUCTIONS -- the following sets of move insns should be all disjoint from each other
     val coalescedMoves = mutableSetOf<Move>()
     val constrainedMoves = mutableSetOf<Move>()
-    val worklistMoves = mutableSetOf<Move>()
+    val worklistMoves = m.toMutableSet()
     val frozenMoves = mutableSetOf<Move>()
     val activeMoves = mutableSetOf<Move>()
 

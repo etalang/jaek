@@ -1,5 +1,6 @@
 package assembly.LVA
 
+import assembly.x86.Instruction
 import assembly.x86.Register
 import assembly.x86.x86FuncDecl
 import optimize.IROptimizer.Graphable
@@ -25,6 +26,10 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
             outEdges.forEach { out = out union (inVals[it] ?: emptySet()) }
             outVals[node] = out
             val oldIn = inVals[node]
+            if (node.insn is Instruction.PUSH) {
+                println("push on charles")
+
+            }
             val newIn = node.insn.use union (out - node.insn.def)
             if (newIn != oldIn) {
                 inVals[node] = newIn
@@ -33,6 +38,11 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
         }
 
         liveIn = inVals
+        liveIn.forEach {
+            if (!it.value.contains(Register.x86(Register.x86Name.RSP))) {
+                println()
+            }
+        }
         liveOut = outVals
     }
 

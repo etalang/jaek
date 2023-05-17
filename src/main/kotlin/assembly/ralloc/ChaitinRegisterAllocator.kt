@@ -97,7 +97,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         File("dataflow${n.name}${debugLoopCtr}.dot").writeText(dataflow.graphViz())
 
         // BUILD INTERFERENCE GRAPH
-        val interferenceGraph = InterferenceGraph(dataflow)
+        val interferenceGraph = InterferenceGraph(dataflow, n.body.flatMap { it.involved }.toSet())
 
         // WORKLISTS DECLARATIONS/INITIALIZATION
         val worklist = Worklist(interferenceGraph, K, n.body)
@@ -109,10 +109,10 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                     it.insn.dest.r, it.insn.src.r
                 )
                 for (reg in (it.insn.def union it.insn.use)) {
-                    interferenceGraph.moveList[reg]!!.add(move)
+                    interferenceGraph.moveList.computeIfAbsent(reg) { mutableSetOf() }.add(move)
                     //TODO: maybe sub from live if we are bold
                 }
-                worklist.worklistMoves.add(move)
+                worklistMoves.add(move)
             }
             val live = dataflow.liveOut[it]!! union it.insn.def
             for (d in it.insn.def) {
@@ -134,12 +134,12 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 
         // COLORING
         worklist.assignColors()
+        println(interferenceGraph.colors)
 
         // check for spills -- if there are spills, have to repeat >.<
         return if (worklist.spilledNodes.isNotEmpty()) {
             val spillInsns = rewriteSpills(n, worklist)
             val nextFuncDecl = x86FuncDecl(n.name, spillInsns)
-//            println(nextFuncDecl)
             File("assemblyIteration${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
             chitLoop(nextFuncDecl)
         } else {

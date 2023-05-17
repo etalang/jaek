@@ -4,9 +4,10 @@ import assembly.LVA.LiveVariableAnalysis
 import assembly.x86.Register
 import assembly.x86.Register.x86
 import optimize.IROptimizer
+import java.util.*
 
 /** InterferenceGraph represents the interferences of all registers? (abstract registers) with other registers */
-class InterferenceGraph(val dataflow: LiveVariableAnalysis) : IROptimizer.Graphable {
+class InterferenceGraph(val dataflow: LiveVariableAnalysis, involved : Set<Register.Abstract>) : IROptimizer.Graphable {
     val adjList: MutableMap<Register, MutableSet<Register>> = mutableMapOf()
     val adjSet: MutableSet<Pair<Register, Register>> = mutableSetOf()
     val degrees: MutableMap<Register, Int> = mutableMapOf()
@@ -18,6 +19,13 @@ class InterferenceGraph(val dataflow: LiveVariableAnalysis) : IROptimizer.Grapha
 
     val colors: MutableMap<Register, Int> = mutableMapOf()
 
+
+    init {
+        for (temp in involved) {
+            adjList[temp] = mutableSetOf()
+            degrees[temp] = 0
+        }
+    }
 
     fun addEdge(u: Register, v: Register) {
         if (Pair(u, v) !in adjSet && u != v) {
@@ -37,7 +45,7 @@ class InterferenceGraph(val dataflow: LiveVariableAnalysis) : IROptimizer.Grapha
 
     override fun graphViz(): String {
         return buildString {
-            appendLine("digraph INTERFERE {")
+            appendLine("graph INTERFERE {")
             appendLine("\trankdir=\"TB\"")
             appendLine("\tfontname = \"Helvetica,Arial,sans-serif\";")
             appendLine("\tnode [fontname = \"Helvetica,Arial,sans-serif\";];")
@@ -46,7 +54,13 @@ class InterferenceGraph(val dataflow: LiveVariableAnalysis) : IROptimizer.Grapha
             adjList.keys.forEach {
                 appendLine("\t${
                     it.toString().filter { it != '$' }
-                } [shape=rectangle; label=\"${it}, ${colors[it]!!}\";];")
+                } [shape=rectangle; label=\"${it}, ${colors[it]}\";];")
+            }
+
+            Register.x86Name.values().forEach {
+                appendLine("\t${
+                    it.toString().lowercase()
+                } [shape=rectangle; label=\"$it\";];")
             }
 
             adjList.forEach { startReg, regSet ->
