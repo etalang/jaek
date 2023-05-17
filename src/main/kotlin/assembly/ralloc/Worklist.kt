@@ -31,17 +31,21 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
 
     init {
         for (reg in ig.degrees.keys) {
-            if (ig.degrees[reg]!! >= K) {
-                spillWorkList.add(reg)
+            if (reg is Abstract) {
+                if (ig.degrees[reg]!! >= K) {
+                    spillWorkList.add(reg)
+                }
+                else if (moveRelated(reg)) {
+                    freezeWorkList.add(reg)
+                }
+                else {
+                    simplifyWorkList.add(reg)
+                }
             }
-            else if (moveRelated(reg)) {
-                freezeWorkList.add(reg)
-            }
-            else {
-                simplifyWorkList.add(reg)
-            }
+
         }
         //// INITIALIZE MOVE INSTRUCTION WORKLIST
+        // unless workListMoves is like ordered it's fine
         for (insn in insns) {
             if (insn is Instruction.MOV)
                 if (insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc)
@@ -52,7 +56,7 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     /* HELPERS FOR ANALYZING NODES */
 
     fun nodeMoves(n : Register) : Set<Move> {
-        return ig.moveList[n]?.minus(activeMoves union worklistMoves) ?: emptySet()
+        return ig.moveList[n]?.intersect(activeMoves union worklistMoves) ?: emptySet()
     }
     fun moveRelated(n : Register) : Boolean {
         return nodeMoves(n).isNotEmpty()
@@ -63,7 +67,7 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     }
 
     /* REQUIRED FOR SIMPLIFY */
-    fun decrementDegree(m : Abstract) {
+    fun decrementDegree(m : Register) {
         val d = ig.degrees[m]
         ig.degrees[m] = d?.minus(1) ?: 0
         if (d != null && d == K) {
@@ -82,16 +86,15 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
 
     fun enableMoves(nodes : Set<Register>) {
         for (n in nodes) {
-            if (n is Abstract) {
-                for (m in nodeMoves(n)) {
-                    if (activeMoves.contains(m)) {
-                        activeMoves.remove(m)
-                        worklistMoves.add(m)
-                    }
+            for (m in nodeMoves(n)) {
+                if (activeMoves.contains(m)) {
+                    activeMoves.remove(m)
+                    worklistMoves.add(m)
                 }
             }
         }
     }
+
     /* REQUIRED FOR COALESCE */
     fun addWorkList(u : Register) {
         if (u is Abstract && !(moveRelated(u))) {

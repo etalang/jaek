@@ -146,8 +146,8 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         worklist.selectStack.add(reg)
         val adjs = worklist.adjacent(reg)
         for (neighbor in adjs) {
-            if (neighbor is Abstract)
-                worklist.decrementDegree(neighbor)
+//            if (neighbor is Abstract)
+            worklist.decrementDegree(neighbor)
         }
     }
 
@@ -194,14 +194,15 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     }
 
     private fun heuristic(regSet : Set<Register>) : Register {
-//        val nonSpills = mutableSetOf<Register>()
-//        for (reg in regSet) {
-//            if (reg is Abstract && !reg.name.startsWith("\$S")) {
-//                nonSpills.add(reg)
-//            }
-//        }
-//        if (nonSpills.isNotEmpty())
-//            return nonSpills.last()
+        // HEURISTIC: TRY TO PICK A NON-SPILLED NODE
+        val nonSpills = mutableSetOf<Register>()
+        for (reg in regSet) {
+            if (reg is Abstract && !reg.name.startsWith("\$S")) {
+                nonSpills.add(reg)
+            }
+        }
+        if (nonSpills.isNotEmpty())
+            return nonSpills.random()
         return regSet.random()
     }
 
@@ -212,7 +213,8 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         worklist.freezeMoves(m)
     }
 
-    /** replaceMap is a map mapping every abstract register in the function body to the corresponding */
+    /** replaceMap is a map mapping every abstract register in the function body to the corresponding x86 register.
+     * indices map the register at that index in regOrder */
     override fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int): x86 {
         return when (r) {
             is Abstract -> {
