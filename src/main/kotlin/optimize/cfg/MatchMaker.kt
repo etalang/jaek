@@ -49,6 +49,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
+        repOp()
         if (!jump && predecessors[to]?.any { !it.second } == true) {
             val dummy = CFGNode.NOOP()
             connect(from, dummy, false)
@@ -62,6 +63,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 it.add(Pair(from, jump))
             }
         }
+        repOp()
     }
 
     /**
@@ -98,10 +100,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         }
     }
 
-    /* Remove a node that is useless. Requires that the node has at most ONE successor! */
+    /* Remove a node that is useless.*/
     fun removeNode(node: CFGNode) {
-        require(successors(node).size < 2)
-
         //REMOVE CONNECTIONS IN
         val aboutToScrewWith = predecessors[node]?.toSet()
         aboutToScrewWith?.let {
