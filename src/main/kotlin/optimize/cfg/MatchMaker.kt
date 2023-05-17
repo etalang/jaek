@@ -7,6 +7,21 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     /* node to fall-throughs and jumps */
     private val successors: MutableMap<CFGNode, Successors> = mutableMapOf()
 
+    fun repOp() {
+        allNodes().forEach {
+            predecessors[it]?.forEach { (pred, jump) ->
+                if (jump) require(jumpingTo(pred) == it)
+                else require(fallThrough(pred) == it)
+            }
+            require((predecessors[it]?.filter { it.second }?.size ?: 0) < 2)
+            require((predecessors[it]?.filter { !it.second }?.size ?: 0) < 2)
+            successors[it]?.let { l ->
+                l.fallThrough?.let { succ -> require(predecessors[succ]?.contains(Pair(it, false)) ?: false) }
+                l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
+            }
+        }
+    }
+
     fun allNodes(): Set<CFGNode> {
         return predecessors.keys union successors.keys
     }
@@ -20,8 +35,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun nodesWithJumpInto(): Set<CFGNode> {
-        return predecessors.entries.filter { entry -> entry.value.any { edgesIn -> edgesIn.second } }
-            .map { it.key }.toSet()
+        return predecessors.entries.filter { entry -> entry.value.any { edgesIn -> edgesIn.second } }.map { it.key }
+            .toSet()
     }
 
     fun nodesWithNoFallThroughsMinusStart(): List<CFGNode> {
@@ -166,7 +181,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 require(jumpNode == null)
                 jumpNode = node
             } else {
-                require(fallThrough==null)
+                require(fallThrough == null)
                 fallThrough = node
             }
         }
