@@ -17,20 +17,18 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
         val funcFile = outputCFG.getOutFile(lir.name, "initial")
         funcFile?.writeText(cfg.graphViz())
 
-        for (i in 1 until 5) {
-            if (optimize.desire(Settings.Opt.Actions.cp)) {
-                val ccp = CondConstProp(cfg)
-                ccp.run()
-                ccp.postprocess()
-            }
+        if (optimize.desire(Settings.Opt.Actions.cp)) {
+            val ccp = CondConstProp(cfg)
+            ccp.run()
+            ccp.postprocess()
+            val lir = CFGDestroyer(cfg, lir).destroy()
+            cfg = CFGBuilder(lir).build()
+        }
 
-            if (optimize.desire(Settings.Opt.Actions.dce)) {
-                val dce = DeadCodeRem(cfg)
-                dce.run()
-                dce.postprocess()
-                val lir = CFGDestroyer(cfg, lir).destroy()
-                cfg = CFGBuilder(lir).build()
-            }
+        if (optimize.desire(Settings.Opt.Actions.dce)) {
+            val dce = DeadCodeRem(cfg)
+            dce.run()
+            dce.postprocess()
         }
 
         val postFile = outputCFG.getOutFile(lir.name, "final")

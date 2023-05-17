@@ -217,7 +217,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         };
         if (remove != null) {
             mm.removeNode(remove)
-            println(remove.pretty)
+            println("removing ${remove.pretty}")
             return true
         }
         return false
