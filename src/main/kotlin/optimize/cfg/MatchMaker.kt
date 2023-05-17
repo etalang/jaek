@@ -18,6 +18,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 l.fallThrough?.let { succ -> require(predecessors[succ]?.contains(Pair(it, false)) ?: false) }
                 l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
             }
+            if (it is CFGNode.If) require(successorEdges(it).let { it.size==2 || it.size==0  })
         }
     }
 
@@ -53,7 +54,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
-        repOk()
         if (!jump && predecessors[to]?.any { !it.second } == true) {
             val dummy = CFGNode.NOOP()
             connect(from, dummy, false)
@@ -67,7 +67,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 it.add(Pair(from, jump))
             }
         }
-        repOk()
     }
 
     /**
@@ -112,6 +111,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
             it.forEach { (pred, jump) ->
                 removeConnection(pred, node, jump)
                 if (pred is CFGNode.If) {
+                    println("bad pred now?")
                     removeAndLink(pred)
                 }
             }

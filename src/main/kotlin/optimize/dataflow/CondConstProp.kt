@@ -143,17 +143,11 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     override fun postprocess() {
         var checkUnreach = true
         var checkIf = true
-//        var unreachables = values.filter { it.value.unreachability is Unreachability.Top }.toMutableMap()
-//        while (checkUnreach) {
-//            checkUnreach = removeUnreachables()
-//            run()
-//            mm.repOk()
-//        }
-//        while (checkIf) {
-//            checkIf = uselessIfs()
-//            run()
-//            mm.repOk()
-//        }
+        while (checkUnreach) {
+            checkUnreach = removeUnreachables()
+            run()
+            mm.repOk()
+        }
         run()
         constantPropogate()
         mm.repOk()
@@ -250,18 +244,22 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 ////        }
 ////        return false
 
-//        private fun removeUnreachables(): Boolean {
-////        val remove = values.filter { it.value.unreachability is Unreachability.Top && mm.predecessors(it.key.node).isNotEmpty() && mm.successors(it.v) }.map { it.key }.firstOrNull()
-//        val remove = mm.nodesWithPredecessorEdges().firstOrNull { values[it]?.unreachability is Unreachability.Top }
-//        if (remove != null) {
-//            println(remove)
-//            mm.removeConnection(remove.from, remove.node, remove.jump)
-////            println("yeet")
-//            return true
-//        }
-//        println("we out")
-//        return false
-//    }
+        private fun removeUnreachables(): Boolean {
+        val remove = mm.nodesWithPredecessorEdges().firstOrNull { values[it]?.unreachability is Unreachability.Top }
+        if (remove != null) {
+            println(remove)
+            mm.removeConnection(remove.from, remove.node, remove.jump)
+            if (remove.from is CFGNode.If && mm.successorEdges(remove.from).size==1) {
+                mm.removeAndLink(remove.from)
+            }
+            if (remove.node is CFGNode.If && mm.successorEdges(remove.node).size==1) {
+                mm.removeAndLink(remove.node)
+            }
+//            println("yeet")
+            return true
+        }
+        return false
+    }
 //
 //    private fun uselessIfs(): Boolean {
 //        val remove =

@@ -18,7 +18,7 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, val outputCFG: S
         val funcFile = outputCFG.getOutFile(lir.name, "initial")
         funcFile?.writeText(cfg.graphViz())
 
-        for (i in 0 until 2) {
+        for (i in 0 until 5) {
             if (optimize.desire(Settings.Opt.Actions.cp)) {
                 val ccp = CondConstProp(cfg)
                 ccp.run()
