@@ -10,7 +10,7 @@ import optimize.dataflow.DeadCodeRem
 import java.io.File
 
 class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Settings.OutputCFG) {
-    val cfg: CFG
+    var cfg: CFG
 
     init {
         val builder = CFGBuilder(lir)
@@ -18,21 +18,28 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
         val funcFile = outputCFG.getOutFile(lir.name, "initial")
         funcFile?.writeText(cfg.graphViz())
 
-        for(i in 1 until 5) {
-            if (optimize.desire(Settings.Opt.Actions.cp)) {
-                val ccp = CondConstProp(cfg)
-                ccp.run()
-                ccp.postprocess()
-            }
-
-            if (optimize.desire(Settings.Opt.Actions.dce)) {
-                val dce = DeadCodeRem(cfg)
-                dce.run()
-//            File("dce.dot").writeText(dce.graphViz())
-                dce.postprocess()
-            }
+//        for(i in 1 until 5) {
+        if (optimize.desire(Settings.Opt.Actions.cp)) {
+            val ccp = CondConstProp(cfg)
+            ccp.run()
+            ccp.postprocess()
+            if (lir.name=="_ImakeRotor_t3aaiaaiiai")
+                File("predestroy.dot").writeText(cfg.graphViz())
+            val lir = CFGDestroyer(cfg, lir).destroy()
+            cfg = CFGBuilder(lir).build()
+            if (lir.name=="_ImakeRotor_t3aaiaaiiai")
+                File("afterdestroy.dot").writeText(cfg.graphViz())
         }
 
+        if (optimize.desire(Settings.Opt.Actions.dce)) {
+            val dce = DeadCodeRem(cfg)
+            dce.run()
+//            File("dce.dot").writeText(dce.graphViz())
+            dce.postprocess()
+            val lir = CFGDestroyer(cfg, lir).destroy()
+            cfg = CFGBuilder(lir).build()
+        }
+//        }
 
 
         val postFile = outputCFG.getOutFile(lir.name, "final")

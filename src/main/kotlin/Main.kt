@@ -92,206 +92,216 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
     /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
-        // the irrun flag should also generate the IR, just like irgen
-        val outputIR = if (runIR) true else initOutputIR
-        if (target != "linux") {
-            throw BadParameterValue("The only supported OS is linux", targetOpt)
-        }
-        val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
-        val absSourcepath = processDirPath(sourcepath, sourceOpt)
-        val absLibpath = processDirPath(libpath, libOpt)
-        val absAssemPath = processDirPath(assemblyRelPath, assemOpt)
+        for (i in 1..1) {
+            // the irrun flag should also generate the IR, just like irgen
+            val outputIR = if (runIR) true else initOutputIR
+            if (target != "linux") {
+                throw BadParameterValue("The only supported OS is linux", targetOpt)
+            }
+            val absDiagnosticPath = processDirPath(diagnosticRelPath, dOpt)
+            val absSourcepath = processDirPath(sourcepath, sourceOpt)
+            val absLibpath = processDirPath(libpath, libOpt)
+            val absAssemPath = processDirPath(assemblyRelPath, assemOpt)
 
-        val expandedFiles = files.map {
-            File(expandPath(it.path).toString())
-        }
+            val expandedFiles = files.map {
+                File(expandPath(it.path).toString())
+            }
 
-        val folderFiles = expandedFiles.map {
-            if (it.isAbsolute) it else File(absSourcepath.toString(), it.path)
-        }
+            val folderFiles = expandedFiles.map {
+                if (it.isAbsolute) it else File(absSourcepath.toString(), it.path)
+            }
 
-        folderFiles.forEach {
-            val kompiler = Kompiler()
-            //the only files accepts must exist at sourcepath & be eta/eti files
-            if (it.exists() && (it.extension == "eta" || it.extension == "eti" || it.extension == "rh" || it.extension == "ri")) {
-                // TODO: pull out it, absDisgnosticPath
-                val lexedFile: File? =
-                    if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
-                val parsedFile: File? =
-                    if (outputParse && !disableOutput) getOutFileName(it, absDiagnosticPath, ".parsed") else null
-                val typedFile: File? =
-                    if (outputTyping && !disableOutput) getOutFileName(it, absDiagnosticPath, ".typed") else null
-                val irFile: File? =
-                    if (outputIR && !disableOutput) getOutFileName(it, absDiagnosticPath, ".ir") else null
-                // adding assembly file -- might be unsafe LOL
-                // TODO: test output assembly file to new -d path
-                val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, ".s") else null
+            folderFiles.forEach {
+                val kompiler = Kompiler()
+                //the only files accepts must exist at sourcepath & be eta/eti files
+                if (it.exists() && (it.extension == "eta" || it.extension == "eti" || it.extension == "rh" || it.extension == "ri")) {
+                    // TODO: pull out it, absDisgnosticPath
+                    val lexedFile: File? =
+                        if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
+                    val parsedFile: File? =
+                        if (outputParse && !disableOutput) getOutFileName(it, absDiagnosticPath, ".parsed") else null
+                    val typedFile: File? =
+                        if (outputTyping && !disableOutput) getOutFileName(it, absDiagnosticPath, ".typed") else null
+                    val irFile: File? =
+                        if (outputIR && !disableOutput) getOutFileName(it, absDiagnosticPath, ".ir") else null
+                    // adding assembly file -- might be unsafe LOL
+                    // TODO: test output assembly file to new -d path
+                    val assemblyFile: File? = if (!disableOutput) getOutFileName(it, absAssemPath, "$i.s") else null
 
-                val optIRInitialFile =
-                    if (printIROpts.contains("initial")) getOutFileName(it, absDiagnosticPath, "_initial.ir") else null
-                val optIRFinalFile =
-                    if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
-                val optCFGInitialFile: File? =
-                    if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-                val optCFGFinalFile: File? =
-                    if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-                // TODO: output path for these three pending response to my Ed post since seems weird
+                    val optIRInitialFile =
+                        if (printIROpts.contains("initial")) getOutFileName(
+                            it,
+                            absDiagnosticPath,
+                            "_initial.ir"
+                        ) else null
+                    val optIRFinalFile =
+                        if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
+                    val optCFGInitialFile: File? =
+                        if (printCFGOpts.contains("initial")) getOutFileName(
+                            it,
+                            absDiagnosticPath,
+                            ".ignored"
+                        ) else null
+                    val optCFGFinalFile: File? =
+                        if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
+                    // TODO: output path for these three pending response to my Ed post since seems weird
 
-                val ast: Node?
-                try {
-                    lex(it, lexedFile)
+                    val ast: Node?
                     try {
-                        ast = parse(it, parsedFile)
+                        lex(it, lexedFile)
                         try {
-                            val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
+                            ast = parse(it, parsedFile)
+                            try {
+                                val context = typeCheck(it, ast, typedFile, absLibpath.toString(), kompiler)
 
-                            when (ast) {
-                                is Program -> {
-                                    val translator = IRTranslator(
-                                        ast, it.nameWithoutExtension, context
-                                    )
-                                    val optConfig = if (disableOpt) Opt.None else {
-                                        if (!ocopy && !odce && !oreg) Opt.All else {
-                                            val include = mutableListOf<Opt.Actions>()
-                                            if (ocopy) include.add(Opt.Actions.copy)
-                                            if (odce) include.add(Opt.Actions.dce)
-                                            if (oreg) include.add(Opt.Actions.reg)
-                                            Opt.Of(include)
+                                when (ast) {
+                                    is Program -> {
+                                        val translator = IRTranslator(
+                                            ast, it.nameWithoutExtension, context
+                                        )
+                                        val optConfig = if (disableOpt) Opt.None else {
+                                            if (!ocopy && !odce && !oreg) Opt.All else {
+                                                val include = mutableListOf<Opt.Actions>()
+                                                if (ocopy) include.add(Opt.Actions.copy)
+                                                if (odce) include.add(Opt.Actions.dce)
+                                                if (oreg) include.add(Opt.Actions.reg)
+                                                Opt.Of(include)
+                                            }
                                         }
-                                    }
-                                    val ir = translator.irgen(
-                                        optConfig, OutputIR(
-                                            optIRInitialFile, optIRFinalFile
-                                        ), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
-                                    )
-                                    val irFileGen = ir.java
-                                    irFile?.let {
-                                        val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
-                                        irFileGen.printSExp(writer)
-                                        writer.flush()
-                                        writer.close()
+                                        val ir = translator.irgen(
+                                            optConfig, OutputIR(
+                                                optIRInitialFile, optIRFinalFile
+                                            ), Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
+                                        )
+                                        val irFileGen = ir.java
+                                        irFile?.let {
+                                            val writer = CodeWriterSExpPrinter(PrintWriter(irFile))
+                                            irFileGen.printSExp(writer)
+                                            writer.flush()
+                                            writer.close()
+                                        }
+
+                                        try {
+                                            val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
+                                            val assemblyAssembler = AssemblyGenerator(ir, funcMap)
+                                            // print to file.s
+                                            val assembly = assemblyAssembler.generate()
+                                            assemblyFile?.writeText(assembly)
+                                        } catch (e: Throwable) {
+                                            assemblyFile?.writeText("Failed to generate assembly for " + it.name)
+                                            if (!disableOutput) println("Failed to generate assembly for " + it.name)
+                                        }
+
                                     }
 
-                                    try {
-                                        val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
-                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
-                                        // print to file.s
-                                        val assembly = assemblyAssembler.generate()
-                                        assemblyFile?.writeText(assembly)
-                                    } catch (e: Throwable) {
-                                        assemblyFile?.writeText("Failed to generate assembly for " + it.name)
-                                        if (!disableOutput) println("Failed to generate assembly for " + it.name)
+                                    is Interface -> {
+                                        irFile?.appendText("Cannot generate IR for an eti file.")
                                     }
 
+                                    else -> {}
                                 }
-
-                                is Interface -> {
-                                    irFile?.appendText("Cannot generate IR for an eti file.")
-                                }
-
-                                else -> {}
+                                // we are sticking with the class IR rep, and do not implement irrun
+                                if (runIR) throw ProgramResult(2)
+                            } catch (e: CompilerError) {
+                                if (!disableOutput) println(e.log)
                             }
-                            // we are sticking with the class IR rep, and do not implement irrun
-                            if (runIR) throw ProgramResult(2)
-                        } catch (e: CompilerError) {
+                        } catch (e: ParseError) {
                             if (!disableOutput) println(e.log)
+                            parsedFile?.appendText(e.mini)
+                            typedFile?.appendText(e.mini)
                         }
-                    } catch (e: ParseError) {
+                    } catch (e: LexicalError) {
                         if (!disableOutput) println(e.log)
                         parsedFile?.appendText(e.mini)
                         typedFile?.appendText(e.mini)
                     }
-                } catch (e: LexicalError) {
-                    if (!disableOutput) println(e.log)
-                    parsedFile?.appendText(e.mini)
-                    typedFile?.appendText(e.mini)
+                } else {
+                    echo("Skipping $it due to invalid file.")
                 }
-            } else {
-                echo("Skipping $it due to invalid file.")
             }
         }
     }
+}
 
-    /** Takes a path string and expands beginning home reference ~ along with any instances of . and .. */
-    private fun expandPath(inPath: String): Path {
-        return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
+/** Takes a path string and expands beginning home reference ~ along with any instances of . and .. */
+private fun expandPath(inPath: String): Path {
+    return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
+}
+
+/**
+ * Expand and make absolute a possibly relative directory path. Validate the directory existence.
+ *
+ * @throws BadParameterValue when the directory is invalid
+ */
+private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
+    val expandedInPath = expandPath(inPath)
+
+    val absInPath = when {
+        (expandedInPath.isAbsolute) -> expandedInPath
+        else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
     }
 
-    /**
-     * Expand and make absolute a possibly relative directory path. Validate the directory existence.
-     *
-     * @throws BadParameterValue when the directory is invalid
-     */
-    private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
-        val expandedInPath = expandPath(inPath)
+    if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
+        text = "The file location must be an existing directory.", option = option
+    )
+    return absInPath
+}
 
-        val absInPath = when {
-            (expandedInPath.isAbsolute) -> expandedInPath
-            else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
-        }
-
-        if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
-            text = "The file location must be an existing directory.", option = option
-        )
-        return absInPath
+private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String): File {
+    val outFileName = inFile.nameWithoutExtension + extension
+    val outFile = File(diagnosticPath.toString(), outFileName)
+    if (outFile.exists() && !outFile.isDirectory) {
+        outFile.delete()
     }
+    outFile.createNewFile()
+    return outFile
+}
 
-    private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String): File {
-        val outFileName = inFile.nameWithoutExtension + extension
-        val outFile = File(diagnosticPath.toString(), outFileName)
-        if (outFile.exists() && !outFile.isDirectory) {
-            outFile.delete()
-        }
-        outFile.createNewFile()
-        return outFile
-    }
-
-    @Throws(LexicalError::class)
-    private fun lex(inFile: File, lexedFile: File?) {
-        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
-        while (true) {
-            try {
-                val t: Symbol = (jFlexLexer.next_token() ?: break)
-                if (t.sym == SymbolTable.EOF) break
-                lexedFile?.appendText((t as Token<*>).lexInfo() + "\n")
-            } catch (e: LexicalError) {
-                lexedFile?.appendText("${e.mini}\n")
-                throw e
-            }
-        }
-    }
-
-    @Throws(ParseError::class)
-    private fun parse(inFile: File, parsedFile: File?): Node {
-        val AST = ASTUtil.getAST(inFile.absoluteFile)
-        parsedFile?.let {
-            val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
-            AST.write(writer)
-            writer.flush()
-            writer.close()
-        }
-        return AST
-    }
-
-    @Throws(SemanticError::class)
-    private fun typeCheck(
-        inFile: File, ast: Node, typedFile: File?, libpath: String, kompiler: Kompiler
-    ): typechecker.Context {
+@Throws(LexicalError::class)
+private fun lex(inFile: File, lexedFile: File?) {
+    val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
+    while (true) {
         try {
-            val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
-            var tc = TypeChecker(topGamma, inFile)
-            if (ast !is Interface) {
-                tc.typeCheck(ast)
-            }
-            typedFile?.appendText("Valid Eta Program")
-            return tc.Gamma
-        } catch (e: CompilerError) {
-            // only append if error in import has not already been appended inside cTLC
-            if (e.file == inFile) typedFile?.appendText(e.mini)
+            val t: Symbol = (jFlexLexer.next_token() ?: break)
+            if (t.sym == SymbolTable.EOF) break
+            lexedFile?.appendText((t as Token<*>).lexInfo() + "\n")
+        } catch (e: LexicalError) {
+            lexedFile?.appendText("${e.mini}\n")
             throw e
         }
     }
-
 }
+
+@Throws(ParseError::class)
+private fun parse(inFile: File, parsedFile: File?): Node {
+    val AST = ASTUtil.getAST(inFile.absoluteFile)
+    parsedFile?.let {
+        val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
+        AST.write(writer)
+        writer.flush()
+        writer.close()
+    }
+    return AST
+}
+
+@Throws(SemanticError::class)
+private fun typeCheck(
+    inFile: File, ast: Node, typedFile: File?, libpath: String, kompiler: Kompiler
+): typechecker.Context {
+    try {
+        val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
+        var tc = TypeChecker(topGamma, inFile)
+        if (ast !is Interface) {
+            tc.typeCheck(ast)
+        }
+        typedFile?.appendText("Valid Eta Program")
+        return tc.Gamma
+    } catch (e: CompilerError) {
+        // only append if error in import has not already been appended inside cTLC
+        if (e.file == inFile) typedFile?.appendText(e.mini)
+        throw e
+    }
+}
+
 
 fun main(args: Array<String>) = Etac().main(args)

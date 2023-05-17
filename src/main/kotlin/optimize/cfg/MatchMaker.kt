@@ -49,13 +49,18 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
-        if (from.index == 97 || to.index == 97) {
-            println()
-        }
-        successors.computeIfAbsent(from) { Successors() }.set(to, jump)
-        predecessors.computeIfAbsent(to) { mutableSetOf() }.let {
-            require(jump || !it.any { !it.second })
-            it.add(Pair(from, jump))
+        if (!jump && predecessors[to]?.any { !it.second } == true) {
+            val dummy = CFGNode.NOOP()
+            connect(from, dummy, false)
+            connect(dummy, to, true)
+            println("SHIT'S FUNKY")
+            return
+        } else {
+            successors.computeIfAbsent(from) { Successors() }.set(to, jump)
+            predecessors.computeIfAbsent(to) { mutableSetOf() }.let {
+                require(jump || !it.any { !it.second })
+                it.add(Pair(from, jump))
+            }
         }
     }
 
@@ -70,7 +75,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
      */
     fun translate(a: CFGNode, b: CFGNode, c: CFGNode) {
         require(fallThrough(a) == b || jumpingTo(a) == b)
-        require(fallThrough(b) == c || jumpingTo(b) == c)
         val jumpAB = jumpingTo(a) == b
         val jumpBC = jumpingTo(b) == c
 
