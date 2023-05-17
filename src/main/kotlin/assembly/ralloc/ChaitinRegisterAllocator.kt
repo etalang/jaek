@@ -92,7 +92,8 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         val worklist = Worklist(interferenceGraph, K, n.body)
 
         // LOOP
-        do {
+        while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
+            || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()){
             if (worklist.simplifyWorkList.isNotEmpty())
                 simplify(worklist)
             else if (worklist.worklistMoves.isNotEmpty())
