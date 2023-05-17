@@ -20,14 +20,14 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun nodesWithJumpInto(): Set<CFGNode> {
-        return predecessors.entries.filter { entry -> entry.value.filter { edgesIn -> edgesIn.second }.isNotEmpty() }
+        return predecessors.entries.filter { entry -> entry.value.any { edgesIn -> edgesIn.second } }
             .map { it.key }.toSet()
     }
 
     fun nodesWithNoFallThroughsMinusStart(): List<CFGNode> {
         println(predecessors)
         return predecessors.entries.filter { entry ->
-            entry.key !is CFGNode.Start && entry.value.filter { edgesIn -> !edgesIn.second }.isEmpty()
+            entry.key !is CFGNode.Start && entry.value.none { edgesIn -> !edgesIn.second }
         }.map { it.key }
     }
 
@@ -41,9 +41,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         }
         successors.computeIfAbsent(from) { Successors() }.set(to, jump)
         predecessors.computeIfAbsent(to) { mutableSetOf() }.let {
-            if (it.any { !it.second } && !jump) {
-                throw Exception("MULTIPLE FALL THROUGHS INTO $to")
-            }
+            require(jump || !it.any { !it.second })
             it.add(Pair(from, jump))
         }
     }
@@ -157,11 +155,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 translate(pred, node, jumpTo)
             }
             return true
-        } else if (jumpTo != null && fallThrough != null && jumpTo == fallThrough) {
-            predecessors(node).forEach { pred ->
-                translate(pred, node, fallThrough)
-            }
-            return true
         }
         return false
     }
@@ -171,14 +164,10 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         var jumpNode: CFGNode? = null
         fun set(node: CFGNode, jump: Boolean) {
             if (jump) {
-                if (jumpNode != null) {
-                    throw Exception("cannot override jump!")
-                }
+                require(jumpNode == null)
                 jumpNode = node
             } else {
-                if (fallThrough != null) {
-                    throw Exception("cannot override fall through!")
-                }
+                require(fallThrough==null)
                 fallThrough = node
             }
         }

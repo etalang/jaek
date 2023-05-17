@@ -6,7 +6,6 @@ import ir.lowered.LIRStmt.*
 import optimize.cfg.CFGExpr.*
 import optimize.cfg.CFGExpr.Mem
 import optimize.cfg.CFGNode.*
-import java.util.StringJoiner
 
 class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     val body: LIRSeq
@@ -18,73 +17,61 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     private val sett = mutableSetOf<String>()
 
     init {
-//        if (func.name =="_ImakeRotor_t3aaiaaiiai") {
-            println(func.name)
-            mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
-            println(jumpLabels)
-            val parents = listOf(cfg.start) + mm.nodesWithNoFallThroughsMinusStart()
-            parents.forEach {
-                println("PARENT: ${it.pretty}")
-                var node: CFGNode? = it
-                while (node != null) {
-                    when (node) {
-                        is Funcking -> {
-                            val retMoves = node.movIntos.map {
-                                when (it) {
-                                    is Gets -> LIRMove(LIRTemp(it.varName), translateExpr(it.expr))
-                                    is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
-                                }
+        mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
+        val parents = listOf(cfg.start) + mm.nodesWithNoFallThroughsMinusStart()
+        parents.forEach {
+            var node: CFGNode? = it
+            while (node != null) {
+                when (node) {
+                    is Funcking -> {
+                        val retMoves = node.movIntos.map {
+                            when (it) {
+                                is Gets -> LIRMove(LIRTemp(it.varName), translateExpr(it.expr))
+                                is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
                             }
-                            addStmt(
-                                node,
-                                LIRCallStmt(
-                                    LIRName(node.name),
-                                    node.movIntos.size.toLong(),
-                                    node.args.map { translateExpr(it) })
-                            )
-                            stmts.addAll(retMoves)
                         }
-
-                        is If -> node.let { n ->
-                            mm.jumpingTo(n)
-                                ?.let { addStmt(n, LIRTrueJump(translateExpr(n.cond), jumpLabels[it]!!)) }
-                        }
-
-                        is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
-
-                        is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
-
-                        is Return -> addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
-
-                        is Start -> {}
-
-                        is Cricket -> node.let { n ->
-                            mm.jumpingTo(n)
-                                ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
-                        }
-
-                        is NOOP -> node.let { n ->
-                            mm.jumpingTo(n)
-                                ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
-                        }
+                        addStmt(
+                            node,
+                            LIRCallStmt(
+                                LIRName(node.name),
+                                node.movIntos.size.toLong(),
+                                node.args.map { translateExpr(it) })
+                        )
+                        stmts.addAll(retMoves)
                     }
-                    node = mm.fallThrough(node)
-                }
 
-//            }
-            println(sett)
+                    is If -> node.let { n ->
+                        mm.jumpingTo(n)
+                            ?.let { addStmt(n, LIRTrueJump(translateExpr(n.cond), jumpLabels[it]!!)) }
+                    }
+
+                    is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
+
+                    is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
+
+                    is Return -> addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
+
+                    is Start -> {}
+
+                    is Cricket -> node.let { n ->
+                        mm.jumpingTo(n)
+                            ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
+                    }
+
+                    is NOOP -> node.let { n ->
+                        mm.jumpingTo(n)
+                            ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
+                    }
+                }
+                node = mm.fallThrough(node)
+            }
         }
         body = LIRSeq(stmts)
     }
 
     private fun addStmt(node: CFGNode, stmt: FlatStmt) {
-        jumpLabels[node]?.let { stmts.add(it); sett.add(it.l)  }
+        jumpLabels[node]?.let { stmts.add(it); sett.add(it.l) }
         stmts.add(stmt)
-    }
-
-    private fun addToStack(node: CFGNode) {
-        if (!visited.contains(node))
-            stack.addFirst(node)
     }
 
     fun destroy(): LIRFuncDecl {

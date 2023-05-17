@@ -19,19 +19,18 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
         funcFile?.writeText(cfg.graphViz())
 
         for(i in 1 until 5) {
+            if (optimize.desire(Settings.Opt.Actions.cp)) {
+                val ccp = CondConstProp(cfg)
+                ccp.run()
+                ccp.postprocess()
+            }
 
-//            if (optimize.desire(Settings.Opt.Actions.cp)) {
-//                val ccp = CondConstProp(cfg)
-//                ccp.run()
-//                ccp.postprocess()
-//            }
-//
-//            if (optimize.desire(Settings.Opt.Actions.dce)) {
-//                val dce = DeadCodeRem(cfg)
-//                dce.run()
-////            File("dce.dot").writeText(dce.graphViz())
-//                dce.postprocess()
-//            }
+            if (optimize.desire(Settings.Opt.Actions.dce)) {
+                val dce = DeadCodeRem(cfg)
+                dce.run()
+//            File("dce.dot").writeText(dce.graphViz())
+                dce.postprocess()
+            }
         }
 
 
