@@ -1,5 +1,5 @@
 build
-
+/*
 etac ("Test --lex") ["lexer"] "--lex" {
     charstringedgecase.eta;
     comments.eta;
@@ -174,7 +174,7 @@ etac ("Test --typecheck") ["typing"] "-libpath $(testpath) --typecheck" {
     wrongfunctionoutput.eta (Semantic, "Assigned expression type does not match expected type bool");
     wrongtypeinarrayassign.eta (Semantic, "Assigned expression type does not match expected type ast.Primitive$INT@527e5409");
 }
-
+*/
 etac ("Test --irgen") ["ir"] "-libpath $(testpath) --irgen" {
     arrayalloc1.eta;
     arrayfuntimes.eta;

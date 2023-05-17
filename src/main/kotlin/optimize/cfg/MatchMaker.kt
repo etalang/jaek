@@ -188,9 +188,9 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun removeAndLink(node: CFGNode): Boolean {
-        println("removing $node. pred: ${predecessorEdges(node)}")
         val fallThrough = fallThrough(node)
         val jumpTo = jumpingTo(node)
+        require(fallThrough == null || jumpTo==null)
         if (jumpTo == null && fallThrough == null) {
             removeNode(node)
             return true

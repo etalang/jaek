@@ -8,6 +8,7 @@ import optimize.cfg.CFGDestroyer
 import optimize.dataflow.CondConstProp
 import optimize.dataflow.CopyProp
 import optimize.dataflow.DeadCodeRem
+import java.io.File
 
 class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, val outputCFG: Settings.OutputCFG) {
     var cfg: CFG
@@ -25,11 +26,11 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, val outputCFG: S
                 ccp.postprocess()
             }
 
-//            if (optimize.desire(Settings.Opt.Actions.dce)) {
-//                val dce = DeadCodeRem(cfg)
-//                dce.run()
-//                dce.postprocess()
-//            }
+            if (optimize.desire(Settings.Opt.Actions.dce)) {
+                val dce = DeadCodeRem(cfg)
+                dce.run()
+                dce.postprocess()
+            }
 
             if (optimize.desire(Settings.Opt.Actions.copy)) {
                 val copypop = CopyProp(cfg)
