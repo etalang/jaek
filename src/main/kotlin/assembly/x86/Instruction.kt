@@ -375,8 +375,8 @@ sealed class Instruction {
 
     /** RDX:RAX := sign-extend of RAX */
     class CQO : Instruction() {
-        override val def: Set<Register> = setOf()
-        override val use: Set<Register> = setOf()
+        override val def: Set<Register> = setOf(x86(RDX),x86(RAX))
+        override val use: Set<Register> = setOf(x86(RAX))
         override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
@@ -453,7 +453,8 @@ sealed class Instruction {
     class CALL(val label: Label) : Instruction() {
         override val def: MutableSet<Register> = mutableSetOf(x86(RSP), x86(RAX),
             x86(RCX), x86(RDX), x86(RDI), x86(RSI), x86(R8), x86(R9), x86(R10), x86(R11))
-        override val use: Set<Register> = setOf(x86(RSP))
+        override val use: Set<Register> = setOf(x86(RSP),x86(RDI), x86(RSI), x86(RDX),
+            x86(RCX), x86(R8), x86(R9))
         override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
