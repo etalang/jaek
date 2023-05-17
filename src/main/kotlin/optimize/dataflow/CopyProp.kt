@@ -1,6 +1,5 @@
 package optimize.dataflow
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import optimize.cfg.CFG
 import optimize.cfg.CFGExpr
 import optimize.cfg.CFGNode
@@ -10,7 +9,7 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
     override val name: String = "Copy Propagation"
     private val mm = cfg.mm
 
-    private fun allVars() : Set<String> {
+    private fun allVars(): Set<String> {
         val allVars = mutableSetOf<String>()
         for (n in mm.allNodes()) {
             allVars.addAll(use(n))
@@ -19,7 +18,7 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
         return allVars
     }
 
-    private fun computeTop() : Set<Copy> {
+    private fun computeTop(): Set<Copy> {
         val allPairs = mutableSetOf<Copy>()
         val vars = allVars()
         for (v1 in vars) {
@@ -38,7 +37,7 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
         return Info(e1.copies intersect e2.copies)
     }
 
-    private fun kill(n : CFGNode) : Set<Copy> {
+    private fun kill(n: CFGNode): Set<Copy> {
         if (n is CFGNode.Gets) {
             val allVars = allVars()
             val killSet = mutableSetOf<Copy>()
@@ -46,14 +45,13 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
                 killSet.add(Copy(n.varName, v))
                 killSet.add(Copy(v, n.varName))
             }
-        }
-        else if (n is CFGNode.Start) {
+        } else if (n is CFGNode.Start) {
             return top.copies
         }
         return emptySet()
     }
 
-    private fun gen(n : CFGNode) : Set<Copy> {
+    private fun gen(n: CFGNode): Set<Copy> {
         if (n is CFGNode.Gets) {
             val expr = n.expr
             if (expr is CFGExpr.Var) {
@@ -62,19 +60,20 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
         }
         return emptySet()
     }
+
     override fun transition(n: CFGNode, argumentInfo: Info): Map<Edge, Info> {
         return mm.successorEdges(n).associateWith {
             Info(argumentInfo.copies.minus(kill(n)) union gen(n))
         }
     }
 
-    data class Copy(val late : String, val early : String)  {
+    data class Copy(val late: String, val early: String) {
         override fun toString(): String {
             return "$late = $early"
         }
     }
 
-    data class Info(val copies : Set<Copy>) : EdgeValues() {
+    data class Info(val copies: Set<Copy>) : EdgeValues() {
         override val pretty: String get() = copies.toString()
     }
 
@@ -83,12 +82,12 @@ class CopyProp(cfg: CFG) : CFGFlow.Forward<CopyProp.Info>(cfg), PostProc, Proper
         while (propagateCopies) {
             propagateCopies = propagateEqualVars()
             run()
-            mm.repOp()
+            mm.repOk()
         }
     }
 
     /** idk what to do here */
-    private fun propagateEqualVars() : Boolean {
+    private fun propagateEqualVars(): Boolean {
         return false
     }
 

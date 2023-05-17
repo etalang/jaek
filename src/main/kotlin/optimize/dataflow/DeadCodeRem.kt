@@ -32,7 +32,7 @@ class DeadCodeRem(cfg: CFG) : CFGFlow.Backward<DeadCodeRem.Info>(cfg), Propertie
         while (deleteDead) {
             deleteDead = deleteDeadAssigns()
             run()
-            mm.repOp()
+            mm.repOk()
         }
     }
 
