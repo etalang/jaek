@@ -110,10 +110,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         aboutToScrewWith?.let {
             it.forEach { (pred, jump) ->
                 removeConnection(pred, node, jump)
-                if (pred is CFGNode.If) {
-                    println("bad pred now?")
-                    removeAndLink(pred)
-                }
             }
         }
         //REMOVE CONNECTIONS OUT
@@ -129,6 +125,9 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         if (predecessors[to]?.isEmpty() == true) predecessors.remove(to)
         successors[from]?.remove(to, jump)
         if (successors[from]?.useless() == true) successors.remove(from)
+        if (from is CFGNode.If && successorEdges(from).size==1) {
+            removeAndLink(from)
+        }
     }
 
     fun fallThrough(node: CFGNode): CFGNode? {

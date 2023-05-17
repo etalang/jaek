@@ -146,6 +146,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         while (checkUnreach) {
             checkUnreach = removeUnreachables()
             run()
+            mm.repOk()
         }
         mm.repOk()
         run()
@@ -248,12 +249,12 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         if (remove != null) {
             println(remove)
             mm.removeConnection(remove.from, remove.node, remove.jump)
-            if (remove.from is CFGNode.If && mm.successorEdges(remove.from).size==1) {
-                mm.removeAndLink(remove.from)
-            }
-            if (remove.node is CFGNode.If && mm.successorEdges(remove.node).size==1) {
-                mm.removeAndLink(remove.node)
-            }
+//            if (remove.from is CFGNode.If && mm.successorEdges(remove.from).size==1) {
+//                mm.removeAndLink(remove.from)
+//            }
+//            if (remove.node is CFGNode.If && mm.successorEdges(remove.node).size==1) {
+//                mm.removeAndLink(remove.node)
+//            }
 //            println("yeet")
             return true
         }
