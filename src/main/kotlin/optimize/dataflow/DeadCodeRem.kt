@@ -42,7 +42,6 @@ class DeadCodeRem(cfg: CFG) : CFGFlow.Backward<DeadCodeRem.Info>(cfg), Propertie
                     (it is CFGNode.Gets && !bigMeet(mm.successorEdges(it)).live.contains(it.varName)) // TODO: consider adding func gets - would be hard
         }
         if (remove != null) {
-            println(remove)
             mm.removeAndLink(remove)
             return true
         }

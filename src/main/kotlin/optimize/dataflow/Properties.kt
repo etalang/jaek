@@ -8,6 +8,7 @@ sealed interface Properties {
         fun use(n: CFGNode): Set<String> {
             return when (n) {
                 is CFGNode.Cricket -> emptySet()
+                is CFGNode.NOOP -> emptySet()
                 is CFGNode.Funcking -> n.args.fold(emptySet()) { acc, it -> acc union exprUse(it) }
                 is CFGNode.If -> exprUse(n.cond)
                 is CFGNode.Gets -> exprUse(n.expr)

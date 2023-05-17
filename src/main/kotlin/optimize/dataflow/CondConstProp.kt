@@ -192,7 +192,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
                                 replaceVar(ret, it.key, value.t)
                             }
 
-                        is CFGNode.Start, is CFGNode.Cricket -> {}
+                        is CFGNode.Start, is CFGNode.Cricket, is CFGNode.NOOP -> {}
                     }
                 }
             }

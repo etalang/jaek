@@ -21,8 +21,14 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
 
     fun nodesWithJumpInto(): Set<CFGNode> {
         return predecessors.entries.filter { entry -> entry.value.filter { edgesIn -> edgesIn.second }.isNotEmpty() }
-            .map { it.key }
-            .toSet()
+            .map { it.key }.toSet()
+    }
+
+    fun nodesWithNoFallThroughsMinusStart(): List<CFGNode> {
+        println(predecessors)
+        return predecessors.entries.filter { entry ->
+            entry.key !is CFGNode.Start && entry.value.filter { edgesIn -> !edgesIn.second }.isEmpty()
+        }.map { it.key }
     }
 
     fun build(from: CFGNode, to: String, jump: Boolean) {
@@ -30,24 +36,57 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
+        if (from.index == 97 || to.index == 97) {
+            println()
+        }
         successors.computeIfAbsent(from) { Successors() }.set(to, jump)
-        predecessors.computeIfAbsent(to) { mutableSetOf() }.add(Pair(from, jump))
-    }
-
-    /** Given a -> b -> c. Removes b and connects a to c, preserving jump status of (a,b) */
-    fun translate(a: CFGNode, b: CFGNode, c: CFGNode) {
-        if (fallThrough(a) == b) {
-            removeConnection(a, b, false)
-            connect(a, c, false)
-        } else if (jumpingTo(a) == b) {
-            removeConnection(a, b, true)
-            connect(a, c, true)
-        } else {
-            throw Exception("CALL SOMEONE CALL ANYONE CALL NOAH")
+        predecessors.computeIfAbsent(to) { mutableSetOf() }.let {
+            if (it.any { !it.second } && !jump) {
+                throw Exception("MULTIPLE FALL THROUGHS INTO $to")
+            }
+            it.add(Pair(from, jump))
         }
     }
 
+    /**
+     * Given a -> b -> c. Removes b and connects a to c.
+     *
+     * Jxy = jump status (x,y) (X, Y) = ( jump status(a,b) , jump status (b,c) )
+     * - (JUMP, JUMP) => JUMP
+     * - (JUMP, FALL) => JUMP
+     * - (FALL, JUMP) => FALL -> DUMMY JUMP
+     * - (FALL, FALL) => FALL
+     */
+    fun translate(a: CFGNode, b: CFGNode, c: CFGNode) {
+        require(fallThrough(a) == b || jumpingTo(a) == b)
+        require(fallThrough(b) == c || jumpingTo(b) == c)
+        val jumpAB = jumpingTo(a) == b
+        val jumpBC = jumpingTo(b) == c
+
+        if (jumpAB) {
+            //JUMP-JUMP or JUMP-FALL
+            removeConnection(a, b, true)
+            removeConnection(b, c, jumpBC)
+            connect(a, c, true)
+        } else if (jumpBC) {
+            //FALL-JUMP
+            removeConnection(a, b, false)
+            removeConnection(b, c, true)
+            val dummy = CFGNode.NOOP()
+            connect(a, dummy, false)
+            connect(dummy, c, true)
+        } else {
+            //FALL-FALL
+            removeConnection(a, b, false)
+            removeConnection(b, c, false)
+            connect(a, c, false)
+        }
+    }
+
+    /* Remove a node that is useless. Requires that the node has at most ONE successor! */
     fun removeNode(node: CFGNode) {
+        require(successors(node).size < 2)
+
         //REMOVE CONNECTIONS IN
         val aboutToScrewWith = predecessors[node]?.toSet()
         aboutToScrewWith?.let {

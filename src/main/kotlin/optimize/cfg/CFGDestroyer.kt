@@ -6,6 +6,7 @@ import ir.lowered.LIRStmt.*
 import optimize.cfg.CFGExpr.*
 import optimize.cfg.CFGExpr.Mem
 import optimize.cfg.CFGNode.*
+import java.util.StringJoiner
 
 class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     val body: LIRSeq
@@ -14,21 +15,18 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     val stmts = mutableListOf<FlatStmt>()
     private val jumpLabels: MutableMap<CFGNode, LIRLabel> = mutableMapOf()
     private val mm = cfg.mm
+    private val sett = mutableSetOf<String>()
 
     init {
-        mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
-        addToStack(cfg.start)
-        while (stack.isNotEmpty()) {
-            val peek = stack.first()
-            val fallThrough = mm.fallThroughsInto(peek)
-            if (fallThrough?.let { visited.contains(it) } == false) {
-                //ENSURE WE DO FALL-THROUGHS FIRST
-                addToStack(fallThrough)
-            } else {
-                val node = stack.removeFirst()
-                if (!visited.contains(node)) {
-                    visited.add(node)
-
+//        if (func.name =="_ImakeRotor_t3aaiaaiiai") {
+            println(func.name)
+            mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
+            println(jumpLabels)
+            val parents = listOf(cfg.start) + mm.nodesWithNoFallThroughsMinusStart()
+            parents.forEach {
+                println("PARENT: ${it.pretty}")
+                var node: CFGNode? = it
+                while (node != null) {
                     when (node) {
                         is Funcking -> {
                             val retMoves = node.movIntos.map {
@@ -47,40 +45,40 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
                             stmts.addAll(retMoves)
                         }
 
-                        is If -> mm.jumpingTo(node)
-                            ?.let {
-                                addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!))
-                                addToStack(it)
-                            }
+                        is If -> node.let { n ->
+                            mm.jumpingTo(n)
+                                ?.let { addStmt(n, LIRTrueJump(translateExpr(n.cond), jumpLabels[it]!!)) }
+                        }
 
                         is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
 
                         is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
 
-                        is Return -> {
-                            addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
-                        }
+                        is Return -> addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
 
                         is Start -> {}
 
-                        is Cricket -> {
-                            mm.jumpingTo(node)?.let {
-                                addStmt(node, LIRJump(LIRName(jumpLabels[it]!!.l)))
-                                addToStack(it)
-                            }
+                        is Cricket -> node.let { n ->
+                            mm.jumpingTo(n)
+                                ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
+                        }
+
+                        is NOOP -> node.let { n ->
+                            mm.jumpingTo(n)
+                                ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
                         }
                     }
-                    mm.fallThrough(node)?.let {
-                        addToStack(it)
-                    }
+                    node = mm.fallThrough(node)
                 }
-            }
+
+//            }
+            println(sett)
         }
         body = LIRSeq(stmts)
     }
 
     private fun addStmt(node: CFGNode, stmt: FlatStmt) {
-        jumpLabels[node]?.let { stmts.add(it) }
+        jumpLabels[node]?.let { stmts.add(it); sett.add(it.l)  }
         stmts.add(stmt)
     }
 
