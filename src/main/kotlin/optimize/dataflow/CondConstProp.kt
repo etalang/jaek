@@ -249,13 +249,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         if (remove != null) {
             println(remove)
             mm.removeConnection(remove.from, remove.node, remove.jump)
-//            if (remove.from is CFGNode.If && mm.successorEdges(remove.from).size==1) {
-//                mm.removeAndLink(remove.from)
-//            }
-//            if (remove.node is CFGNode.If && mm.successorEdges(remove.node).size==1) {
-//                mm.removeAndLink(remove.node)
-//            }
-//            println("yeet")
+            mm.ensureIfsAreOk()
             return true
         }
         return false

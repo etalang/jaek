@@ -125,9 +125,16 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         if (predecessors[to]?.isEmpty() == true) predecessors.remove(to)
         successors[from]?.remove(to, jump)
         if (successors[from]?.useless() == true) successors.remove(from)
-        if (from is CFGNode.If && successorEdges(from).size==1) {
-            removeAndLink(from)
+    }
+
+    fun ensureIfsAreOk() : Boolean{
+        val found = successors.keys.firstOrNull{it is CFGNode.If && successorEdges(it).size < 2}
+        if (found != null) {
+            removeAndLink(found)
+            ensureIfsAreOk()
+            return true
         }
+        return false
     }
 
     fun fallThrough(node: CFGNode): CFGNode? {
