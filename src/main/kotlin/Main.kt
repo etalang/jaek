@@ -40,6 +40,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     private val oreg: Boolean by option("-Oreg", help = "Enable register allocation and move coalescing.").flag()
     private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
     private val ocopy: Boolean by option("-Ocopy", help = "Enable copy propagation.").flag()
+    private val reportOps: Boolean by option("--report-opts", help=" Output (only) a list of optimizations supported by the compiler").flag()
 
     //LOGISTICS
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
@@ -93,6 +94,10 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
         // the irrun flag should also generate the IR, just like irgen
+        if (reportOps) {
+            Settings.Opt.Actions.values().forEach { println(it) }
+            throw ProgramResult(0)
+        }
         val outputIR = if (runIR) true else initOutputIR
         if (target != "linux") {
             throw BadParameterValue("The only supported OS is linux", targetOpt)
