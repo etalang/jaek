@@ -6,6 +6,7 @@ import optimize.cfg.CFG
 import optimize.cfg.CFGBuilder
 import optimize.cfg.CFGDestroyer
 import optimize.dataflow.CondConstProp
+import optimize.dataflow.CopyProp
 import optimize.dataflow.DeadCodeRem
 import java.io.File
 
@@ -40,6 +41,14 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, outputCFG: Setti
             cfg = CFGBuilder(lir).build()
         }
 //        }
+
+        if (optimize.desire(Settings.Opt.Actions.cp)) {
+            val copypop = CopyProp(cfg)
+            copypop.run()
+            copypop.postprocess()
+            val lir = CFGDestroyer(cfg, lir).destroy()
+            cfg = CFGBuilder(lir).build()
+        }
 
 
         val postFile = outputCFG.getOutFile(lir.name, "final")
