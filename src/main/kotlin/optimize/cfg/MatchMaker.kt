@@ -98,10 +98,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         }
     }
 
-    /* Remove a node that is useless. Requires that the node has at most ONE successor! */
+    /* Remove a node that is useless.*/
     fun removeNode(node: CFGNode) {
-        require(successors(node).size < 2)
-
         //REMOVE CONNECTIONS IN
         val aboutToScrewWith = predecessors[node]?.toSet()
         aboutToScrewWith?.let {

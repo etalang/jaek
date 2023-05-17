@@ -142,29 +142,14 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 
     override fun postprocess() {
         var checkUnreach = true
-        var checkIf = true
         while (checkUnreach) {
             checkUnreach = removeUnreachables()
-            run()
-            mm.repOp()
-        }
-        while (checkIf) {
-            checkIf = removeLonelyIfs()
             run()
             mm.repOp()
         }
         run()
         constantPropogate()
         mm.repOp()
-    }
-
-    private fun removeLonelyIfs(): Boolean {
-        var changed = false
-        mm.fastNodesWithPredecessors().filter { it is CFGNode.If && mm.successors(it).size<=1 }.forEach {
-            changed = mm.removeAndLink(it)
-            if (changed) return changed
-        }
-        return changed
     }
 
     private fun constantPropogate() {
@@ -232,6 +217,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         };
         if (remove != null) {
             mm.removeNode(remove)
+            println(remove.pretty)
             return true
         }
         return false
