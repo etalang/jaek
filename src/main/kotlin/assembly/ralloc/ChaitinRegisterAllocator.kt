@@ -99,9 +99,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         // BUILD INTERFERENCE GRAPH
         val interferenceGraph = InterferenceGraph(dataflow, n.body.flatMap { it.involved }.toSet())
 
-        // WORKLISTS DECLARATIONS/INITIALIZATION
-        val worklist = Worklist(interferenceGraph, K, n.body)
-
+        val worklistMoves = mutableSetOf<InterferenceGraph.Move>()
         //Procedure Build
         dataflow.cfg.nodes.forEach {
             if (it.insn is MOV && it.insn.dest is Destination.RegisterDest && it.insn.src is Source.RegisterSrc) {
@@ -122,10 +120,15 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             }
         }
 
+        // WORKLISTS DECLARATIONS/INITIALIZATION
+        val worklist = Worklist(interferenceGraph, K, n.body, worklistMoves)
+
+
         File("ig${debugLoopCtr}.dot").writeText(interferenceGraph.graphViz())
 
         // LOOP
-        while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty() || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()) {
+        while (worklist.simplifyWorkList.isNotEmpty() // || worklist.worklistMoves.isNotEmpty()
+            || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()) {
             if (worklist.simplifyWorkList.isNotEmpty()) simplify(worklist)
 //            else if (worklist.worklistMoves.isNotEmpty()) coalesce(worklist)
             else if (worklist.freezeWorkList.isNotEmpty()) freeze(worklist)
@@ -177,7 +180,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         if (u == v) {
             worklist.coalescedMoves.add(m)
             worklist.addWorkList(u)
-        } else if (v is x86 && worklist.ig.adjList[u]?.contains(v) == true) {
+        } else if (v is x86 && worklist.ig.adjSet.contains(u to v)) {
             worklist.constrainedMoves.add(m)
             worklist.addWorkList(u)
             worklist.addWorkList(v)

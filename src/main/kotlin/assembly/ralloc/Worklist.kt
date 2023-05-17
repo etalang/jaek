@@ -48,10 +48,10 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
             } else {
                 simplifyWorkList.add(reg)
             }
-
         }
+
         //// INITIALIZE MOVE INSTRUCTION WORKLIST
-        // unless workListMoves is like ordered it's fine
+        // unless workListMoves is ordered it's fine
         for (insn in insns) {
             if (insn is Instruction.MOV)
                 if (insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc
@@ -185,9 +185,9 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
             }
             val okColors = mutableSetOf<Int>()
             for (idx in 0 until K) {
-                if (!reservedColors.contains(idx)) {
-                    okColors.add(idx)
-                }
+//                if (!reservedColors.contains(idx)) {
+                okColors.add(idx)
+//                }
             }
 //            okColors.addAll(0 until K)
             val nNeighbors = ig.adjList[n] ?: emptySet()

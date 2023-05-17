@@ -398,7 +398,7 @@ sealed class Instruction {
     /** Decrements the stack pointer and then stores 204 on the top of the stack. */
     class PAD : Instruction() {
         override val def: Set<Register> = setOf(x86(RSP))
-        override val use: Set<Register> = setOf()
+        override val use: Set<Register> = setOf(x86(RSP))
         override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
