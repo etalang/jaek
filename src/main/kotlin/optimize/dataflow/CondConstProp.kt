@@ -146,11 +146,10 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         while (checkUnreach) {
             checkUnreach = removeUnreachables()
             run()
-            mm.repOk()
         }
+        mm.repOk()
         run()
         constantPropogate()
-        mm.repOk()
     }
 
     private fun constantPropogate() {
