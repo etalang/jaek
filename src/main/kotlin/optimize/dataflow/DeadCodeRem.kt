@@ -43,7 +43,7 @@ class DeadCodeRem(cfg: CFG) : CFGFlow.Backward<DeadCodeRem.Info>(cfg), Propertie
                     (it is CFGNode.Gets && !bigMeet(mm.successorEdges(it)).live.contains(it.varName)) // TODO: consider adding func gets - would be hard
         }
         if (remove != null) {
-            val changing = mm.predecessors(remove)
+            val changing = mm.predecessors(remove) union mm.successors(remove)
             mm.removeAndLink(remove)
             return changing
         }
