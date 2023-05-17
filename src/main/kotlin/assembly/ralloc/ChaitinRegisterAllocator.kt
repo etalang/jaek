@@ -3,20 +3,38 @@ package assembly.ralloc
 import assembly.ConventionalCaller
 import assembly.LVA.LiveVariableAnalysis
 import assembly.x86.*
-import assembly.x86.Register.*
-import assembly.x86.Register.x86Name.*
-import assembly.x86.Memory.*
 import assembly.x86.Instruction.*
-import assembly.x86.Instruction
+import assembly.x86.Memory.LabelMem
+import assembly.x86.Memory.RegisterMem
+import assembly.x86.Register.Abstract
+import assembly.x86.Register.x86
+import assembly.x86.Register.x86Name.*
 import typechecker.EtaFunc
 import java.io.File
 
 class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String, EtaFunc>) :
     RegisterAllocator(assembly, functionTypes) {
     val K = 16
+
     // needs to be exact same ordering as declaration of enum x86Name in Register
-    val regOrder = listOf(x86(RAX), x86(RBX), x86(RCX), x86(RDX), x86(RSP), x86(RBP), x86(RDI), x86(RSI),
-        x86(R8), x86(R9), x86(R10), x86(R11), x86(R12), x86(R13), x86(R14), x86(R15))
+    val regOrder = listOf(
+        x86(RAX),
+        x86(RBX),
+        x86(RCX),
+        x86(RDX),
+        x86(RSP),
+        x86(RBP),
+        x86(RDI),
+        x86(RSI),
+        x86(R8),
+        x86(R9),
+        x86(R10),
+        x86(R11),
+        x86(R12),
+        x86(R13),
+        x86(R14),
+        x86(R15)
+    )
 
     // tracking offset map of spilled temps per function (func name -> (temp name -> offset))
     val fullOffsetMap: MutableMap<String, MutableMap<String, Int>> = mutableMapOf()
@@ -31,19 +49,12 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     var debugLoopCtr = 0
     override fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
         val calleeTemps: Map<x86, Abstract> = calleeSavedRegs.associateWith { calleeSpill() }
-//        val callerTemps: Map<x86, Abstract> = callerSavedRegs.associateWith { callerSpill() }
         val saveCallees =
             calleeSavedRegs.map { MOV(Destination.RegisterDest(calleeTemps[it]!!), Source.RegisterSrc(it)) }
-        val saveCallers : MutableList<Instruction> = callerSavedRegs.map{ PUSH(it) }.toMutableList()
+        val saveCallers: MutableList<Instruction> = callerSavedRegs.map { PUSH(it) }.toMutableList()
         saveCallers.add(0, PAD())
-            // callerSavedRegs.map{ MOV(Destination.RegisterDest(callerTemps[it]!!),
-//            Source.RegisterSrc(it)) }
-        val popCallers : MutableList<Instruction> = callerSavedRegs.reversed().map{ POP(it) }.toMutableList()
+        val popCallers: MutableList<Instruction> = callerSavedRegs.reversed().map { POP(it) }.toMutableList()
         popCallers.add(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8)))
-        //callerSavedRegs.map{ MOV(Destination.RegisterDest(it),
-        //    Source.RegisterSrc(callerTemps[it]!!)) }.reversed()
-
-
         val withCalleeSaved: MutableList<Instruction> = saveCallees.toMutableList()
 
         val funcType = functionTypes[n.name]!!
@@ -51,8 +62,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         val populateArguments: MutableList<Instruction> = mutableListOf()
         for (i in 1..funcType.argCount) populateArguments.add(
             MOV(
-                Destination.RegisterDest(Abstract("_ARG$i")),
-                cc.getArg(i)
+                Destination.RegisterDest(Abstract("_ARG$i")), cc.getArg(i)
             )
         )
         withCalleeSaved.addAll(populateArguments)
@@ -61,8 +71,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             if (insn is LEAVE) {
                 withCalleeSaved.addAll(calleeSavedRegs.map {
                     MOV(
-                        Destination.RegisterDest(it),
-                        Source.RegisterSrc(calleeTemps[it]!!)
+                        Destination.RegisterDest(it), Source.RegisterSrc(calleeTemps[it]!!)
                     )
                 })
             }
@@ -74,9 +83,6 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 withCalleeSaved.addAll(popCallers)
                 continue
             }
-//            if (insn is CALL) {
-//                insn.def.addAll(callerTemps.values)
-//            }
             withCalleeSaved.add(insn)
         }
         return chitLoop(x86FuncDecl(n.name, withCalleeSaved))
@@ -85,40 +91,46 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     fun chitLoop(n: x86FuncDecl): x86FuncDecl {
         debugLoopCtr++
         println("${n.name} allocation round $debugLoopCtr")
+
         // LIVENESS ANALYSIS
         val dataflow = LiveVariableAnalysis(n)
-        File("dataflow${debugLoopCtr}.dot").writeText(dataflow.graphViz())
+        File("dataflow${n.name}${debugLoopCtr}.dot").writeText(dataflow.graphViz())
+
         // BUILD INTERFERENCE GRAPH
-        val interferenceGraph = InterferenceGraph(dataflow.liveIn, dataflow.cfg, n.body)
-        interferenceGraph.constructGraph()
+        val interferenceGraph = InterferenceGraph(dataflow)
 
         // WORKLISTS DECLARATIONS/INITIALIZATION
         val worklist = Worklist(interferenceGraph, K, n.body)
 
-        // LOOP
-        while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
-            || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()){
-            if (worklist.simplifyWorkList.isNotEmpty())
-                simplify(worklist)
-            else if (worklist.worklistMoves.isNotEmpty())
-                coalesce(worklist)
-            else if (worklist.freezeWorkList.isNotEmpty())
-                freeze(worklist)
-            else if (worklist.spillWorkList.isNotEmpty())
-                selectSpill(worklist)
+        //Procedure Build
+        dataflow.cfg.nodes.forEach {
+            if (it.insn is MOV && it.insn.dest is Destination.RegisterDest && it.insn.src is Source.RegisterSrc) {
+                val move = InterferenceGraph.Move(
+                    it.insn.dest.r, it.insn.src.r
+                )
+                for (reg in (it.insn.def union it.insn.use)) {
+                    interferenceGraph.moveList[reg]!!.add(move)
+                    //TODO: maybe sub from live if we are bold
+                }
+                worklist.worklistMoves.add(move)
+            }
+            val live = dataflow.liveOut[it]!! union it.insn.def
+            for (d in it.insn.def) {
+                for (l in live) {
+                    interferenceGraph.addEdge(l, d)
+                }
+            }
         }
-//        do {
-//            if (worklist.simplifyWorkList.isNotEmpty())
-//                simplify(worklist)
-//            else if (worklist.worklistMoves.isNotEmpty())
-//                coalesce(worklist)
-//            else if (worklist.freezeWorkList.isNotEmpty())
-//                freeze(worklist)
-//            else if (worklist.spillWorkList.isNotEmpty())
-//                selectSpill(worklist)
-//        } while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
-//            || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()
-//        )
+
+        File("ig${debugLoopCtr}.dot").writeText(interferenceGraph.graphViz())
+
+        // LOOP
+        while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty() || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()) {
+            if (worklist.simplifyWorkList.isNotEmpty()) simplify(worklist)
+//            else if (worklist.worklistMoves.isNotEmpty()) coalesce(worklist)
+            else if (worklist.freezeWorkList.isNotEmpty()) freeze(worklist)
+            else if (worklist.spillWorkList.isNotEmpty()) selectSpill(worklist)
+        }
 
         // COLORING
         worklist.assignColors()
@@ -128,13 +140,12 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             val spillInsns = rewriteSpills(n, worklist)
             val nextFuncDecl = x86FuncDecl(n.name, spillInsns)
 //            println(nextFuncDecl)
-            File("assembleeee${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
+            File("assemblyIteration${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
             chitLoop(nextFuncDecl)
         } else {
             val replaceMap = mutableMapOf<String, Int>()
             for (reg in worklist.ig.colors.keys) {
-                if (reg is Abstract)
-                    replaceMap[reg.name] = worklist.ig.colors[reg]!!
+                if (reg is Abstract) replaceMap[reg.name] = worklist.ig.colors[reg]!!
             }
             val allocatedInsns = n.body.map { replaceInsnRegisters(it, replaceMap) }
             // maybe want to remove redundant moves in allocatedInsns?
@@ -181,14 +192,11 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 worklist.combine(u, v)
                 worklist.addWorkList(u)
             }
-        } else if (u is Abstract
-            && worklist.conservative(worklist.adjacent(u) union worklist.adjacent(v))
-        ) {
+        } else if (u is Abstract && worklist.conservative(worklist.adjacent(u) union worklist.adjacent(v))) {
             worklist.coalescedMoves.add(m)
             worklist.combine(u, v)
             worklist.addWorkList(u)
-        } else
-            worklist.activeMoves.add(m)
+        } else worklist.activeMoves.add(m)
     }
 
     private fun freeze(worklist: Worklist) {
@@ -198,7 +206,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         worklist.freezeMoves(u)
     }
 
-    private fun heuristic(regSet : Set<Register>) : Register {
+    private fun heuristic(regSet: Set<Register>): Register {
         // HEURISTIC: TRY TO PICK A NON-SPILLED NODE
         val nonSpills = mutableSetOf<Register>()
         for (reg in regSet) {
@@ -206,25 +214,26 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 nonSpills.add(reg)
             }
         }
-        if (nonSpills.isNotEmpty())
-            return nonSpills.random()
+        if (nonSpills.isNotEmpty()) return nonSpills.random()
         return regSet.random()
     }
 
     private fun selectSpill(worklist: Worklist) {
-        val m = heuristic(worklist.spillWorkList) // worklist.spillWorkList.random()  // TODO: MUST pick w/ heuristic instead
+        val m =
+            heuristic(worklist.spillWorkList) // worklist.spillWorkList.random()  // TODO: MUST pick w/ heuristic instead
         worklist.spillWorkList.remove(m)
         worklist.simplifyWorkList.add(m)
         worklist.freezeMoves(m)
     }
 
-    /** replaceMap is a map mapping every abstract register in the function body to the corresponding x86 register.
-     * indices map the register at that index in regOrder */
+    /**
+     * replaceMap is a map mapping every abstract register in the function body to the corresponding x86 register.
+     * indices map the register at that index in regOrder
+     */
     override fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int): x86 {
         return when (r) {
             is Abstract -> {
-                if (size == 64)
-                    regOrder[replaceMap[r.name]!!]
+                if (size == 64) regOrder[replaceMap[r.name]!!]
                 else {
                     regOrder[replaceMap[r.name]!!].copy(size = 8)
                 }
@@ -234,8 +243,11 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         }
     }
 
-    /** postProcessInsns filters out all redundant moves created by move coalescing
-     * TODO: add support for calling conventions  */
+    /**
+     * postProcessInsns filters out all redundant moves created by move coalescing
+     *
+     * TODO: add support for calling conventions
+     */
     private fun postprocess(name: String, insns: List<Instruction>, worklist: Worklist): List<Instruction> {
         val filteredInsns = insns.filter {
             if (it is MOV && it.dest is Destination.RegisterDest && it.src is Source.RegisterSrc) {
@@ -297,11 +309,9 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                             MOV(
                                 Destination.MemoryDest(
                                     RegisterMem(
-                                        base = x86(RBP),
-                                        offset = -8L * offsetMap[r.name]!!
+                                        base = x86(RBP), offset = -8L * offsetMap[r.name]!!
                                     )
-                                ),
-                                Source.RegisterSrc(Abstract(regName))
+                                ), Source.RegisterSrc(Abstract(regName))
                             )
                         )
                     }
@@ -325,8 +335,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             is Arith -> {
                 when (insn) {
                     is Arith.ADD -> Arith.ADD(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Arith.LEA -> Arith.LEA(
@@ -338,52 +347,43 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                     )
 
                     is Arith.MUL -> Arith.MUL(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Arith.SUB -> Arith.SUB(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
                 }
             }
 
             is CMP -> CMP(
-                renameDestRegister(insn.dest, renameMap),
-                renameSrcRegister(insn.src, renameMap)
+                renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
             )
 
             is Logic -> {
                 when (insn) {
                     is Logic.AND -> Logic.AND(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Logic.OR -> Logic.OR(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Logic.SHL -> Logic.SHL(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Logic.SHR -> Logic.SHR(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Logic.XOR -> Logic.XOR(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
 
                     is Logic.SAR -> Logic.SAR(
-                        renameDestRegister(insn.dest, renameMap),
-                        renameSrcRegister(insn.src, renameMap)
+                        renameDestRegister(insn.dest, renameMap), renameSrcRegister(insn.src, renameMap)
                     )
                 }
             }
@@ -392,8 +392,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             is POP -> POP(renameRegister(insn.dest, renameMap))
             is PUSH -> PUSH(renameRegister(insn.arg, renameMap))
             is TEST -> TEST(
-                renameRegister(insn.reg1, renameMap),
-                renameRegister(insn.reg2, renameMap)
+                renameRegister(insn.reg1, renameMap), renameRegister(insn.reg2, renameMap)
             )
 
             is JumpSet -> {
@@ -439,7 +438,8 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             is RegisterMem -> RegisterMem(
                 if (m.base == null) null else renameRegister(m.base, renameMap),
                 if (m.index == null) null else renameRegister(m.index, renameMap),
-                shift = m.shift, offset = m.offset
+                shift = m.shift,
+                offset = m.offset
             )
         }
 

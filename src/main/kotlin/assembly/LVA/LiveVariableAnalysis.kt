@@ -6,10 +6,12 @@ import optimize.IROptimizer.Graphable
 
 class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
     val liveIn: Map<CFGNode, Set<Register>>
+    val liveOut: Map<CFGNode, Set<Register>>
     val cfg = CFGBuilder(funcDecl).build()
 
     init {
         val inVals: MutableMap<CFGNode, Set<Register>> = mutableMapOf()
+        val outVals: MutableMap<CFGNode, Set<Register>> = mutableMapOf()
         cfg.nodes.forEach {
             inVals[it] = emptySet()
         }
@@ -21,6 +23,7 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
             val outEdges = node.to.mapNotNull { cfg.targets[it] }
             var out = emptySet<Register>()
             outEdges.forEach { out = out union (inVals[it] ?: emptySet()) }
+            outVals[node] = out
             val oldIn = inVals[node]
             val newIn = node.insn.use union (out - node.insn.def)
             if (newIn != oldIn) {
@@ -30,6 +33,7 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
         }
 
         liveIn = inVals
+        liveOut = outVals
     }
 
     override fun graphViz(): String {

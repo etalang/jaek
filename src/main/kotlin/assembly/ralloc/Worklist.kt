@@ -1,15 +1,17 @@
 package assembly.ralloc
 
+import assembly.ralloc.InterferenceGraph.*
 import assembly.x86.Destination
 import assembly.x86.Instruction
 import assembly.x86.Register
 import assembly.x86.Register.*
 import assembly.x86.Source
-import assembly.ralloc.InterferenceGraph.*
-import kotlinx.coroutines.selects.select
+import java.util.*
 
-class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruction>) {
+class Worklist(val ig: InterferenceGraph, val K: Int, val insns: List<Instruction>) {
     // WORKLISTS/DATA STRUCTURE DECLARATIONS
+    val initial = mutableSetOf<Abstract>()
+
     val simplifyWorkList = mutableSetOf<Register>() // low-degree nodes, not move-related
     val freezeWorkList = mutableSetOf<Register>() // low-degree nodes, move related
     val spillWorkList = mutableSetOf<Register>() // high-degree nodes
@@ -17,30 +19,34 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     val spilledNodes = mutableSetOf<Register>() // nodes marked for spilling
     val coalescedNodes = mutableSetOf<Register>() // nodes that have been coalesced
     val coloredNodes = mutableSetOf<Register>() // nodes successfully colored
-    val selectStack = mutableListOf<Register>() // stack with temporaries removed from the graph
+    val selectStack = Stack<Register>() // stack with temporaries removed from the graph
 
     /// MOVE INSTRUCTIONS -- the following sets of move insns should be all disjoint from each other
-    val worklistMoves = mutableSetOf<Move>()
-    val activeMoves = mutableSetOf<Move>()
-    val frozenMoves = mutableSetOf<Move>()
-    val constrainedMoves = mutableSetOf<Move>()
     val coalescedMoves = mutableSetOf<Move>()
+    val constrainedMoves = mutableSetOf<Move>()
+    val worklistMoves = mutableSetOf<Move>()
+    val frozenMoves = mutableSetOf<Move>()
+    val activeMoves = mutableSetOf<Move>()
 
     // DON'T COLOR THINGS RSP OR RBP COLOR!
-    val reservedColors = setOf(4,5)
+//    val reservedColors = setOf(4,5)
+
+    fun sanity() {
+        spillWorkList.forEach { require(ig.degrees[it]!! >= K) }
+    }
 
     init {
-        for (reg in ig.degrees.keys) {
-            if (reg is Abstract) {
-                if (ig.degrees[reg]!! >= K) {
-                    spillWorkList.add(reg)
-                }
-                else if (moveRelated(reg)) {
-                    freezeWorkList.add(reg)
-                }
-                else {
-                    simplifyWorkList.add(reg)
-                }
+        val initial = insns.flatMap { it.involved }.toMutableSet()
+        while (initial.isNotEmpty()) {
+            val reg = initial.elementAt(0)
+            initial.remove(reg)
+
+            if (ig.degrees[reg]!! >= K) {
+                spillWorkList.add(reg)
+            } else if (moveRelated(reg)) {
+                freezeWorkList.add(reg)
+            } else {
+                simplifyWorkList.add(reg)
             }
 
         }
@@ -49,26 +55,28 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         for (insn in insns) {
             if (insn is Instruction.MOV)
                 if (insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc
-                    && !(insn.dest.r is x86 && insn.src.r is x86))
+                    && !(insn.dest.r is x86 && insn.src.r is x86)
+                )
                     worklistMoves.add(Move(insn.dest.r, insn.src.r))
         }
     }
 
     /* HELPERS FOR ANALYZING NODES */
 
-    fun nodeMoves(n : Register) : Set<Move> {
-        return ig.moveList[n]?.intersect(activeMoves union worklistMoves) ?: emptySet()
+    fun nodeMoves(n: Register): Set<Move> {
+        return ig.moveList[n]!!.intersect(activeMoves union worklistMoves)
     }
-    fun moveRelated(n : Register) : Boolean {
+
+    fun moveRelated(n: Register): Boolean {
         return nodeMoves(n).isNotEmpty()
     }
 
-    fun adjacent(n : Register) : MutableSet<Register> {
-        return ig.adjList[n]?.minus(selectStack.toSet() union coalescedNodes)?.toMutableSet() ?: mutableSetOf()
+    fun adjacent(n: Register): MutableSet<Register> {
+        return ig.adjList[n]!!.minus(selectStack.toSet() union coalescedNodes).toMutableSet()
     }
 
     /* REQUIRED FOR SIMPLIFY */
-    fun decrementDegree(m : Register) {
+    fun decrementDegree(m: Register) {
         val d = ig.degrees[m]
         ig.degrees[m] = d?.minus(1) ?: 0
         if (d != null && d == K) {
@@ -76,14 +84,13 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
             spillWorkList.remove(m)
             if (moveRelated(m)) {
                 freezeWorkList.add(m)
-            }
-            else {
+            } else {
                 simplifyWorkList.add(m)
             }
         }
     }
 
-    fun enableMoves(nodes : Set<Register>) {
+    fun enableMoves(nodes: Set<Register>) {
         for (n in nodes) {
             for (m in nodeMoves(n)) {
                 if (activeMoves.contains(m)) {
@@ -95,27 +102,24 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     }
 
     /* REQUIRED FOR COALESCE */
-    fun addWorkList(u : Register) {
-        if (u is Abstract && !(moveRelated(u))) {
-            val du = ig.degrees[u]
-            if (du != null && du < K) {
-                freezeWorkList.remove(u)
-                simplifyWorkList.add(u)
-            }
+    fun addWorkList(u: Register) {
+        if (u !is x86 && !(moveRelated(u)) && ig.degrees[u]!! < K) {
+            freezeWorkList.remove(u)
+            simplifyWorkList.add(u)
         }
     }
 
-    fun OK(t : Register, r : Register) : Boolean {
-        if (t is x86) return true
-        else {
-            val dt = ig.degrees[t]
-            val tNeighbors = ig.adjList[t]
-            if (dt != null && dt < K) return true
-            return (tNeighbors?.contains(r) == true)
-        }
+    fun OK(t: Register, r: Register): Boolean {
+        return ig.degrees[t]!! < K || t is x86 || Pair(t, r) in ig.adjSet
+//        if (t is x86) return true
+//        else {
+//            val dt = ig.degrees[t]
+//            if (dt != null && dt < K) return true
+//            return (Pair(t,r) in ig.adjSet)
+//        }
     }
 
-    fun conservative(nodes : Set<Register>) : Boolean {
+    fun conservative(nodes: Set<Register>): Boolean {
         var k = 0
         for (n in nodes) {
             val dn = ig.degrees[n]
@@ -124,19 +128,16 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         return k < K
     }
 
-    fun getAlias(n : Register) : Register {
+    fun getAlias(n: Register): Register {
         return if (coalescedNodes.contains(n)) {
-            val identified = ig.alias[n]
-            if (identified != null) getAlias(identified) else n
-        }
-        else n
+            getAlias(ig.alias[n]!!)
+        } else n
     }
 
-    fun combine(u : Register, v : Register) {
+    fun combine(u: Register, v: Register) {
         if (freezeWorkList.contains(v)) {
             freezeWorkList.remove(v)
-        }
-        else {
+        } else {
             spillWorkList.remove(v)
         }
         coalescedNodes.add(v)
@@ -160,7 +161,7 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     }
 
     /* REQUIRED FOR FREEZE */
-    fun freezeMoves(u : Register) {
+    fun freezeMoves(u: Register) {
         for (m in nodeMoves(u)) {
             val x = m.dest
             val y = m.src
@@ -193,13 +194,12 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
             for (w in nNeighbors) {
                 val r = getAlias(w)
                 if (coloredNodes.contains(r) || r is x86) {
-                    ig.colors[r].let{ okColors.remove(it) }
+                    ig.colors[r].let { okColors.remove(it) }
                 }
             }
             if (okColors.isEmpty()) {
                 spilledNodes.add(n)
-            }
-            else {
+            } else {
                 coloredNodes.add(n)
                 val c = okColors.elementAt(0)
                 ig.colors[n] = c
