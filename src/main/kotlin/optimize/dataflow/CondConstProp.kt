@@ -244,12 +244,21 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
 ////        }
 ////        return false
 
-        private fun removeUnreachables(): Boolean {
-        val remove = mm.nodesWithPredecessorEdges().firstOrNull { values[it]?.unreachability is Unreachability.Top }
-        if (remove != null) {
-            println(remove)
-            mm.removeConnection(remove.from, remove.node, remove.jump)
-            mm.ensureIfsAreOk()
+    private fun removeUnreachables(): Boolean {
+//        val remove = mm.fastNodesWithPredecessors().firstOrNull {
+//            it !is CFGNode.Start && bigMeet(mm.predecessorEdges(it)).unreachability is Unreachability.Top
+//        }
+//        if (remove != null) {
+//            mm.removeNode(remove)
+//            mm.ensureIfsAreOk()
+//            return true
+//        }
+        val removeEdge = mm.nodesWithPredecessorEdges().firstOrNull { values[it]?.unreachability is Unreachability.Top }
+        if (removeEdge != null) {
+            mm.removeConnection(removeEdge.from, removeEdge.node, removeEdge.jump)
+            if (mm.predecessors(removeEdge.from).isNotEmpty())
+                mm.ensureIfsAreOk()
+            else mm.removeNode(removeEdge.from)
             return true
         }
         return false

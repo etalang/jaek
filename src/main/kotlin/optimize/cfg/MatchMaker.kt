@@ -19,6 +19,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
                 l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
             }
             if (it is CFGNode.If) require(successorEdges(it).let { it.size==2 || it.size==0  })
+            require(!predecessors.contains(it) || predecessors[it]?.isNotEmpty()==true)
         }
     }
 
@@ -130,6 +131,23 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     fun ensureIfsAreOk() : Boolean{
         val found = successors.keys.firstOrNull{it is CFGNode.If && successorEdges(it).size < 2}
         if (found != null) {
+//            if (fallThrough(found)==found) {
+//                println("DUMB")
+//                val dummy = CFGNode.NOOP()
+//                connect(dummy,dummy,true)
+//                connect(found,dummy,true)
+//                return true
+//            }
+//            if (jumpsInto(found)==found) {
+//                println("DUMB")
+//
+//                val dummy = CFGNode.NOOP()
+//                connect(dummy,dummy,true)
+//                connect(found,dummy,false)
+//                return true
+//
+//            }
+//            println("found $found. child: ${successors(found)}")
             removeAndLink(found)
             ensureIfsAreOk()
             return true
@@ -170,6 +188,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun removeAndLink(node: CFGNode): Boolean {
+        println("removing $node. pred: ${predecessorEdges(node)}")
         val fallThrough = fallThrough(node)
         val jumpTo = jumpingTo(node)
         if (jumpTo == null && fallThrough == null) {
