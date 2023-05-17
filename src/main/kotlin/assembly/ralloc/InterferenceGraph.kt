@@ -1,6 +1,7 @@
 package assembly.ralloc
 
 import assembly.LVA.CFGNode
+import assembly.LVA.CFG
 import assembly.x86.Destination
 import assembly.x86.Instruction
 import assembly.x86.Register
@@ -10,7 +11,7 @@ import assembly.x86.Register.x86Name.*
 
 /** InterferenceGraph represents the interferences of all registers? (abstract registers) with other
  * registers */
-class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : List<Instruction>) {
+class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val cfg : CFG,  val insns : List<Instruction>) {
     val adjList: MutableMap<Register, MutableSet<Register>> = mutableMapOf()
     val degrees: MutableMap<Register, Int> = mutableMapOf()
     val precolored : Set<x86> = setOf(x86(RAX), x86(RBX), x86(RCX), x86(RDX), x86(RDI), x86(RSI), x86(RSP), x86(RBP),
@@ -23,20 +24,33 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
 
 
     fun addEdge(src: Register, dest: Register) {
-        if (adjList.keys.contains(src) && src !is x86) {
-            adjList[src]?.add(dest)
-            degrees[src] = degrees[src]?.plus(1) ?: -1
-        }
-        else {
-            if (src !is x86) {
-                adjList[src] = mutableSetOf(dest)
-                degrees[src] = 1
+        if (src != dest) {
+            if (adjList.keys.contains(src) && !adjList[src]!!.contains(dest)) {
+                if (src !is x86) {
+                    adjList[src]?.add(dest)
+                    degrees[src] = degrees[src]?.plus(1) ?: -1
+                }
+                if (dest !is x86) {
+                    adjList[dest]?.add(src)
+                    degrees[dest] = degrees[dest]?.plus(1) ?: -1
+                }
+            }
+            else if (!adjList.keys.contains(src)) {
+                if (src !is x86) {
+                    adjList[src] = mutableSetOf(dest)
+                    degrees[src] = 1
+                }
+                if (dest !is x86) {
+                    adjList[dest] = mutableSetOf(src)
+                    degrees[dest] = 1
+                }
             }
         }
     }
 
 
     fun constructGraph() {
+        // TODO: the following block is to prevent null lookups
         val encountered = insns.flatMap { it.involved }.toSet()
         for (temp in encountered) {
             adjList[temp] = mutableSetOf()
@@ -47,6 +61,7 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
             degrees[p] = 0
             colors[p] = p.name.ordinal
         }
+
         for (conflictSet in liveIns.values) {
             for (u in conflictSet) { // more elegant way to iterate over all pairs?
                 for (v in conflictSet) {
@@ -60,6 +75,20 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
             }
         }
 
+        for (node in liveIns.keys) {
+            val outEdges = node.to.mapNotNull { cfg.targets[it] }
+            val liveOut = mutableSetOf<Register>()
+            for (cfgn in outEdges) {
+                liveOut.addAll(liveIns[cfgn]!!)
+            }
+            for (r1 in node.insn.def) {
+                for (r2 in liveOut) {
+                    addEdge(r1, r2)
+                    addEdge(r2, r1)
+                }
+            }
+        }
+
         for (insn in insns) {
             if (insn is Instruction.MOV && insn.dest is Destination.RegisterDest && insn.src is Source.RegisterSrc) {
                 for (reg in insn.involved) {
@@ -69,6 +98,33 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val insns : L
                 }
             }
         }
+
+
+//        // APPEL IMPLEMENTATION
+//        var live = setOf<Register>()
+//        for (insn in insns.reversed()) {
+//            if (insn is Instruction.MOV && insn.dest is Destination.RegisterDest
+//                && insn.src is Source.RegisterSrc) {
+//                live = live.minus(insn.use)
+//                for (n in insn.def union insn.use) {
+//                    if (moveList.keys.contains(n)) {
+//                        moveList[n]?.add(Move(insn.dest.r, insn.src.r))
+//                    }
+//                    else {
+//                        moveList[n] = mutableSetOf(Move(insn.dest.r, insn.src.r))
+//                    }
+//                }
+//            }
+//            live = live.union(insn.def)
+//            for (d in insn.def) {
+//                for (l in live) {
+//                    addEdge(l, d)
+//                }
+//            }
+//            live = live.minus(insn.def).union(insn.use)
+//        }
+
+
     }
 
     

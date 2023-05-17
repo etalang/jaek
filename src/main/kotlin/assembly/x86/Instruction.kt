@@ -396,7 +396,7 @@ sealed class Instruction {
     }
 
     /** Decrements the stack pointer and then stores 204 on the top of the stack. */
-    class PAD() : Instruction() {
+    class PAD : Instruction() {
         override val def: Set<Register> = setOf(x86(RSP))
         override val use: Set<Register> = setOf()
         override val involved: Set<Abstract> = setOf()
@@ -407,7 +407,7 @@ sealed class Instruction {
     }
 
     /** pseudo-instruction, a placeholder for pushing caller-save registers onto the stack */
-    class CALLERSAVEPUSH() : Instruction() {
+    class CALLERSAVEPUSH : Instruction() {
         override val def: Set<Register> = setOf()
         override val use: Set<Register> = setOf()
         override val involved: Set<Abstract> = setOf()
@@ -418,7 +418,7 @@ sealed class Instruction {
     }
 
     /** pseudo-instruction, a placeholder for popping caller-save registers off of the stack */
-    class CALLERSAVEPOP() : Instruction() {
+    class CALLERSAVEPOP : Instruction() {
         override val def: Set<Register> = setOf()
         override val use: Set<Register> = setOf()
         override val involved: Set<Abstract> = setOf()
@@ -451,8 +451,8 @@ sealed class Instruction {
      * TODO: The operand can be an immediate value, a general-purpose register, or a memory location.
      */
     class CALL(val label: Label) : Instruction() {
-        override val def: Set<Register> = setOf(x86(RSP), x86(RAX), x86(RCX), x86(RDX), x86(RDI), x86(RSI),
-            x86(R8), x86(R9), x86(R10), x86(R11))
+        override val def: MutableSet<Register> = mutableSetOf(x86(RSP), x86(RAX),
+            x86(RCX), x86(RDX), x86(RDI), x86(RSI), x86(R8), x86(R9), x86(R10), x86(R11))
         override val use: Set<Register> = setOf(x86(RSP))
         override val involved: Set<Abstract> = setOf()
 

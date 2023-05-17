@@ -6,7 +6,7 @@ import optimize.IROptimizer.Graphable
 
 class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
     val liveIn: Map<CFGNode, Set<Register>>
-    private val cfg = CFGBuilder(funcDecl).build()
+    val cfg = CFGBuilder(funcDecl).build()
 
     init {
         val inVals: MutableMap<CFGNode, Set<Register>> = mutableMapOf()

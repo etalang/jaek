@@ -58,7 +58,7 @@ class TrivialRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         for (i in 1..funcType.argCount) populateArguments.add(
             MOV(
                 RegisterDest(Abstract("_ARG$i")),
-                cc.getArg(i, numTemps)
+                cc.getArg(i)
             )
         )
         val allocatedInsns = populateArguments + insns

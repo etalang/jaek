@@ -6,6 +6,7 @@ import assembly.x86.Register
 import assembly.x86.Register.*
 import assembly.x86.Source
 import assembly.ralloc.InterferenceGraph.*
+import kotlinx.coroutines.selects.select
 
 class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruction>) {
     // WORKLISTS/DATA STRUCTURE DECLARATIONS
@@ -16,7 +17,7 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     val spilledNodes = mutableSetOf<Register>() // nodes marked for spilling
     val coalescedNodes = mutableSetOf<Register>() // nodes that have been coalesced
     val coloredNodes = mutableSetOf<Register>() // nodes successfully colored
-    val selectStack = mutableSetOf<Register>() // stack with temporaries removed from the graph
+    val selectStack = mutableListOf<Register>() // stack with temporaries removed from the graph
 
     /// MOVE INSTRUCTIONS -- the following sets of move insns should be all disjoint from each other
     val worklistMoves = mutableSetOf<Move>()
@@ -24,6 +25,9 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     val frozenMoves = mutableSetOf<Move>()
     val constrainedMoves = mutableSetOf<Move>()
     val coalescedMoves = mutableSetOf<Move>()
+
+    // DON'T COLOR THINGS RSP OR RBP COLOR!
+    val reservedColors = setOf(4,5)
 
     init {
         for (reg in ig.degrees.keys) {
@@ -55,7 +59,7 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     }
 
     fun adjacent(n : Register) : MutableSet<Register> {
-        return ig.adjList[n]?.minus(selectStack union coalescedNodes)?.toMutableSet() ?: mutableSetOf()
+        return ig.adjList[n]?.minus(selectStack.toSet() union coalescedNodes)?.toMutableSet() ?: mutableSetOf()
     }
 
     /* REQUIRED FOR SIMPLIFY */
@@ -170,12 +174,17 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
 
     fun assignColors() {
         while (selectStack.isNotEmpty()) {
-            val n = selectStack.elementAt(0)
-            selectStack.remove(n)
+            val n = selectStack.removeLast()
+//            selectStack = selectStack.removeLast
 //            if (n is x86) // TODO: still a bandaid fix but maybe more plausible
 //                coloredNodes.add(n)
             val okColors = mutableSetOf<Int>()
-            okColors.addAll(0 until K )
+            for (idx in 0 until K) {
+                if (!reservedColors.contains(idx)) {
+                    okColors.add(idx)
+                }
+            }
+//            okColors.addAll(0 until K)
             val nNeighbors = ig.adjList[n] ?: emptySet()
             for (w in nNeighbors) {
                 val r = getAlias(w)

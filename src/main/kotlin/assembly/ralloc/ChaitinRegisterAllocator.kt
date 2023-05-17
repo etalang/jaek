@@ -13,11 +13,10 @@ import java.io.File
 
 class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String, EtaFunc>) :
     RegisterAllocator(assembly, functionTypes) {
-    val K = 12
-    val regOrder = listOf(
-        x86(RCX), x86(RDI),
-        x86(RSI), x86(R8), x86(R9), x86(R10), x86(R11), x86(RBX), x86(R12), x86(R13), x86(R14), x86(R15),
-    )
+    val K = 16
+    // needs to be exact same ordering as declaration of enum x86Name in Register
+    val regOrder = listOf(x86(RAX), x86(RBX), x86(RCX), x86(RDX), x86(RSP), x86(RBP), x86(RDI), x86(RSI),
+        x86(R8), x86(R9), x86(R10), x86(R11), x86(R12), x86(R13), x86(R14), x86(R15))
 
     // tracking offset map of spilled temps per function (func name -> (temp name -> offset))
     val fullOffsetMap: MutableMap<String, MutableMap<String, Int>> = mutableMapOf()
@@ -30,12 +29,31 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     }
 
     var debugLoopCtr = 0
-    override fun allocateFunction(funcDecl: x86FuncDecl): x86FuncDecl {
+    override fun allocateFunction(n: x86FuncDecl): x86FuncDecl {
         val calleeTemps: Map<x86, Abstract> = calleeSavedRegs.associateWith { calleeSpill() }
+//        val callerTemps: Map<x86, Abstract> = callerSavedRegs.associateWith { callerSpill() }
         val saveCallees =
             calleeSavedRegs.map { MOV(Destination.RegisterDest(calleeTemps[it]!!), Source.RegisterSrc(it)) }
+//        val saveCallers = callerSavedRegs.map{ MOV(Destination.RegisterDest(callerTemps[it]!!),
+//            Source.RegisterSrc(it)) }
+//        val popCallers = callerSavedRegs.map{ MOV(Destination.RegisterDest(it),
+//            Source.RegisterSrc(callerTemps[it]!!)) }.reversed()
+
+
         val withCalleeSaved: MutableList<Instruction> = saveCallees.toMutableList()
-        for (insn in funcDecl.body) {
+
+        val funcType = functionTypes[n.name]!!
+        val cc = ConventionalCaller(funcType)
+        val populateArguments: MutableList<Instruction> = mutableListOf()
+        for (i in 1..funcType.argCount) populateArguments.add(
+            MOV(
+                Destination.RegisterDest(Abstract("_ARG$i")),
+                cc.getArg(i)
+            )
+        )
+        withCalleeSaved.addAll(populateArguments)
+
+        for (insn in n.body) {
             if (insn is LEAVE) {
                 withCalleeSaved.addAll(calleeSavedRegs.map {
                     MOV(
@@ -44,12 +62,20 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                     )
                 })
             }
-            if (insn is CALLERSAVEPOP || insn is CALLERSAVEPUSH) {
+            if (insn is CALLERSAVEPUSH) {
+//                withCalleeSaved.addAll(saveCallers)
                 continue
             }
+            if (insn is CALLERSAVEPOP) {
+//                withCalleeSaved.addAll(popCallers)
+                continue
+            }
+//            if (insn is CALL) {
+//                insn.def.addAll(callerTemps.values)
+//            }
             withCalleeSaved.add(insn)
         }
-        return chitLoop(x86FuncDecl(funcDecl.name, withCalleeSaved))
+        return chitLoop(x86FuncDecl(n.name, withCalleeSaved))
     }
 
     fun chitLoop(n: x86FuncDecl): x86FuncDecl {
@@ -57,8 +83,9 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         println("${n.name} allocation round $debugLoopCtr")
         // LIVENESS ANALYSIS
         val dataflow = LiveVariableAnalysis(n)
+        File("dataflow${debugLoopCtr}.dot").writeText(dataflow.graphViz())
         // BUILD INTERFERENCE GRAPH
-        val interferenceGraph = InterferenceGraph(dataflow.liveIn, n.body)
+        val interferenceGraph = InterferenceGraph(dataflow.liveIn, dataflow.cfg, n.body)
         interferenceGraph.constructGraph()
 
         // WORKLISTS DECLARATIONS/INITIALIZATION
@@ -157,14 +184,14 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     }
 
     private fun heuristic(regSet : Set<Register>) : Register {
-        val nonSpills = mutableSetOf<Register>()
-        for (reg in regSet) {
-            if (reg is Abstract && !reg.name.startsWith("\$S")) {
-                nonSpills.add(reg)
-            }
-        }
-        if (nonSpills.isNotEmpty())
-            return nonSpills.last()
+//        val nonSpills = mutableSetOf<Register>()
+//        for (reg in regSet) {
+//            if (reg is Abstract && !reg.name.startsWith("\$S")) {
+//                nonSpills.add(reg)
+//            }
+//        }
+//        if (nonSpills.isNotEmpty())
+//            return nonSpills.last()
         return regSet.random()
     }
 
@@ -203,15 +230,16 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         val padTemps = if (numTemps % 2 == 1) 1 else 0
         val argumentsTemps = mutableListOf<Instruction>(ENTER(8L * (numTemps + padTemps)))
 
-        val funcType = functionTypes[name]!!
-        val cc = ConventionalCaller(funcType)
-        for (i in 1..funcType.argCount) argumentsTemps.add(
-            MOV(
-                Destination.RegisterDest(regOrder[worklist.ig.colors[Abstract("_ARG$i")]!!]),
-                cc.getArg(i, numTemps)
-            )
-        )
-        return argumentsTemps + filteredInsns
+//        val funcType = functionTypes[name]!!
+//        val cc = ConventionalCaller(funcType)
+//        for (i in 1..funcType.argCount) argumentsTemps.add(
+//            MOV(
+//                Destination.RegisterDest(regOrder[worklist.ig.colors[Abstract("_ARG$i")]!!]),
+//                cc.getArg(i)
+//            )
+//        )
+        argumentsTemps.addAll(filteredInsns)
+        return argumentsTemps
     }
 
     fun rewriteSpills(funcDecl: x86FuncDecl, worklist: Worklist): List<Instruction> {
@@ -414,7 +442,13 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     private var freshCalleeTempCount = 0
     private fun calleeSpill(): Abstract {
         freshCalleeTempCount++
-        return Abstract("\$C$freshCalleeTempCount")
+        return Abstract("\$CE$freshCalleeTempCount")
+    }
+
+    private var freshCallerTempCount = 0
+    private fun callerSpill(): Abstract {
+        freshCallerTempCount++
+        return Abstract("\$CR$freshCallerTempCount")
     }
 
     private var freshSpillTempCount = 0
