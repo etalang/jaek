@@ -50,7 +50,6 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, val outputCFG: S
 
         val postFile = outputCFG.getOutFile(lir.name, "final")
         postFile?.writeText(cfg.graphViz())
-        println("completed $count rounds for ${lir.name}")
     }
 
     fun destroy(): LIRFuncDecl {

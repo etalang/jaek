@@ -1,21 +1,19 @@
 use io
 use conv
 
-f() : int {
-    c : bool = true
-    x : bool = true
-    if (c & x) {
-        a : int = 5
-        b : int = a + 1
-        print(unparseInt(b))
-        return b
-    }
-
-    return 17
-}
 
 main(args : int[][]) {
-    str : int[] = {1,2,3}
-    print("hello")
-    x : int = f()
+    a : int = 5
+    x : int = a + 1
+    y : int = 5
+    z : int = y
+    b : int = 10
+    tua : int = 4444
+    noah : int = 234
+    blu : int = 344
+    kaet : int = 134
+    x = a + x + y + z + tua + noah + blu
+    print(unparseInt(x))
 }
+
+f(x : int) {}

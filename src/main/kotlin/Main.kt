@@ -185,7 +185,8 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
                                     try {
                                         val funcMap = context.runtimeFunctionMap(translator::mangleMethodName)
-                                        val assemblyAssembler = AssemblyGenerator(ir, funcMap)
+                                        val assemblyAssembler =
+                                            AssemblyGenerator(ir, funcMap, optConfig.desire(Opt.Actions.reg))
                                         // print to file.s
                                         val assembly = assemblyAssembler.generate()
                                         assemblyFile?.writeText(assembly)
@@ -221,89 +222,87 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                 echo("Skipping $it due to invalid file.")
             }
         }
-
-    }
-}
-
-/** Takes a path string and expands beginning home reference ~ along with any instances of . and .. */
-private fun expandPath(inPath: String): Path {
-    return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
-}
-
-/**
- * Expand and make absolute a possibly relative directory path. Validate the directory existence.
- *
- * @throws BadParameterValue when the directory is invalid
- */
-private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
-    val expandedInPath = expandPath(inPath)
-
-    val absInPath = when {
-        (expandedInPath.isAbsolute) -> expandedInPath
-        else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
     }
 
-    if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
-        text = "The file location must be an existing directory.", option = option
-    )
-    return absInPath
-}
-
-private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String): File {
-    val outFileName = inFile.nameWithoutExtension + extension
-    val outFile = File(diagnosticPath.toString(), outFileName)
-    if (outFile.exists() && !outFile.isDirectory) {
-        outFile.delete()
+    /** Takes a path string and expands beginning home reference ~ along with any instances of . and .. */
+    private fun expandPath(inPath: String): Path {
+        return Path(inPath.replaceFirst("~", System.getProperty("user.home"))).normalize()
     }
-    outFile.createNewFile()
-    return outFile
-}
 
-@Throws(LexicalError::class)
-private fun lex(inFile: File, lexedFile: File?) {
-    val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
-    while (true) {
+    /**
+     * Expand and make absolute a possibly relative directory path. Validate the directory existence.
+     *
+     * @throws BadParameterValue when the directory is invalid
+     */
+    private fun processDirPath(inPath: String, option: OptionWithValues<String, String, String>): Path {
+        val expandedInPath = expandPath(inPath)
+
+        val absInPath = when {
+            (expandedInPath.isAbsolute) -> expandedInPath
+            else -> Path(System.getProperty("user.dir"), expandedInPath.toString())
+        }
+
+        if (!File(absInPath.toString()).isDirectory) throw BadParameterValue(
+            text = "The file location must be an existing directory.", option = option
+        )
+        return absInPath
+    }
+
+    private fun getOutFileName(inFile: File, diagnosticPath: Path, extension: String): File {
+        val outFileName = inFile.nameWithoutExtension + extension
+        val outFile = File(diagnosticPath.toString(), outFileName)
+        if (outFile.exists() && !outFile.isDirectory) {
+            outFile.delete()
+        }
+        outFile.createNewFile()
+        return outFile
+    }
+
+    @Throws(LexicalError::class)
+    private fun lex(inFile: File, lexedFile: File?) {
+        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
+        while (true) {
+            try {
+                val t: Symbol = (jFlexLexer.next_token() ?: break)
+                if (t.sym == SymbolTable.EOF) break
+                lexedFile?.appendText((t as Token<*>).lexInfo() + "\n")
+            } catch (e: LexicalError) {
+                lexedFile?.appendText("${e.mini}\n")
+                throw e
+            }
+        }
+    }
+
+    @Throws(ParseError::class)
+    private fun parse(inFile: File, parsedFile: File?): Node {
+        val AST = ASTUtil.getAST(inFile.absoluteFile)
+        parsedFile?.let {
+            val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
+            AST.write(writer)
+            writer.flush()
+            writer.close()
+        }
+        return AST
+    }
+
+    @Throws(SemanticError::class)
+    private fun typeCheck(
+        inFile: File, ast: Node, typedFile: File?, libpath: String, kompiler: Kompiler
+    ): typechecker.Context {
         try {
-            val t: Symbol = (jFlexLexer.next_token() ?: break)
-            if (t.sym == SymbolTable.EOF) break
-            lexedFile?.appendText((t as Token<*>).lexInfo() + "\n")
-        } catch (e: LexicalError) {
-            lexedFile?.appendText("${e.mini}\n")
+            val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
+            var tc = TypeChecker(topGamma, inFile)
+            if (ast !is Interface) {
+                tc.typeCheck(ast)
+            }
+            typedFile?.appendText("Valid Eta Program")
+            return tc.Gamma
+        } catch (e: CompilerError) {
+            // only append if error in import has not already been appended inside cTLC
+            if (e.file == inFile) typedFile?.appendText(e.mini)
             throw e
         }
     }
 }
-
-@Throws(ParseError::class)
-private fun parse(inFile: File, parsedFile: File?): Node {
-    val AST = ASTUtil.getAST(inFile.absoluteFile)
-    parsedFile?.let {
-        val writer = CodeWriterSExpPrinter(PrintWriter(parsedFile))
-        AST.write(writer)
-        writer.flush()
-        writer.close()
-    }
-    return AST
-}
-
-@Throws(SemanticError::class)
-private fun typeCheck(
-    inFile: File, ast: Node, typedFile: File?, libpath: String, kompiler: Kompiler
-): typechecker.Context {
-    try {
-        val topGamma = kompiler.createTopLevelContext(inFile, ast, libpath, typedFile)
-        var tc = TypeChecker(topGamma, inFile)
-        if (ast !is Interface) {
-            tc.typeCheck(ast)
-        }
-        typedFile?.appendText("Valid Eta Program")
-        return tc.Gamma
-    } catch (e: CompilerError) {
-        // only append if error in import has not already been appended inside cTLC
-        if (e.file == inFile) typedFile?.appendText(e.mini)
-        throw e
-    }
-}
-
 
 fun main(args: Array<String>) = Etac().main(args)

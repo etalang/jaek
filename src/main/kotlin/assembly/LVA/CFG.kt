@@ -1,9 +1,11 @@
 package assembly.LVA
 
-class CFG(val nodes: List<CFGNode>, val name: String, val targets: Map<String, CFGNode>) {
+import optimize.IROptimizer.Graphable
+
+class CFG(val nodes: List<CFGNode>, val name: String, val targets: Map<String, CFGNode>) : Graphable {
     val start = nodes.first()
 
-    fun graphViz(): String {
+    override fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
         nodes.forEachIndexed { index, t -> map[t] = "n$index" }
         return buildString {

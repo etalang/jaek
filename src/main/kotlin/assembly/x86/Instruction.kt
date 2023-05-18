@@ -1,5 +1,8 @@
 package assembly.x86
 
+import assembly.x86.Register.*
+import assembly.x86.Register.x86Name.*
+
 /**
  * Flag Information:
  * - ZF = 1 <=> result = 0
@@ -8,12 +11,12 @@ package assembly.x86
  * - PF = 1 <=> sum of bits is even
  */
 sealed class Instruction {
-    abstract val involved: Set<Register.Abstract>
+    abstract val involved: Set<Abstract>
     abstract val use: Set<Register>
     abstract val def: Set<Register>
 
     class COMMENT(val str: String) : Instruction() {
-        override val involved: Set<Register.Abstract> = setOf()
+        override val involved: Set<Abstract> = setOf()
         override val use: Set<Register> = setOf()
         override val def: Set<Register> = setOf()
 
@@ -30,7 +33,7 @@ sealed class Instruction {
      * be the same size, which can be a byte, a word, a doubleword, or a quadword.
      */
     class MOV(val dest: Destination, val src: Source) : Instruction() {
-        override val involved: Set<Register.Abstract> = dest.involved union src.involved
+        override val involved: Set<Abstract> = dest.involved union src.involved
         override val def: Set<Register> = dest.def
         override val use: Set<Register>
             get() {
@@ -48,7 +51,7 @@ sealed class Instruction {
     sealed class Arith(val dest: Destination, val src: Source) : Instruction() {
         override val def: Set<Register> = dest.def
         override val use: Set<Register> = dest.use union src.use
-        override val involved: Set<Register.Abstract> = dest.involved union src.involved
+        override val involved: Set<Abstract> = dest.involved union src.involved
 
         /**
          * [dest] := [dest] + [src]
@@ -107,7 +110,7 @@ sealed class Instruction {
         class INC(val dest: Destination) : Instruction() {
             override val def = dest.def
             override val use = dest.use
-            override val involved: Set<Register.Abstract> = dest.involved
+            override val involved: Set<Abstract> = dest.involved
 
             override fun toString(): String {
                 return "inc $dest"
@@ -117,7 +120,7 @@ sealed class Instruction {
         class DEC(val dest: Destination) : Instruction() {
             override val def = dest.def
             override val use = dest.use
-            override val involved: Set<Register.Abstract> = dest.involved
+            override val involved: Set<Abstract> = dest.involved
 
             override fun toString(): String {
                 return "dec $dest"
@@ -129,7 +132,7 @@ sealed class Instruction {
     sealed class Logic(var dest: Destination, var src: Source) : Instruction() {
         override val def: Set<Register> = dest.def
         override val use: Set<Register> = dest.use union src.use
-        override val involved: Set<Register.Abstract> = dest.involved union src.involved
+        override val involved: Set<Abstract> = dest.involved union src.involved
 
         /**
          * [dest] := [dest] AND [src]
@@ -216,7 +219,7 @@ sealed class Instruction {
     class CMP(val dest: Destination, val src: Source) : Instruction() {
         override val def: Set<Register> = setOf()
         override val use: Set<Register> = dest.use union src.use
-        override val involved: Set<Register.Abstract> = dest.involved union src.involved
+        override val involved: Set<Abstract> = dest.involved union src.involved
 
         override fun toString(): String {
             return "cmp $dest, $src"
@@ -232,7 +235,7 @@ sealed class Instruction {
     class TEST(val reg1: Register, val reg2: Register) : Instruction() {
         override val def: Set<Register> = setOf()
         override val use: Set<Register> = setOf(reg1, reg2)
-        override val involved: Set<Register.Abstract> = listOf(reg1, reg2).filterIsInstance<Register.Abstract>().toSet()
+        override val involved: Set<Abstract> = listOf(reg1, reg2).filterIsInstance<Abstract>().toSet()
 
         override fun toString(): String {
             return "test $reg1, $reg2"
@@ -247,7 +250,7 @@ sealed class Instruction {
     sealed class JumpSet(val reg: Register) : Instruction() {
         override val def: Set<Register> = setOf(reg)
         override val use: Set<Register> = setOf()
-        override val involved: Set<Register.Abstract> = listOf(reg).filterIsInstance<Register.Abstract>().toSet()
+        override val involved: Set<Abstract> = listOf(reg).filterIsInstance<Abstract>().toSet()
 
         class SETZ(reg: Register) : JumpSet(reg) {
             override fun toString(): String {
@@ -297,7 +300,7 @@ sealed class Instruction {
     sealed class Jump(val loc: Location) : Instruction() {
         override val def: Set<Register> = setOf()
         override val use: Set<Register> = setOf()
-        override val involved: Set<Register.Abstract> = setOf()
+        override val involved: Set<Abstract> = setOf()
 
         /** Transfers program control to instruction at [loc] */
         class JMP(loc: Location) : Jump(loc) {
@@ -372,9 +375,9 @@ sealed class Instruction {
 
     /** RDX:RAX := sign-extend of RAX */
     class CQO : Instruction() {
-        override val def: Set<Register> = setOf()
-        override val use: Set<Register> = setOf()
-        override val involved: Set<Register.Abstract> = setOf()
+        override val def: Set<Register> = setOf(x86(RDX),x86(RAX))
+        override val use: Set<Register> = setOf(x86(RAX))
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "cqo"
@@ -383,9 +386,9 @@ sealed class Instruction {
 
     /** Decrements the stack pointer and then stores [arg] on the top of the stack. */
     class PUSH(val arg: Register) : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val use: Set<Register> = setOf(arg, Register.x86(Register.x86Name.RSP))
-        override val involved: Set<Register.Abstract> = listOf(arg).filterIsInstance<Register.Abstract>().toSet()
+        override val def: Set<Register> = setOf(x86(RSP))
+        override val use: Set<Register> = setOf(arg, x86(RSP))
+        override val involved: Set<Abstract> = listOf(arg).filterIsInstance<Abstract>().toSet()
 
         override fun toString(): String {
             return "push $arg"
@@ -393,13 +396,35 @@ sealed class Instruction {
     }
 
     /** Decrements the stack pointer and then stores 204 on the top of the stack. */
-    class PAD() : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val use: Set<Register> = setOf()
-        override val involved: Set<Register.Abstract> = setOf()
+    class PAD : Instruction() {
+        override val def: Set<Register> = setOf(x86(RSP))
+        override val use: Set<Register> = setOf(x86(RSP))
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "push 204"
+        }
+    }
+
+    /** pseudo-instruction, a placeholder for pushing caller-save registers onto the stack */
+    class CALLERSAVEPUSH : Instruction() {
+        override val def: Set<Register> = setOf()
+        override val use: Set<Register> = setOf()
+        override val involved: Set<Abstract> = setOf()
+
+        override fun toString(): String {
+            return "push on_charles"
+        }
+    }
+
+    /** pseudo-instruction, a placeholder for popping caller-save registers off of the stack */
+    class CALLERSAVEPOP : Instruction() {
+        override val def: Set<Register> = setOf()
+        override val use: Set<Register> = setOf()
+        override val involved: Set<Abstract> = setOf()
+
+        override fun toString(): String {
+            return "pop off_charles"
         }
     }
 
@@ -410,9 +435,9 @@ sealed class Instruction {
      * TODO: The destination operand can be a general-purpose register, memory location, or segment register.
      */
     class POP(val dest: Register) : Instruction() {
-        override val def: Set<Register> = setOf(dest, Register.x86(Register.x86Name.RSP))
-        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val involved: Set<Register.Abstract> = listOf(dest).filterIsInstance<Register.Abstract>().toSet()
+        override val def: Set<Register> = setOf(dest, x86(RSP))
+        override val use: Set<Register> = setOf(x86(RSP))
+        override val involved: Set<Abstract> = listOf(dest).filterIsInstance<Abstract>().toSet()
 
         override fun toString(): String {
             return "pop $dest"
@@ -426,9 +451,11 @@ sealed class Instruction {
      * TODO: The operand can be an immediate value, a general-purpose register, or a memory location.
      */
     class CALL(val label: Label) : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val involved: Set<Register.Abstract> = setOf()
+        override val def: MutableSet<Register> = mutableSetOf(x86(RSP), x86(RAX),
+            x86(RCX), x86(RDX), x86(RDI), x86(RSI), x86(R8), x86(R9), x86(R10), x86(R11))
+        override val use: Set<Register> = setOf(x86(RSP),x86(RDI), x86(RSI), x86(RDX),
+            x86(RCX), x86(R8), x86(R9))
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "call $label"
@@ -444,9 +471,9 @@ sealed class Instruction {
      *     pointers.
      */
     class ENTER(val bytes: Long) : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP), Register.x86(Register.x86Name.RBP))
-        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP), Register.x86(Register.x86Name.RBP))
-        override val involved: Set<Register.Abstract> = setOf()
+        override val def: Set<Register> = setOf(x86(RSP), x86(RBP))
+        override val use: Set<Register> = setOf(x86(RSP), x86(RBP))
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "enter $bytes, 0"
@@ -461,9 +488,9 @@ sealed class Instruction {
      * instruction) is then popped from the stack into the EBP register, restoring the calling procedure’s stack frame.
      */
     class LEAVE : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP), Register.x86(Register.x86Name.RBP))
-        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP), Register.x86(Register.x86Name.RBP))
-        override val involved: Set<Register.Abstract> = setOf()
+        override val def: Set<Register> = setOf(x86(RSP), x86(RBP))
+        override val use: Set<Register> = setOf(x86(RSP), x86(RBP))
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "leave"
@@ -475,9 +502,10 @@ sealed class Instruction {
      * the stack by a CALL instruction, and the return is made to the instruction that follows the CALL instruction.
      */
     class RET : Instruction() {
-        override val def: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val use: Set<Register> = setOf(Register.x86(Register.x86Name.RSP))
-        override val involved: Set<Register.Abstract> = setOf()
+        override val def: Set<Register> = setOf(x86(RSP))
+        override val use: Set<Register> = setOf(x86(RSP), x86(RBX), x86(R12), x86(R13), x86(R14),
+            x86(R15), x86(RAX), x86(RDX))
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "ret"
@@ -488,7 +516,7 @@ sealed class Instruction {
     class NOP : Instruction() {
         override val def: Set<Register> = setOf()
         override val use: Set<Register> = setOf()
-        override val involved: Set<Register.Abstract> = setOf()
+        override val involved: Set<Abstract> = setOf()
 
         override fun toString(): String {
             return "nop"
@@ -498,10 +526,10 @@ sealed class Instruction {
     /** Unsigned divide RDX:RAX by [divisor], with result stored in RAX := Quotient, RDX := Remainder */
     class DIV(val divisor: Register) : Instruction() {
         override val def: Set<Register> = setOf(
-            Register.x86(Register.x86Name.RAX), Register.x86(Register.x86Name.RDX)
+            x86(RAX), x86(RDX)
         )
-        override val use: Set<Register> = setOf(divisor, Register.x86(Register.x86Name.RAX))
-        override val involved: Set<Register.Abstract> = listOf(divisor).filterIsInstance<Register.Abstract>().toSet()
+        override val use: Set<Register> = setOf(divisor, x86(RAX))
+        override val involved: Set<Abstract> = listOf(divisor).filterIsInstance<Abstract>().toSet()
 
         override fun toString(): String {
             return "idiv $divisor"
@@ -511,10 +539,10 @@ sealed class Instruction {
     /** RDX:RAX := RAX * [factor]. */
     class IMULSingle(val factor: Register) : Instruction() {
         override val def: Set<Register> = setOf(
-            Register.x86(Register.x86Name.RAX), Register.x86(Register.x86Name.RDX)
+            x86(RAX), x86(RDX)
         )
-        override val use: Set<Register> = setOf(factor, Register.x86(Register.x86Name.RAX))
-        override val involved: Set<Register.Abstract> = listOf(factor).filterIsInstance<Register.Abstract>().toSet()
+        override val use: Set<Register> = setOf(factor, x86(RAX))
+        override val involved: Set<Abstract> = listOf(factor).filterIsInstance<Abstract>().toSet()
 
         override fun toString(): String {
             return "imul $factor"

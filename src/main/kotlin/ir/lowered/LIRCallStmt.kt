@@ -14,24 +14,13 @@ import edu.cornell.cs.cs4120.etac.ir.IRCallStmt
 class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: List<LIRExpr>) : LIRStmt.FlatStmt() {
     override val java: IRCallStmt = factory.IRCallStmt(target.java, n_returns, args.map { it.java })
 
-    private val callerSavedRegs = listOf(
-        Register.x86(Register.x86Name.RAX),
-        Register.x86(Register.x86Name.RCX),
-        Register.x86(Register.x86Name.RDX),
-        Register.x86(Register.x86Name.RDI),
-        Register.x86(Register.x86Name.RSI),
-        Register.x86(Register.x86Name.R8),
-        Register.x86(Register.x86Name.R9),
-        Register.x86(Register.x86Name.R10),
-        Register.x86(Register.x86Name.R11)
-    )
-
     override val defaultTile: Tile.Regular
         get() {
             val builder = TileBuilder.Regular(1, this)
             val cc = ConventionalCaller(args.size, n_returns.toInt())
-            //push caller saved registers
-            callerSavedRegs.forEach { builder.add(PUSH(it)) } //ODD but + callee = EVEN
+            //push caller saved registers pseudo-instruction
+            builder.add(CALLERSAVEPUSH())
+//            callerSavedRegs.forEach { builder.add(PUSH(it)) } //ODD but + callee = EVEN
 
             //alignment before arguments get pushed on the stack
             val pushedReturns = (n_returns.toInt() - 2).coerceAtLeast(0)
@@ -63,7 +52,6 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             }
 
-
             for (i in args.size - 1 downTo 0) {
                 val argNum = i + 1
                 val tile = args[i].optimalTile()
@@ -92,7 +80,8 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
             }
 
             //after everything is done, restore caller saved
-            callerSavedRegs.reversed().forEach { builder.add(POP(it)) }
+            builder.add(CALLERSAVEPOP())
+//            callerSavedRegs.reversed().forEach { builder.add(POP(it)) }
             return builder.build()
         }
 

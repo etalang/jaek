@@ -59,7 +59,7 @@ class ConventionalCaller(private val numArgs: Int, private val numReturns: Int) 
      *
      * the idea is that we will do MOV( _ARGx, getArg(x) ) to populate the _ARG temp
      * **/
-    fun getArg(index: Int, numTemps : Int): Source {
+    fun getArg(index: Int): Source {
         val adjIdx = if (numReturns > 2) index + 1 else index // bump everything down one to keep space for ret ptr
 
         return if (adjIdx <= 6) { // domesticated args

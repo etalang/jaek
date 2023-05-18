@@ -1,14 +1,18 @@
 package assembly.LVA
 
+import assembly.x86.Instruction
 import assembly.x86.Register
 import assembly.x86.x86FuncDecl
+import optimize.IROptimizer.Graphable
 
-class LiveVariableAnalysis(val funcDecl: x86FuncDecl) {
+class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
     val liveIn: Map<CFGNode, Set<Register>>
-    private val cfg = CFGBuilder(funcDecl).build()
+    val liveOut: Map<CFGNode, Set<Register>>
+    val cfg = CFGBuilder(funcDecl).build()
 
     init {
         val inVals: MutableMap<CFGNode, Set<Register>> = mutableMapOf()
+        val outVals: MutableMap<CFGNode, Set<Register>> = mutableMapOf()
         cfg.nodes.forEach {
             inVals[it] = emptySet()
         }
@@ -20,7 +24,12 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) {
             val outEdges = node.to.mapNotNull { cfg.targets[it] }
             var out = emptySet<Register>()
             outEdges.forEach { out = out union (inVals[it] ?: emptySet()) }
+            outVals[node] = out
             val oldIn = inVals[node]
+            if (node.insn is Instruction.PUSH) {
+//                println("push on charles")
+
+            }
             val newIn = node.insn.use union (out - node.insn.def)
             if (newIn != oldIn) {
                 inVals[node] = newIn
@@ -29,9 +38,14 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) {
         }
 
         liveIn = inVals
+        liveIn.forEach {
+            if (!it.value.contains(Register.x86(Register.x86Name.RSP))) {
+            }
+        }
+        liveOut = outVals
     }
 
-    fun graphViz(): String {
+    override fun graphViz(): String {
         val map = mutableMapOf<CFGNode, String>()
         cfg.nodes.forEachIndexed { index, t -> map[t] = "n$index" }
         return buildString {

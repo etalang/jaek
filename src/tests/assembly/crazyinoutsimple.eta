@@ -16,7 +16,7 @@ fmanyargmanyret(arg1:int,arg2: int, arg3: int,arg4: int, arg5:int,arg6: int, arg
 //    println(unparseInt(arg3))
 //    println(unparseInt(arg4))
 //    println(unparseInt(arg5))
-//    println(unparseInt(arg6))
-//    println(unparseInt(arg7))
+//   println(unparseInt(arg6))
+//   println(unparseInt(arg7))
     return {8,324},{9,3043,304040},{10},{11,-1203},{12,555}
 }

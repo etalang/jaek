@@ -75,6 +75,28 @@ sealed class Register {
             return if (size == 64) x86NametoString(name) else x86NametoLow8BitString(name)
         }
 
+        companion object {
+            fun calleeSaved() : Set<x86> {
+                return setOf(
+                x86(x86Name.RBX),
+                x86(x86Name.R12),
+                x86(x86Name.R13),
+                x86(x86Name.R14),
+                x86(x86Name.R15))
+            }
+            fun callerSaved() : Set<x86> {
+                return setOf(x86(x86Name.RAX),
+                    x86(x86Name.RCX),
+                    x86(x86Name.RDX),
+                    x86(x86Name.RDI),
+                    x86(x86Name.RSI),
+                    x86(x86Name.R8),
+                    x86(x86Name.R9),
+                    x86(x86Name.R10),
+                    x86(x86Name.R11))
+            }
+        }
+
         override fun equals(other: Any?): Boolean {
             return if (other is x86){
                 other.name == this.name
