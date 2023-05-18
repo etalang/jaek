@@ -1,0 +1,13 @@
+use io
+use conv
+
+main(args : int[][]) {
+    w : int = 0; n : int;
+    i : int; o : int; p : int;
+    while (n < 100000000) {
+    i = 5; o = n + 1; p = 5;
+    w = w + 1 ; n= n+1}
+    asdg : int = 4444; qwet : int = 234; xzcv : int = 344;
+    w = w + i * o / p - n
+    print(unparseInt(w))
+}

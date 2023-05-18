@@ -1,0 +1,18 @@
+use io
+use conv
+
+main(args : int[][]) {
+    n : int = 0
+    a : int; x : int; y : int; z : int; b : int;
+    while (n < 100000000) {
+    a = 5; x = a + 1; y = 5; z = y; b = 10
+    n = n + 1 }
+    tua : int = 4444; noah : int = 234; blu : int = 344; kaet : int = 134
+    n = f(kaet)
+    x = a + x + y + z + tua + noah + blu + kaet
+    print(unparseInt(x))
+}
+
+f(w : int) : int {
+    return w
+}
