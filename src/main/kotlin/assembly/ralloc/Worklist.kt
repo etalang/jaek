@@ -29,11 +29,8 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     val activeMoves = mutableSetOf<Move>()
 
     // DON'T COLOR THINGS RSP OR RBP COLOR!
-    val reservedColors = setOf(0, 3) // RAX and RDX
+//    val reservedColors = setOf(0, 3) // RAX and RDX
 
-    fun sanity() {
-        spillWorkList.forEach { require(ig.degrees[it]!! >= K) }
-    }
 
     init {
         val initial = insns.flatMap { it.involved }.toMutableSet()
@@ -180,17 +177,15 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
         }
         while (selectStack.isNotEmpty()) {
             val n = selectStack.pop()
-//            println("$n")
-            println(" we interfere with : ${ig.adjList[n]}")
             if (n is x86) {
                 coloredNodes.add(n)
                 continue
             }
             val okColors = mutableSetOf<Int>()
             for (idx in 0 until K) {
-                if (!reservedColors.contains(idx)) {
+//                if (!reservedColors.contains(idx)) {
                     okColors.add(idx)
-                }
+//                }
             }
             for (w in ig.adjList[n]!!) {
                 val r = getAlias(w)
@@ -199,7 +194,6 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
                 }
             }
             if (okColors.isEmpty()) {
-                println("there is no color left for ${n}")
                 spilledNodes.add(n)
             } else {
                 coloredNodes.add(n)

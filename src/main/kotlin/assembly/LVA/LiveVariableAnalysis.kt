@@ -40,7 +40,6 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
         liveIn = inVals
         liveIn.forEach {
             if (!it.value.contains(Register.x86(Register.x86Name.RSP))) {
-                println()
             }
         }
         liveOut = outVals
