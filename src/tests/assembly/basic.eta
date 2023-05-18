@@ -5,7 +5,16 @@ use conv
 main(args : int[][]) {
     a : int = 5
     x : int = a + 1
-    f(x)
+    y : int = 5
+    z : int = y
+    b : int = 10
+    tua : int = 4444
+    noah : int = 234
+    blu : int = 344
+    kaet : int = 134
+    f(kaet)
+    x = a + x + y + z + tua + noah + blu
+    print(unparseInt(x))
 }
 
 f(x : int) {}

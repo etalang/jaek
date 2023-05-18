@@ -8,6 +8,7 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
     /** In the current calling conventions, the callee-save registers are rbp, rsp, rbx, and r12–r15. */
     val calleeSavedRegs = Register.x86.calleeSaved()
     val callerSavedRegs = Register.x86.callerSaved()
+    val hackyCallerSavedRegs = Register.x86.callerSaved().minus(Register.x86(Register.x86Name.RDX)).minus(Register.x86(Register.x86Name.RAX))
 
     fun allocate(): x86CompUnit {
         return allocateCompUnit(assembly)

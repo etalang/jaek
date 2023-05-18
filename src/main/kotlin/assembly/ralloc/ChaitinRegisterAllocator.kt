@@ -15,6 +15,8 @@ import java.io.File
 class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String, EtaFunc>) :
     RegisterAllocator(assembly, functionTypes) {
     val K = 16
+    val saveCallers: List<Instruction> = listOf(PAD()) + hackyCallerSavedRegs.map { PUSH(it) }
+    val popCallers: List<Instruction> = hackyCallerSavedRegs.reversed().map { POP(it) }.plus(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8)))
 
     // needs to be exact same ordering as declaration of enum x86Name in Register
     val regOrder = listOf(
@@ -50,10 +52,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         val calleeTemps: Map<x86, Abstract> = calleeSavedRegs.associateWith { calleeSpill() }
         val saveCallees =
             calleeSavedRegs.map { MOV(Destination.RegisterDest(calleeTemps[it]!!), Source.RegisterSrc(it)) }
-        val saveCallers: MutableList<Instruction> = callerSavedRegs.map { PUSH(it) }.toMutableList()
-        saveCallers.add(0, PAD())
-        val popCallers: MutableList<Instruction> = callerSavedRegs.reversed().map { POP(it) }.toMutableList()
-        popCallers.add(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8)))
+
         val withCalleeSaved: MutableList<Instruction> = saveCallees.toMutableList()
 
         val funcType = functionTypes[n.name]!!
@@ -74,14 +73,14 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                     )
                 })
             }
-            if (insn is CALLERSAVEPUSH) {
-                withCalleeSaved.addAll(saveCallers)
-                continue
-            }
-            if (insn is CALLERSAVEPOP) {
-                withCalleeSaved.addAll(popCallers)
-                continue
-            }
+//            if (insn is CALLERSAVEPUSH) {
+//                withCalleeSaved.addAll(saveCallers)
+//                continue
+//            }
+//            if (insn is CALLERSAVEPOP) {
+//                withCalleeSaved.addAll(popCallers)
+//                continue
+//            }
             withCalleeSaved.add(insn)
         }
         return chitLoop(x86FuncDecl(n.name, withCalleeSaved))
@@ -128,10 +127,10 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         File("ig${debugLoopCtr}.dot").writeText(interferenceGraph.graphViz())
 
         // LOOP
-        while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
+        while (worklist.simplifyWorkList.isNotEmpty() // || worklist.worklistMoves.isNotEmpty()
             || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()) {
             if (worklist.simplifyWorkList.isNotEmpty()) simplify(worklist)
-            else if (worklist.worklistMoves.isNotEmpty()) coalesce(worklist)
+//            else if (worklist.worklistMoves.isNotEmpty()) coalesce(worklist)
             else if (worklist.freezeWorkList.isNotEmpty()) freeze(worklist)
             else if (worklist.spillWorkList.isNotEmpty()) selectSpill(worklist)
         }
@@ -142,7 +141,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 
         // check for spills -- if there are spills, have to repeat >.<
         return if (worklist.spilledNodes.isNotEmpty()) {
-            println(worklist.spilledNodes)
+            println("get fucked by" + worklist.spilledNodes)
             val spillInsns = rewriteSpills(n, worklist)
             val nextFuncDecl = x86FuncDecl(n.name, spillInsns)
             File("assemblyIteration${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
@@ -270,6 +269,19 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 !(it.dest.r is x86 && it.src.r is x86 && it.dest.r.name == it.src.r.name)
             } else true
         }
+        
+        val instructiones = mutableListOf<Instruction>()
+        for (insn in filteredInsns) {
+            if (insn is CALLERSAVEPOP) {
+                instructiones.addAll(popCallers)
+                continue
+            }
+            if (insn is CALLERSAVEPUSH) {
+                instructiones.addAll(saveCallers)
+                continue
+            }
+            instructiones.add(insn)
+        }
 
         val numTemps = fullOffsetMap[name]!!.keys.size
         val padTemps = if (numTemps % 2 == 1) 1 else 0
@@ -283,7 +295,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 //                cc.getArg(i)
 //            )
 //        )
-        argumentsTemps.addAll(filteredInsns)
+        argumentsTemps.addAll(instructiones)
         return argumentsTemps
     }
 
