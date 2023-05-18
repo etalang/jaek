@@ -27,8 +27,8 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
     val constrainedMoves = mutableSetOf<Move>()
     val coalescedMoves = mutableSetOf<Move>()
 
-    // DON'T COLOR THINGS RSP OR RBP COLOR!
-    val reservedColors = setOf(4,5)
+    // DON'T COLOR THINGS RAX, RDX, RSP, OR RBP COLOR!
+    val reservedColors = setOf(0,3,4,5)
 
     init {
         for (reg in ig.degrees.keys) {
@@ -108,14 +108,8 @@ class Worklist(val ig : InterferenceGraph, val K : Int, val insns : List<Instruc
         }
     }
 
-    fun OK(t : Register, r : Register) : Boolean {
-        if (t is x86) return true
-        else {
-            val dt = ig.degrees[t]
-            val tNeighbors = ig.adjList[t]
-            if (dt != null && dt < K) return true
-            return (tNeighbors?.contains(r) == true)
-        }
+    fun OK(t: Register, r: Register): Boolean {
+        return t is x86 || ig.degrees[t]!! < K || Pair(t, r) in ig.adjSet
     }
 
     fun conservative(nodes : Set<Register>) : Boolean {

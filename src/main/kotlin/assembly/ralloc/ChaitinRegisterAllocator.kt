@@ -166,29 +166,26 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         if (u == v) {
             worklist.coalescedMoves.add(m)
             worklist.addWorkList(u)
-        } else if (v is x86 && worklist.ig.adjList[u]?.contains(v) == true) {
+        } else if (v is x86 && worklist.ig.adjSet.contains(u to v)) {
             worklist.constrainedMoves.add(m)
             worklist.addWorkList(u)
             worklist.addWorkList(v)
-        } else if (u is x86 && v is Abstract) { // TODO: CHECK IF THIS IS OK TO ENFORCE
+        } else {
             var isOK = true
             val vNeighbors = worklist.adjacent(v)
             for (t in vNeighbors) {
                 isOK = isOK && worklist.OK(t, u)
             }
-            if (isOK) {
+            val firstCond =  u is x86 && isOK
+            val secondCond = u is Abstract &&
+                    worklist.conservative(worklist.adjacent(u) union worklist.adjacent(v))
+            if (firstCond || secondCond) {
                 worklist.coalescedMoves.add(m)
                 worklist.combine(u, v)
                 worklist.addWorkList(u)
             }
-        } else if (u is Abstract
-            && worklist.conservative(worklist.adjacent(u) union worklist.adjacent(v))
-        ) {
-            worklist.coalescedMoves.add(m)
-            worklist.combine(u, v)
-            worklist.addWorkList(u)
-        } else
-            worklist.activeMoves.add(m)
+            else worklist.activeMoves.add(m)
+        }
     }
 
     private fun freeze(worklist: Worklist) {

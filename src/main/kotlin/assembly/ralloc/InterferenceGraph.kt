@@ -13,6 +13,7 @@ import assembly.x86.Register.x86Name.*
  * registers */
 class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val cfg : CFG,  val insns : List<Instruction>) {
     val adjList: MutableMap<Register, MutableSet<Register>> = mutableMapOf()
+    val adjSet: MutableSet<Pair<Register,Register>> = mutableSetOf()
     val degrees: MutableMap<Register, Int> = mutableMapOf()
     val precolored : Set<x86> = setOf(x86(RAX), x86(RBX), x86(RCX), x86(RDX), x86(RDI), x86(RSI), x86(RSP), x86(RBP),
         x86(R8), x86(R9), x86(R10), x86(R11), x86(R12), x86(R13), x86(R14), x86(R15))
@@ -23,27 +24,17 @@ class InterferenceGraph(val liveIns : Map<CFGNode, Set<Register>>, val cfg : CFG
     val colors: MutableMap<Register, Int> = mutableMapOf()
 
 
-    fun addEdge(src: Register, dest: Register) {
-        if (src != dest) {
-            if (adjList.keys.contains(src) && !adjList[src]!!.contains(dest)) {
-                if (src !is x86) {
-                    adjList[src]?.add(dest)
-                    degrees[src] = degrees[src]?.plus(1) ?: -1
-                }
-                if (dest !is x86) {
-                    adjList[dest]?.add(src)
-                    degrees[dest] = degrees[dest]?.plus(1) ?: -1
-                }
+    fun addEdge(u: Register, v: Register) {
+        if (Pair(u, v) !in adjSet && u != v) {
+            adjSet.add(u to v)
+            adjSet.add(v to u)
+            if (u !is x86) {
+                adjList[u]!!.add(v)
+                degrees[u]!!.plus(1)
             }
-            else if (!adjList.keys.contains(src)) {
-                if (src !is x86) {
-                    adjList[src] = mutableSetOf(dest)
-                    degrees[src] = 1
-                }
-                if (dest !is x86) {
-                    adjList[dest] = mutableSetOf(src)
-                    degrees[dest] = 1
-                }
+            if (v !is x86) {
+                adjList[v]!!.add(u)
+                degrees[v]!!.plus(1)
             }
         }
     }
