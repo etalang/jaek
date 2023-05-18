@@ -1,1 +1,1 @@
-1:2 error:multiple assignment disallowed in global
+1:12 error:multiple assignment disallowed in global

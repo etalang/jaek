@@ -1,0 +1,19 @@
+use interfaceimportsright
+use interfaceimportswrong
+
+swap(p: Point) {
+
+}
+
+record Point {
+    x : int
+    y : int
+}
+
+main(args: int[][]) {
+    p : Point
+    p = Point(1, 2)
+    p1 : Point = p
+    println(unparseInt(p.x))
+    println(unparseInt(p1.y))
+}

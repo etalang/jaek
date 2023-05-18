@@ -40,6 +40,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     private val oreg: Boolean by option("-Oreg", help = "Enable register allocation and move coalescing.").flag()
     private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
     private val ocopy: Boolean by option("-Ocopy", help = "Enable copy propagation.").flag()
+    private val reportOps: Boolean by option("--report-opts", help=" Output (only) a list of optimizations supported by the compiler").flag()
 
     //LOGISTICS
     private val outputLex: Boolean by option("--lex", help = "Generate output from lexical analysis.").flag()
@@ -83,19 +84,20 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         help = "Specify the operating system for which to generate code " + "Default is linux. No other OS is supported."
     ).default("linux")
     private val target: String by targetOpt
-    private val printIROpts: List<String> by option(
-        "--optir", metavar = "<phase>",
-        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\"."
-    ).multiple()
-    private val printCFGOpts: List<String> by option(
+    private val printIROpts : List<String> by option("--optir", metavar = "<phase>",
+        help = "Report the intermediate code at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
+    private val printCFGOpts : List<String> by option(
         "--optcfg",
         metavar = "<phase>",
-        help = "Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\"."
-    ).multiple()
+        help ="Report the control-flow graph at the specified phase of optimization. Supports \"initial\" and \"final\".").multiple()
 
     /** [run] is the main loop of the CLI. All program arguments have already been preprocessed into vars above. */
     override fun run() {
         // the irrun flag should also generate the IR, just like irgen
+        if (reportOps) {
+            Settings.Opt.Actions.values().forEach { println(it) }
+            throw ProgramResult(0)
+        }
         val outputIR = if (runIR) true else initOutputIR
         if (target != "linux") {
             throw BadParameterValue("The only supported OS is linux", targetOpt)
@@ -116,7 +118,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
         folderFiles.forEach {
             val kompiler = Kompiler()
             //the only files accepts must exist at sourcepath & be eta/eti files
-            if (it.exists() && (it.extension == "eta" || it.extension == "eti")) {
+            if (it.exists() && (it.extension == "eta" || it.extension == "eti" || it.extension == "rh" || it.extension == "ri")) {
                 // TODO: pull out it, absDisgnosticPath
                 val lexedFile: File? =
                     if (outputLex && !disableOutput) getOutFileName(it, absDiagnosticPath, ".lexed") else null
@@ -136,7 +138,8 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                     if (printIROpts.contains("final")) getOutFileName(it, absDiagnosticPath, "_final.ir") else null
                 val optCFGInitialFile: File? =
                     if (printCFGOpts.contains("initial")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
-//                print(it)
+                val optCFGFinalFile : File? =
+                    if (printCFGOpts.contains("final")) getOutFileName(it, absDiagnosticPath, ".ignored") else null
                 // TODO: output path for these three pending response to my Ed post since seems weird
 
                 val ast: Node?
@@ -152,14 +155,13 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                     val translator = IRTranslator(
                                         ast,
                                         it.nameWithoutExtension,
-                                        context.functionMap()
+                                        context
                                     )
                                     val ir =
                                         translator.irgen(
-                                            if (disableOpt) Opt.None else
-                                                Opt.All,
+                                            if (disableOpt) Opt.None else Opt.All,
                                             OutputIR(optIRInitialFile, optIRFinalFile),
-                                            Settings.OutputCFG(optCFGInitialFile, null)
+                                            Settings.OutputCFG(optCFGInitialFile, optCFGFinalFile)
                                         )
                                     val irFileGen = ir.java
                                     irFile?.let {
@@ -245,7 +247,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
 
     @Throws(LexicalError::class)
     private fun lex(inFile: File, lexedFile: File?) {
-        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile)
+        val jFlexLexer = JFlexLexer(inFile.bufferedReader(), inFile, inFile.extension)
         while (true) {
             try {
                 val t: Symbol = (jFlexLexer.next_token() ?: break)

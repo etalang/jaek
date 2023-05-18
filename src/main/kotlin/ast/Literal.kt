@@ -43,6 +43,12 @@ sealed class Literal : Expr() {
         }
     }
 
+    class NullLit(override val terminal: Terminal) : Literal() {
+        override fun write(printer: SExpPrinter) {
+            printer.printAtom("null")
+        }
+    }
+
     class ArrayLit(val list: ArrayList<Expr>, override val terminal: Terminal) : Literal() {
 
         override fun write(printer: SExpPrinter) {

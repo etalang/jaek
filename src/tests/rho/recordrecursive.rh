@@ -1,0 +1,14 @@
+use io
+use conv
+
+record Point {
+    x, y: Value
+}
+
+record Value {
+    x : Point
+}
+
+main(args: int[][]) {
+    p, p1 : Point
+}

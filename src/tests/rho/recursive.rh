@@ -1,0 +1,16 @@
+use io
+use conv
+
+frec(i : int) : int {
+    if (i < 1) {
+        return 3
+    } else {
+        println(unparseInt(i))
+        return frec(i-2)
+    }
+}
+
+main(args : int[][]) {
+    val:int = frec(5)
+    print("complete")
+}

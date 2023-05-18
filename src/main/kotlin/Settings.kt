@@ -2,7 +2,7 @@ import java.io.File
 
 sealed class Settings {
     sealed class Opt {
-        enum class Actions { cf, reg, copy, dce }
+        enum class Actions { cf, reg, copy, dce, cp }
 
         abstract fun desire(optimization: Actions): Boolean
 
@@ -24,10 +24,10 @@ sealed class Settings {
 
     class OutputCFG(val initial: File?, val final: File?) {
         //file expected is just path to desired output location + file name and any extension, no phase, no func
-        fun getOutInit(name : String) : File? {
-            return if (initial != null){
+        fun getOutFile(name: String, postpend: String): File? {
+            return if (initial != null) {
                 val funcFile =
-                    File(initial.parent, initial.nameWithoutExtension + "_${name}_initial.dot")
+                    File(initial.parent, initial.nameWithoutExtension + "_${name}_$postpend.dot")
                 if (funcFile.exists() && !funcFile.isDirectory) {
                     funcFile.delete()
                 }

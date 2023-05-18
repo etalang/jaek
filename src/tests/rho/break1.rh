@@ -1,0 +1,14 @@
+use io
+use conv
+
+main(args:int[][]) {
+    A : int = 1
+    B : int[] = {}
+    while (A < 10) {
+        if (B == null){
+            break
+        }
+        A = A + 1
+    }
+    print(unparseInt(A))
+}
