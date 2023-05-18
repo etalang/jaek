@@ -8,19 +8,21 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     private val successors: MutableMap<CFGNode, Successors> = mutableMapOf()
 
     fun repOk() {
-        allNodes().forEach {
-            predecessors[it]?.forEach { (pred, jump) ->
-                if (jump) require(jumpingTo(pred) == it)
-                else require(fallThrough(pred) == it)
-            }
-            require((predecessors[it]?.filter { !it.second }?.size ?: 0) < 2) //fall-throughs In
-            successors[it]?.let { l ->
-                l.fallThrough?.let { succ -> require(predecessors[succ]?.contains(Pair(it, false)) ?: false) }
-                l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
-            }
-            if (it is CFGNode.If) require(successorEdges(it).let { it.size==2 || it.size==0  })
-            require(!predecessors.contains(it) || predecessors[it]?.isNotEmpty()==true)
-        }
+        //Disabled for production
+        /*
+                    allNodes().forEach {
+                    predecessors[it]?.forEach { (pred, jump) ->
+                        if (jump) require(jumpingTo(pred) == it)
+                        else require(fallThrough(pred) == it)
+                    }
+                    require((predecessors[it]?.filter { !it.second }?.size ?: 0) < 2) //fall-throughs In
+                    successors[it]?.let { l ->
+                        l.fallThrough?.let { succ -> require(predecessors[succ]?.contains(Pair(it, false)) ?: false) }
+                        l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
+                    }
+                    if (it is CFGNode.If) require(successorEdges(it).let { it.size==2 || it.size==0  })
+                    require(!predecessors.contains(it) || predecessors[it]?.isNotEmpty()==true)
+                }*/
     }
 
     fun allNodes(): Set<CFGNode> {
@@ -59,7 +61,6 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
             val dummy = CFGNode.NOOP()
             connect(from, dummy, false)
             connect(dummy, to, true)
-            println("SHIT'S FUNKY")
             return
         } else {
             successors.computeIfAbsent(from) { Successors() }.set(to, jump)
@@ -128,8 +129,8 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         if (successors[from]?.useless() == true) successors.remove(from)
     }
 
-    fun ensureIfsAreOk() : Boolean{
-        val found = successors.keys.firstOrNull{it is CFGNode.If && successorEdges(it).size < 2}
+    fun ensureIfsAreOk(): Boolean {
+        val found = successors.keys.firstOrNull { it is CFGNode.If && successorEdges(it).size < 2 }
         if (found != null) {
 //            if (fallThrough(found)==found) {
 //                println("DUMB")
@@ -190,7 +191,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     fun removeAndLink(node: CFGNode): Boolean {
         val fallThrough = fallThrough(node)
         val jumpTo = jumpingTo(node)
-        require(fallThrough == null || jumpTo==null)
+        require(fallThrough == null || jumpTo == null)
         if (jumpTo == null && fallThrough == null) {
             removeNode(node)
             return true
