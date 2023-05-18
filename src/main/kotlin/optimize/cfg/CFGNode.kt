@@ -76,5 +76,12 @@ sealed class CFGNode(
         }
     }
 
+    class NOOP() : CFGNode(null) {
+        override val pretty = "NOOP"
+        override fun resolveEdges(mm: MatchMaker) {
+            throw Exception("shouldn't resolve this")
+        }
+    }
+
 
 }

@@ -5,32 +5,32 @@ import assembly.TileBuilder
 import edu.cornell.cs.cs4120.etac.ir.IRBinOp
 import edu.cornell.cs.cs4120.etac.ir.IRSeq
 
-/** IRSeq represents the sequential composition of IR statements in [block]**/
+/** IRSeq represents the sequential composition of IR statements in [block]* */
 class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
+    companion object {
+        private var freshLabelCount = 0
+        private fun freshLabel(): String {
+            freshLabelCount++
+            return "\$B$freshLabelCount"
+        }
+    }
+
     override val java: IRSeq get() = factory.IRSeq(block.map { it.java })
 
     override val defaultTile: Tile.Regular
         get() {
-
             val builder = TileBuilder.Regular(0, this)
             for (stmt in block) builder.consume(stmt.optimalTile())
-
-            // TODO: do register allocation here
-            // TODO: add preamble (currently a full guess)
             return builder.build()
-//            val ra = RegisterAllocator()
-//            val insns = ra.allocateRegisters(builder.publicIns)
-//            return Tile.Regular(insns, builder.publicCost)
-//            return builder.build()
         }
 
     override fun findBestTile() {}
 
-    fun blockReordering(freshLabel: () -> String): LIRSeq {
-        val b = maximalBasicBlocks(freshLabel)
+    fun blockReordering(): LIRSeq {
+        val b = maximalBasicBlocks()
         val n = buildCFG(b)
         val g = greedyTrace(n)
-        val j = fixJumps(g, freshLabel)
+        val j = fixJumps(g)
         val c = removeUselessJumps(j)
         val s = LIRSeq(toSequence(c))
         return s
@@ -39,7 +39,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     class BasicBlock(
         val label: String, val ordinary: List<FlatStmt>, val end: EndBlock?
     ) {
-        class Builder(val freshLabel: () -> String) {
+        class Builder() {
             var label: String? = null
             private val statements: MutableList<FlatStmt> = ArrayList()
             var end: EndBlock? = null
@@ -87,8 +87,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
 
 
     sealed class Node(
-        val statements: List<FlatStmt>,
-        val label: String
+        val statements: List<FlatStmt>, val label: String
     ) {
         abstract val edges: List<String>
 
@@ -96,8 +95,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
             override val edges: List<String> = listOf()
         }
 
-        class Unconditional(statements: List<FlatStmt>, label: String, val to: String) :
-            Node(statements, label) {
+        class Unconditional(statements: List<FlatStmt>, label: String, val to: String) : Node(statements, label) {
             override val edges = listOf(to)
         }
 
@@ -118,15 +116,15 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
     }
 
 
-    private fun maximalBasicBlocks(freshLabel: () -> String): List<BasicBlock> {
+    private fun maximalBasicBlocks(): List<BasicBlock> {
         val blocks: MutableList<BasicBlock> = ArrayList()
         val statements = block.iterator()
-        var builder = BasicBlock.Builder(freshLabel)
+        var builder = BasicBlock.Builder()
         while (statements.hasNext()) {
             val next = statements.next()
             if (next is LIRLabel || builder.complete) {
                 blocks.add(builder.build)
-                builder = BasicBlock.Builder(freshLabel)
+                builder = BasicBlock.Builder()
             }
             builder.put(next)
         }
@@ -142,7 +140,11 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 )
 
                 is LIRTrueJump -> Node.Conditional(
-                    ArrayList(it.ordinary), it.label, end.guard, end.trueBranch.l, null
+                    ArrayList(it.ordinary),
+                    it.label,
+                    end.guard,
+                    end.trueBranch.l,
+                    if (index < blocks.lastIndex) blocks[index + 1].label else null
                 )
 
                 is LIRJump -> {
@@ -153,10 +155,10 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                 is LIRReturn -> Node.None(ArrayList(it.ordinary.plus(end)), it.label)
 
                 null -> {
-                    if (index < blocks.lastIndex)
-                        Node.Unconditional(ArrayList(it.ordinary), it.label, blocks[index + 1].label)
-                    else
-                        Node.None(ArrayList(it.ordinary), it.label)
+                    if (index < blocks.lastIndex) Node.Unconditional(
+                        ArrayList(it.ordinary), it.label, blocks[index + 1].label
+                    )
+                    else Node.None(ArrayList(it.ordinary), it.label)
                 }
             }
         }
@@ -192,8 +194,7 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
         return order
     }
 
-    private fun fixJumps(nodes: List<Node>, freshLabel: () -> String): List<Node> {
-        //TODO: think hard about this nested list approach... alternative approach was DoubleJump (see earlier history)
+    private fun fixJumps(nodes: List<Node>): List<Node> {
         return nodes.mapIndexed { index, node ->
             val nextBlock = nodes.getOrNull(index + 1)
             when (node) {
@@ -217,7 +218,14 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                                 Node.Conditional(
                                     node.statements,
                                     node.label,
-                                    LIROp(IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)),
+                                    if (node.condition is LIROp
+                                        && node.condition.op == IRBinOp.OpType.XOR
+                                        && node.condition.right is LIRExpr.LIRConst
+                                        && node.condition.right.value == 1L
+                                    )
+                                        node.condition.left else LIROp(
+                                        IRBinOp.OpType.XOR, node.condition, LIRExpr.LIRConst(1)
+                                    ),
                                     node.falseEdge,
                                     null
                                 )
@@ -226,13 +234,8 @@ class LIRSeq(var block: List<FlatStmt>) : LIRStmt() {
                             //FALL THROUGH IS UNCONDITIONAL JUMP
                             listOf(
                                 Node.Conditional(
-                                    node.statements,
-                                    node.label,
-                                    node.condition,
-                                    node.trueEdge,
-                                    null
-                                ),
-                                Node.Unconditional(ArrayList(), freshLabel(), node.falseEdge)
+                                    node.statements, node.label, node.condition, node.trueEdge, null
+                                ), Node.Unconditional(ArrayList(), freshLabel(), node.falseEdge)
                             )
                         }
                     }

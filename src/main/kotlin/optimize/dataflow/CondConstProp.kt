@@ -14,13 +14,13 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     override val name: String = "Conditional Constant Propogation"
     private val mm = cfg.mm
 
-    override fun transition(n: CFGNode, inInfo: Info): Map<Edge, Info> {
-        val outInfo = inInfo.copy()
+    override fun transition(n: CFGNode, argumentInfo: Info): Map<Edge, Info> {
+        val outInfo = argumentInfo.copy()
         val allVarsTop = outInfo.varVals.mapValues { Definition.Top }
         val unreachableInfo = Info(Unreachability.Top, allVarsTop.toMutableMap())
         if (n is CFGNode.Start) return mm.successorEdges(n)
-            .associateWith { Info(Unreachability.Bottom, inInfo.varVals) } // start must be reachable
-        if (inInfo.unreachability == Unreachability.Bottom) { // if reachable
+            .associateWith { Info(Unreachability.Bottom, argumentInfo.varVals) } // start must be reachable
+        if (argumentInfo.unreachability == Unreachability.Bottom) { // if reachable
             when (n) {
                 is CFGNode.If -> {
                     when (val guardAbs = abstractInterpretation(n.cond, varVals = outInfo.varVals)) {
@@ -146,22 +146,11 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
         while (checkUnreach) {
             checkUnreach = removeUnreachables()
             run()
+            mm.repOk()
         }
-        while (checkIf) {
-            checkIf = removeLonelyIfs()
-            run()
-        }
+        mm.repOk()
         run()
         constantPropogate()
-    }
-
-    private fun removeLonelyIfs(): Boolean {
-        var changed = false
-        mm.fastNodesWithPredecessors().filterIsInstance<CFGNode.If>().forEach {
-            changed = mm.removeAndLink(it)
-            if (changed) return changed
-        }
-        return changed
     }
 
     private fun constantPropogate() {
@@ -192,7 +181,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
                                 replaceVar(ret, it.key, value.t)
                             }
 
-                        is CFGNode.Start, is CFGNode.Cricket -> {}
+                        is CFGNode.Start, is CFGNode.Cricket, is CFGNode.NOOP -> {}
                     }
                 }
             }
@@ -215,6 +204,7 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
                     )
                 }
             }
+
             is CFGExpr.Const -> expr
             is CFGExpr.Label -> expr
             is CFGExpr.Mem -> CFGExpr.Mem(replaceVar(expr.loc, varName, varVal))
@@ -223,14 +213,61 @@ class CondConstProp(cfg: CFG) : CFGFlow.Forward<CondConstProp.Info>(cfg), PostPr
     }
 
     /* returns false when no change */
+
+//    private fun removeUnreachables(remaining : MutableMap<Edge, Info>) {
+//        remaining.forEach {
+//            val unreachedEdge = it.key
+//            when (val lastReachedNode = unreachedEdge.from) {
+//                is CFGNode.If -> {
+//                    val preIfEdges = mm.predecessorEdges(lastReachedNode)
+//                    if (unreachedEdge.jump) {
+//                        preIfEdges.forEach {
+//                            mm.translate(it.from, lastReachedNode, mm.fallThrough(lastReachedNode)!!)
+//                        }
+//                    } else {
+//                        preIfEdges.forEach {
+//                            mm.translate(it.from, lastReachedNode, mm.jumpingTo(lastReachedNode)!!)
+//                        }
+//                    }
+//                }
+//                else -> {
+//                    mm.removeNode(unreachedEdge.node)
+//                }
+//            }
+//        }
+////        val remove = mm.fastNodesWithPredecessors().firstOrNull {
+////            it !is CFGNode.Start && bigMeet(mm.predecessorEdges(it)).unreachability is Unreachability.Top
+////        }
+////        if (remove != null) {
+////            mm.removeNode(remove)
+////            return true
+////        }
+////        return false
+
     private fun removeUnreachables(): Boolean {
-        val remove = mm.fastNodesWithPredecessors().firstOrNull {
-            it !is CFGNode.Start && bigMeet(mm.predecessorEdges(it)).unreachability is Unreachability.Top
-        };
-        if (remove != null) {
-            mm.removeNode(remove)
+//        val remove = mm.fastNodesWithPredecessors().firstOrNull {
+//            it !is CFGNode.Start && bigMeet(mm.predecessorEdges(it)).unreachability is Unreachability.Top
+//        }
+//        if (remove != null) {
+//            mm.removeNode(remove)
+//            mm.ensureIfsAreOk()
+//            return true
+//        }
+        val removeEdge = mm.nodesWithPredecessorEdges().firstOrNull { values[it]?.unreachability is Unreachability.Top }
+        if (removeEdge != null) {
+            mm.removeConnection(removeEdge.from, removeEdge.node, removeEdge.jump)
+            if (mm.predecessors(removeEdge.from).isNotEmpty())
+                mm.ensureIfsAreOk()
+            else mm.removeNode(removeEdge.from)
             return true
         }
         return false
     }
+//
+//    private fun uselessIfs(): Boolean {
+//        val remove =
+//            mm.fastNodesWithPredecessors().firstOrNull { it is CFGNode.If && mm.jumpingTo(it) == mm.fallThrough(it) }
+//        if (remove != null) mm.removeAndLink(remove)
+//        return false
+//    }
 }
