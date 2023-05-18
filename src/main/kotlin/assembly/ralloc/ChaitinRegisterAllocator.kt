@@ -9,6 +9,7 @@ import assembly.x86.Memory.RegisterMem
 import assembly.x86.Register.Abstract
 import assembly.x86.Register.x86
 import assembly.x86.Register.x86Name.*
+import errors.ChaitinError
 import typechecker.EtaFunc
 import java.io.File
 
@@ -18,6 +19,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     val saveCallers: List<Instruction> = listOf(PAD()) + hackyCallerSavedRegs.map { PUSH(it) }
     val popCallers: List<Instruction> = hackyCallerSavedRegs.reversed().map { POP(it) }.plus(Arith.ADD(Destination.RegisterDest(x86(RSP)), Source.ConstSrc(8)))
 
+    val startTime = System.currentTimeMillis()
     // needs to be exact same ordering as declaration of enum x86Name in Register
     val regOrder = listOf(
         x86(RAX),
@@ -73,26 +75,25 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                     )
                 })
             }
-//            if (insn is CALLERSAVEPUSH) {
-//                withCalleeSaved.addAll(saveCallers)
-//                continue
-//            }
-//            if (insn is CALLERSAVEPOP) {
-//                withCalleeSaved.addAll(popCallers)
-//                continue
-//            }
+            if (insn is CALLERSAVEPUSH) {
+                withCalleeSaved.addAll(saveCallers)
+                continue
+            }
+            if (insn is CALLERSAVEPOP) {
+                withCalleeSaved.addAll(popCallers)
+                continue
+            }
             withCalleeSaved.add(insn)
         }
         return chitLoop(x86FuncDecl(n.name, withCalleeSaved))
     }
 
     fun chitLoop(n: x86FuncDecl): x86FuncDecl {
+        if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
         debugLoopCtr++
-        println("${n.name} allocation round $debugLoopCtr")
 
         // LIVENESS ANALYSIS
         val dataflow = LiveVariableAnalysis(n)
-        File("dataflow${n.name}${debugLoopCtr}.dot").writeText(dataflow.graphViz())
 
         // BUILD INTERFERENCE GRAPH
         val interferenceGraph = InterferenceGraph(dataflow, n.body.flatMap { it.involved }.toSet())
@@ -100,6 +101,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         val worklistMoves = mutableSetOf<InterferenceGraph.Move>()
         //Procedure Build
         dataflow.cfg.nodes.forEach {
+            if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
             var live = dataflow.liveOut[it]!!
             if (it.insn is MOV && it.insn.dest is Destination.RegisterDest && it.insn.src is Source.RegisterSrc) {
                 val move = InterferenceGraph.Move(
@@ -116,6 +118,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             for (d in it.insn.def) {
                 for (l in live) {
                     interferenceGraph.addEdge(l, d)
+                    if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
                 }
             }
         }
@@ -123,8 +126,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         // WORKLISTS DECLARATIONS/INITIALIZATION
         val worklist = Worklist(interferenceGraph, K, n.body, worklistMoves)
 
-
-        File("ig${debugLoopCtr}.dot").writeText(interferenceGraph.graphViz())
+        if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
 
         // LOOP
         while (worklist.simplifyWorkList.isNotEmpty() // || worklist.worklistMoves.isNotEmpty()
@@ -137,16 +139,18 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 
         // COLORING
         worklist.assignColors()
-        println(interferenceGraph.colors)
+//        println(interferenceGraph.colors)
+
+        if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
 
         // check for spills -- if there are spills, have to repeat >.<
         return if (worklist.spilledNodes.isNotEmpty()) {
-            println("get fucked by" + worklist.spilledNodes)
             val spillInsns = rewriteSpills(n, worklist)
             val nextFuncDecl = x86FuncDecl(n.name, spillInsns)
-            File("assemblyIteration${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
+            if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
             chitLoop(nextFuncDecl)
         } else {
+            if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
             val replaceMap = mutableMapOf<String, Int>()
             for (reg in worklist.ig.colors.keys) {
                 if (reg is Abstract) replaceMap[reg.name] = worklist.ig.colors[reg]!!
@@ -166,6 +170,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         worklist.selectStack.push(n)
         for (m in worklist.adjacent(n)) {
             if (m is Abstract) worklist.decrementDegree(m)
+            if (System.currentTimeMillis()-startTime > 10000) throw ChaitinError()
         }
     }
 
@@ -233,7 +238,6 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     }
 
     private fun selectSpill(worklist: Worklist) {
-        print("HEY I'M SPILLING")
         val m =
             heuristic(worklist.spillWorkList) // worklist.spillWorkList.random()  // TODO: MUST pick w/ heuristic instead
         worklist.spillWorkList.remove(m)

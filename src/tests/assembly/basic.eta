@@ -12,7 +12,6 @@ main(args : int[][]) {
     noah : int = 234
     blu : int = 344
     kaet : int = 134
-    f(kaet)
     x = a + x + y + z + tua + noah + blu
     print(unparseInt(x))
 }
