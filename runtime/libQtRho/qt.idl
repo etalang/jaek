@@ -1,0 +1,2507 @@
+/*********************************************************************
+This is a Rho interface to the Qt graphical user interface library.
+For more information about the classes and methods in this interface,
+consult the online documentation at:
+
+    https://doc.qt.io/archives/qt-4.8/index.html.
+*********************************************************************/
+
+bindH [[
+#include <QApplication>
+#include <QString>
+#include <QPointer>
+
+#include <QPoint>
+#include <QSize>
+
+#include <QAction>
+#include <QButtonGroup>
+#include <QCheckBox>
+#include <QColor>
+#include <QFont>
+#include <QFontMetrics>
+#include <QGroupBox>
+#include <QIcon>
+#include <QInputEvent>
+#include <QLabel>
+#include <QMainWindow>
+#include <QMenu>
+#include <QMenuBar>
+#include <QPainter>
+#include <QPen>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QStyle>
+#include <QTimer>
+#include <QToolBar>
+#include <QWidget>
+
+#include <QDialog>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QTextEdit>
+#include <QAbstractSlider>
+#include <QScrollBar>
+#include <QSlider>
+
+#include <QLayout>
+#include <QBoxLayout>
+#include <QStackedLayout>
+
+#include <xiqobjectholder.h>
+#include <xiqwrapperfactory.h>
+#include <xiqproxywidgets.h>
+#include <xiqslot.h>
+
+inline int toXi(const QChar& c) {
+    return c.unicode();
+}
+
+using namespace Qt;
+
+// We need to do some forward decls ourselves, since makebindings won't
+struct XiQString;
+struct XiQAction;
+struct XiQWidget;
+struct XiQPixmap;
+struct XiQPushButton;
+struct XiQColor;
+struct XiQBrush;
+struct XiQFont;
+struct XiQIcon;
+struct XiQWidget;
+struct XiQLayout;
+
+struct XiAboutToQuitListener;
+struct XiTimerListener;
+struct XiClickListener;
+struct XiActionListener;
+struct XiToggleListener;
+
+typedef QStyle::StandardPixmap StandardIcon;
+struct XiStandardIcon;
+]]
+
+
+/* A GUI application needs a single instance of the class QApplication.
+ It manages the control flow of the application and its main settings.
+ A QApplication allows the user interface to be set up and to be started
+ running. An application looks roughly like this:
+
+main(origArgs: int[][]) = {
+    qapp: QApplication, args: int[][] = qapplication(origArgs);
+    // set up initial GUI here, and show it
+    QApplication_exec(qapp);
+}
+
+Unlike other classes, QApplication may NOT be extended from Rho.
+*/
+pointer QApplication {
+    bindH [[
+        XiQObjectHolder<QApplication> handle;
+        XiQApplicationSigs* sig;
+        xiqEventListenerList<XiAboutToQuitListener> quitListeners;
+
+        QApplication* getImpl() {
+            return handle.get();
+        }
+
+        void createImpl() {
+            assert(false);
+        }
+
+        void setObject(QApplication* a) {
+            handle.setObject(a, this);
+            sig = new XiQApplicationSigs(this, a);
+        }
+
+        ~XiQApplication() {
+            delete sig;
+        }
+    ]]
+
+    void exec();
+
+    /* Interrupt execution of the application, by halting a
+       call to exec().
+     */
+    void quit();
+
+    /* Close all application windows.
+     */
+    void closeAllWindows();
+
+    /* Stylesheets can be used to tweak UI appearance.
+       See: https://doc.qt.io/archives/qt-4.8/stylesheet.html
+    */
+    QString styleSheet();
+    void setStyleSheet(QString sheet);
+
+    QIcon windowIcon();
+    void setWindowIcon(QIcon);
+    QFont font();
+    void setFont(QFont);
+
+    /* Add a listener to be notified when the application is about to exit.
+    */
+    void addAboutToQuitListener(AboutToQuitListener l) [[
+        __this->quitListeners.append(l);
+    ]]
+}
+
+
+
+xi [[
+// Create a QApplication.
+qapplication(origArgs: int[][]): QApplication, int[][]
+
+]]
+
+/* A Listener called by applications that are quitting. */
+nopeer AboutToQuitListener {
+    void aboutToQuit() [[]]
+}
+
+
+bindH [[
+
+ETA_EXPORT XiQApplication* ETA(qapplication_t2r12QApplicationaaiaai)(int64_t** args);
+
+]]
+
+bindCPP [[
+
+XiQApplication* ETA(qapplication_t2r12QApplicationaaiaai)(int64_t** args)
+{
+    int64_t argc    = ((int64_t*)args)[-1];
+    char** argv = new char*[argc];
+    // Demarshal the string arrays.
+    // ### broken unicode-wise since it just discards upper bits
+    // ### some memory gets leaked
+    // ### BUT THAT MIGHT NOT BE TRUE IN 64-BIT not that anybody cares
+    for (int a = 0; a < argc; ++a) {
+        int64_t slen = args[a][-1];
+        argv[a]  = (char*)malloc(slen + 1);
+        for (int c = 0; c < slen; ++c)
+            argv[a][c] = char(args[a][c]);
+
+        argv[a][slen] = '\0';
+    }
+
+    // This is pretty awkward --- Qt actually expects to get a reference
+    // to argc. To do that, we pass it reference to the length cell
+    // of the out array, which we allocate with the initial size.
+    // ### if it messes with argv after our copy below bad things will
+    // happen, though.
+    int64_t* outArgs = (int64_t*) _eta_alloc(argc*8 + 8);
+    outArgs[0] = argc;
+
+    QApplication*    qapp  = new QApplication(((int*)outArgs)[1], argv);
+    XiQApplication*  xiApp = gcNew<XiQApplication>();
+    xiApp->setObject(qapp);
+    argc = outArgs[0];
+
+    // Convert the strings back.
+    int64_t** argsA = (int64_t**)&outArgs[1];
+
+    for (int a = 0; a < argc; ++a) {
+        int l = strlen(argv[a]);
+
+        int64_t* buf = (int64_t*) _eta_alloc(l*8 + 8);
+        buf[0] = l;
+        argsA[a] = buf + 1;
+        for (int c = 0; c < l; ++c)
+            argsA[a][c] = argv[a][c];
+    }
+
+    SET2NDRESULT(argsA);
+    return xiApp;
+}
+
+]]
+
+
+/* A QString is a mutable string. Rho code can use qs "foo"
+ to construct instances from Rho string literals, which are
+ represented as int64_t[] arrays that are in UCS-4.
+ well, the bottom 32 bits are UCS-4. the top 32 are meaningless.
+
+ Methods suffixed with CI are case-insensitive variants.
+*/
+ // Do we really need to support all these methods?
+value QString {
+    int[] RhoString() [[
+        QVector<uint> v = __this->impl()->toUcs4();
+
+        // maybe I should have exported ximkArray...
+        uint64_t* mem = reinterpret_cast<uint64_t*>(_eta_alloc(8*(v.size() + 1)));
+        mem[0] = v.size();
+        for (int c = 0; c < v.size(); ++c)
+            mem[c + 1] = v[c];
+        return mem + 1;
+    ]]
+
+    void append(QString other);
+    int  at  (int pos);
+    void chop(int n);
+    void clear();
+
+    int compare(QString other);
+
+    bool contains(QString other);
+    // case insensitive version
+    bool containsCI(QString other) [[
+        return __this->impl()->contains(fromXi(other), Qt::CaseInsensitive);
+    ]]
+
+    int count(QString other);
+    int countCI(QString other) [[
+        return __this->impl()->count(fromXi(other), Qt::CaseInsensitive);
+    ]]
+
+    bool endsWith(QString other);
+
+    int indexOf  (QString other, int from);
+    int indexOfCI(QString other, int from) [[
+        return __this->impl()->indexOf(fromXi(other), Qt::CaseInsensitive);
+    ]]
+
+    void insert(int pos, QString str);
+
+    bool isEmpty();
+    QString left(int n);
+    int getLength() [[
+        return __this->impl()->length();
+    ]]
+    QString mid(int pos, int n);
+    void prepend(QString other);
+    void remove(int position, int n);
+    QString repeated(int n);
+
+    void replace(QString before, QString after);
+    void replaceCI(QString before, QString after) [[
+        __this->impl()->replace(fromXi(before), fromXi(after), Qt::CaseInsensitive);
+    ]]
+
+    QString right(int n);
+    void setNum(int num);
+    QString simplified();
+
+    QString[] split(QString separator) [[
+        QStringList l = __this->impl()->split(fromXi(separator));
+
+        uint* mem = reinterpret_cast<uint*>(_eta_alloc(8*(l.size() + 1)));
+        mem[0] = l.size();
+        XiQString** out = reinterpret_cast<XiQString**>(mem + 1);
+        for (int i = 0; i < l.size(); ++ i)
+            out[i] = toXi(l[i]);
+        return out;
+    ]]
+
+    bool startsWith(QString other);
+
+    // no tuples here, so no toInt.
+    QString toLower();
+    QString toUpper();
+
+    QString trimmed();
+    void    truncate(int n);
+
+    QString plus(QString other) [[
+        return toXi(*__this->impl() + fromXi(other));
+    ]]
+
+    bool equals(QString other) [[
+        return *__this->impl() == fromXi(other);
+    ]]
+
+    bool neq(QString other) [[
+        return *__this->impl() != fromXi(other);
+    ]]
+
+    bool less(QString other) [[
+        return *__this->impl() < fromXi(other);
+    ]]
+
+    bool leq(QString other) [[
+        return *__this->impl() <= fromXi(other);
+    ]]
+
+    bool greater(QString other) [[
+        return *__this->impl() > fromXi(other);
+    ]]
+
+    bool geq(QString other) [[
+        return *__this->impl() > fromXi(other);
+    ]]
+}
+
+// ### should I bind QRegExp?
+
+/* Convert a Rho string to a QString */
+QString qs(int[] istr) [[
+    XiQString* out = gcNew<XiQString>();
+    // this is the laziest port possible.
+    uint64_t* istrData = reinterpret_cast<uint64_t*>(istr);
+    // gross. qt doesn't want 64-bit chars, so we have to shove em into ints
+    unsigned int* str = (unsigned int*)malloc(istrData[-1] * sizeof(unsigned int));
+    for (int i = 0; i < istrData[-1]; ++i) {
+        str[i] = (unsigned int)istrData[i];
+    }
+    out->value = QString::fromUcs4(str, istrData[-1]);
+    free(str);
+    return out;
+]]
+
+/* A QString containing the decimal representation of num. */
+QString qsNum(int num) [[
+    XiQString* out = gcNew<XiQString>();
+    out->value = QString::number(num);
+    return out;
+]]
+
+/* QPoint is a two-dimensional point (x,y). */
+value QPoint {
+    int x();
+    int y();
+    void setX(int);
+    void setY(int);
+
+    QPoint plus(QPoint other) [[
+        return toXi(*__this->impl() + fromXi(other));
+    ]]
+
+    QPoint minus(QPoint other) [[
+        return toXi(*__this->impl() + fromXi(other));
+    ]]
+
+    bool equals(QPoint other) [[
+        return *__this->impl() == fromXi(other);
+    ]]
+
+    bool neq(QPoint other) [[
+        return *__this->impl() != fromXi(other);
+    ]]
+}
+
+/* qpoint(x,y) is the QPoint for (x,y).
+ */
+QPoint qpoint(int x, int y) [[
+    XiQPoint* p = gcNew<XiQPoint>();
+    p->impl()->setX(x);
+    p->impl()->setY(x);
+    return p;
+]]
+
+value QSize {
+    QSize boundedTo(QSize other);
+    QSize expandedTo(QSize other);
+    bool isEmpty();
+    bool isNull();
+    bool isValid();
+    void setHeight(int);
+    void setWidth(int);
+    void transpose();
+    int  width();
+    int  height();
+
+    QSize plus(QSize other) [[
+        return toXi(*__this->impl() + fromXi(other));
+    ]]
+
+    QSize minus(QSize other) [[
+        return toXi(*__this->impl() + fromXi(other));
+    ]]
+
+    bool equals(QSize other) [[
+        return *__this->impl() == fromXi(other);
+    ]]
+
+    bool neq(QSize other) [[
+        return *__this->impl() != fromXi(other);
+    ]]
+}
+
+QSize qsize(int w, int h) [[
+    XiQSize* s = gcNew<XiQSize>();
+    s->impl()->setWidth(w);
+    s->impl()->setHeight(h);
+    return s;
+]]
+
+value QRect {
+    void  adjust(int dx1, int dy1, int dx2, int dy2);
+    QRect adjusted(int dx1, int dy1, int dx2, int dy2);
+    int bottom();
+    QPoint bottomLeft();
+    QPoint bottomRight();
+    QPoint center();
+    bool contains(QPoint);
+    int height();
+    QRect intersected(QRect other);
+    bool intersects(QRect other);
+    bool isEmpty();
+    int left();
+    void moveBottom(int y);
+    void moveBottomLeft(QPoint p);
+    void moveBottomRight(QPoint p);
+    void moveCenter(QPoint p);
+    void moveLeft(int x);
+    void moveRight(int x);
+    void moveTo(QPoint p);
+    void moveTop(int y);
+    void moveTopLeft(QPoint p);
+    void moveTopRight(QPoint p);
+    QRect normalized();
+    int right();
+    void setBottom(int y);
+    void setBottomLeft(QPoint p);
+    void setBottomRight(QPoint p);
+    void setCoords(int x1, int y1, int x2, int y2);
+    void setHeight(int h);
+    void setLeft(int x);
+    void setRect(int x, int y, int w, int h);
+    void setRight(int x);
+    void setSize(QSize size);
+    void setTop(int y);
+    void setTopLeft(QPoint p);
+    void setTopRight(QPoint p);
+    void setWidth(int w);
+    void setX(int x);
+    void setY(int y);
+    QSize size();
+    int top();
+    QPoint topLeft();
+    QPoint topRight();
+    void translate(int dx, int y);
+    QRect translated(int dx, int dy);
+    QRect united(QRect other);
+    int width();
+    int x();
+    int y();
+
+    bool equals(QRect other) [[
+        return *__this->impl() == fromXi(other);
+    ]]
+
+    bool neq(QRect other) [[
+        return *__this->impl() != fromXi(other);
+    ]]
+}
+
+QRect qrect(int x, int y, int w, int h) [[
+    XiQRect* r = gcNew<XiQRect>();
+    r->impl()->setRect(x, y, w, h);
+    return r;
+]]
+
+/*
+ Some important enums
+*/
+value Orientation {
+    enumConst Horizontal;
+    enumConst Vertical;
+}
+
+
+/****************************************************************************
+ Events.  Warning: you may only use events objects within the corresponding
+ handler method. If you try to access them later, things will crash. They
+ also can't be extended from Rho
+*/
+bindH [[
+    typedef QEvent::Type EventType;
+]]
+
+/*
+ See https://doc.qt.io/archives/qt-4.8/qevent.html#Type-enum
+ */
+value EventType {
+    enumPrefix [[QEvent::]]
+
+    enumConst ContextMenu;
+    enumConst Close;
+    enumConst Enter;
+    enumConst Hide;
+    enumConst KeyPress;
+    enumConst KeyRelease;
+    enumConst Leave;
+    enumConst MouseButtonDblClick;
+    enumConst MouseButtonPress;
+    enumConst MouseButtonRelease;
+    enumConst MouseMove;
+    enumConst Paint;
+    enumConst Resize;
+    enumConst Show;
+    // ShortCut?
+    enumConst Wheel;
+}
+
+pointer QEvent {
+    bindH [[
+        QEvent* e;
+        QEvent* getImpl() {
+            return e;
+        }
+
+        void createImpl() {
+            assert(false);
+        }
+    ]]
+
+    EventType type();
+
+    // states we want the event, so not to forward it to parent
+    void accept();
+
+    // state we don't want the event, so it should be sent to parent
+    void ignore();
+
+    bool isAccepted();
+}
+
+// QCloseEvent, QHideEvent, QShowEvent: not needed
+
+/* We provide boolean accessors instead of bitflags in the original */
+pointer QInputEvent: QEvent {
+    bindH [[
+        QInputEvent* getImpl() {
+            return static_cast<QInputEvent*>(e);
+        }
+    ]]
+
+    bool shift() [[
+        return __this->impl()->modifiers() & Qt::ShiftModifier;
+    ]]
+
+    bool ctrl() [[
+        return __this->impl()->modifiers() & Qt::ControlModifier;
+    ]]
+
+    bool alt() [[
+        return __this->impl()->modifiers() & Qt::AltModifier;
+    ]]
+
+    bool meta() [[
+        return __this->impl()->modifiers() & Qt::MetaModifier;
+    ]]
+}
+
+pointer QContextMenuEvent: QInputEvent {
+    bindH [[
+        QContextMenuEvent* getImpl() {
+            return static_cast<QContextMenuEvent*>(e);
+        }
+    ]]
+
+    QPoint globalPos();
+    QPoint pos();
+}
+
+pointer QKeyEvent: QInputEvent {
+    bindH [[
+        QKeyEvent* getImpl() {
+            return static_cast<QKeyEvent*>(e);
+        }
+    ]]
+
+    int count();
+    QString text();
+    bool isAutoRepeat();
+
+    /* See https://doc.qt.io/archives/qt-4.8/qt.html#Key-enum for possible
+       keycodes if you really need them */
+    int key();
+}
+
+
+value MouseButton {
+    enumConst LeftButton;
+    enumConst RightButton;
+    enumConst MidButton;
+}
+
+pointer QMouseEvent: QInputEvent {
+    bindH [[
+        QMouseEvent* getImpl() {
+            return static_cast<QMouseEvent*>(e);
+        }
+    ]]
+
+    QPoint pos();
+    QPoint globalPos();
+
+    /* the button the causes the event */
+    MouseButton button();
+
+    /* complete state of buttons */
+    bool left() [[
+        return __this->impl()->buttons() & LeftButton;
+    ]]
+
+    bool middle() [[
+        return __this->impl()->buttons() & MidButton;
+    ]]
+
+    bool right() [[
+        return __this->impl()->buttons() & RightButton;
+    ]]
+}
+
+
+pointer QPaintEvent: QEvent {
+    bindH [[
+        QPaintEvent* getImpl() {
+            return static_cast<QPaintEvent*>(e);
+        }
+    ]]
+
+    QRect rect();
+    // ### QRegion?
+}
+
+pointer QResizeEvent: QEvent {
+    bindH [[
+        QResizeEvent* getImpl() {
+            return static_cast<QResizeEvent*>(e);
+        }
+    ]]
+
+    QSize oldSize();
+    QSize size();
+}
+
+pointer QWheelEvent: QInputEvent {
+    bindH [[
+        QWheelEvent* getImpl() {
+            return static_cast<QWheelEvent*>(e);
+        }
+    ]]
+
+    int delta();
+    QPoint pos();
+    QPoint globalPos();
+
+    Orientation orientation();
+}
+
+/****************************************************************************
+  Graphics primitives
+*/
+
+/* A QPaintDevice is an object that can be painted.
+   You should not extend this.
+*/
+pointer QPaintDevice {
+    bindH [[
+        QPaintDevice* getImpl();
+        void createImpl() {
+            assert(0);
+        }
+    ]]
+
+    bindCPP [[
+        QPaintDevice* XiQPaintDevice::getImpl() {
+            if (vtable()->toPixmap(this))
+                return static_cast<XiQPixmap*>(this)->getImpl();
+            if (vtable()->toWidget(this))
+                return static_cast<XiQWidget*>(this)->getImpl();
+            return 0;
+        }
+    ]]
+
+    QPixmap toPixmap() [[
+        return 0;
+    ]]
+
+    QWidget toWidget() [[
+        return 0;
+    ]]
+}
+
+// No QImage --- the difference is mostly a matter of performance
+
+/* An off-screen picture, which can both be drawn to,
+  and which can be drawn in turn */
+pointer QPixmap: QPaintDevice {
+    bindH [[
+        QPixmap* handle;
+
+        QPixmap* getImpl() {
+            return handle;
+        }
+
+        void createImpl() {
+            handle = new QPixmap(); // an empty one
+        }
+
+        ~XiQPixmap() {
+            delete handle;
+        }
+    ]]
+
+    QPixmap toPixmap() [[
+        return __this;
+    ]]
+
+    void load(QString file);
+    void save(QString file);
+    void fill(QColor c);
+
+    QPixmap copy(QRect rect);
+
+    bool isNull();
+    int  height();
+    int  width();
+    QSize  size();
+}
+
+QPixmap qpixmap(int width, int height) [[
+    XiQPixmap* p = gcNew<XiQPixmap>();
+    p->handle = new QPixmap(width, height);
+    return p;
+]]
+
+QPixmap qpixmapFromFile(QString f) [[
+    XiQPixmap* p = gcNew<XiQPixmap>();
+    p->handle = new QPixmap();
+    p->handle->load(fromXi(f));
+    return p;
+]]
+
+bindH [[
+
+inline XiQPixmap* toXi(const QPixmap& p) {
+    XiQPixmap* ip = gcNew<XiQPixmap>();
+    ip->handle = new QPixmap(p);
+    return ip;
+}
+
+]]
+
+/* Represent a color; components range 0-255 */
+value QColor {
+    int alpha();
+    int red();
+    int green();
+    int blue();
+
+    void setAlpha(int);
+    void setRed(int);
+    void setGreen(int);
+    void setBlue(int);
+
+    QString name();
+    void setNamedColor(QString);
+
+    bool equals(QColor other) [[
+        return *__this->impl() == fromXi(other);
+    ]]
+
+    bool neq(QColor other) [[
+        return *__this->impl() != fromXi(other);
+    ]]
+}
+
+QColor qcolor(int r, int g, int b) [[
+    XiQColor* o = gcNew<XiQColor>();
+    o->value = QColor::fromRgb(r, g, b);
+    return o;
+]]
+
+QColor qcolorRGBA(int r, int g, int b, int a) [[
+    XiQColor* o = gcNew<XiQColor>();
+    o->value = QColor::fromRgb(r, g, b, a);
+    return o;
+]]
+
+value PenStyle {
+    enumConst NoPen;
+    enumConst SolidLine;
+    enumConst DashLine;
+    enumConst DotLine;
+    enumConst DashDotLine;
+    enumConst DashDotDotLine;
+}
+
+value PenCapStyle {
+    enumConst FlatCap;
+    enumConst SquareCap;
+    enumConst RoundCap;
+}
+
+value PenJoinStyle {
+    enumConst MiterJoin;
+    enumConst BevelJoin;
+    enumConst RoundJoin;
+    enumConst SvgMiterJoin;
+}
+
+/* Pens are used for standalone lines and outlines of shapes */
+value QPen {
+    QBrush brush();
+    PenCapStyle capStyle();
+    QColor color();
+    bool isCosmetic();
+    bool isSolid();
+    PenJoinStyle joinStyle();
+    void setBrush(QBrush);
+    void setCapStyle(PenCapStyle);
+    void setColor(QColor);
+    void setCosmetic(bool);
+    void setJoinStyle(PenJoinStyle);
+    void setStyle(PenStyle);
+    void setWidth(int);
+    PenStyle style();
+    int width();
+
+    bool equals(QPen other) [[
+        return *__this->impl() == fromXi(other);
+    ]]
+
+    bool neq(QPen other) [[
+        return *__this->impl() != fromXi(other);
+    ]]
+}
+
+QPen qpen(QColor c) [[
+    XiQPen* pen = gcNew<XiQPen>();
+    pen->value.setColor(fromXi(c));
+    return pen;
+]]
+
+/* Brushes are used to fill interiors of shapes.
+*/
+value QBrush {
+    // I am not binding the patterns because it's not the 80s.
+    // They look ugly on anything newer than the original Macintosh
+    // I am not binding gradients because it's a lot of work
+
+    QColor color();
+    QPixmap texture();
+
+    void setColor(QColor c);
+
+    void setTexture(QPixmap p) [[        __this->impl()->setTexture(*fromXi(p));
+    ]]
+}
+
+QBrush qbrush(QColor c) [[
+    XiQBrush* b = gcNew<XiQBrush>();
+    b->value = QBrush(fromXi(c));
+    return b;
+]]
+
+QBrush qtextureBrush(QPixmap p) [[
+    XiQBrush* b = gcNew<XiQBrush>();
+    b->value = QBrush(*fromXi(p));
+    return b;
+]]
+
+bindH [[
+    typedef QFont::Style FontStyle;
+]]
+
+value FontStyle {
+    enumPrefix [[QFont::]]
+    enumConst StyleNormal;
+    enumConst StyleItalic;
+    enumConst StyleOblique;
+}
+
+value QFont {
+    bool bold();
+    void setBold(bool);
+    bool italic();
+    void setItalic(bool);
+    QString family();
+    void setFamily(QString);
+    bool fixedPitch();
+    void setFixedPitch(bool);
+    bool kerning();
+    void setKerning(bool);
+
+    int pixelSize();
+    void setPixelSize(int);
+    int pointSize();
+    void setPointSize(int);
+
+    bool overline();
+    bool underline();
+    bool strikeOut();
+    void setOverline (bool);
+    void setUnderline(bool);
+    void setStrikeOut(bool);
+
+    QString toString();
+}
+
+/* Returns application default font. See also QApplication::setFont */
+QFont qfont() [[
+    return gcNew<XiQFont>();
+]]
+
+value TextElideMode {
+    enumConst ElideLeft;
+    enumConst ElideRight;
+    enumConst ElideMiddle;
+    enumConst ElideNone;
+}
+
+/* This class lets one compute how much text will take with given
+   font.
+   Warning: can't be extended
+*/
+pointer QFontMetrics {
+    bindH [[
+        QFontMetrics* handle;
+        QFontMetrics* getImpl() {
+            return handle;
+        }
+
+        void createImpl() {
+            assert(false);
+        }
+    ]]
+
+    int ascent();
+    int descent();
+    int height();
+    int leading();
+    int lineSpacing();
+    int xHeight();
+
+    int averageCharWidth();
+    int maxWidth();
+
+    bool inFont    (int ch);
+    int leftBearing(int ch);
+    int minLeftBearing();
+    int rightBearing(int ch);
+    int minRightBearing();
+
+
+    /* line as in underline, etc.*/
+    int lineWidth();
+    int overlinePos();
+    int strikeOutPos();
+    int underlinePos();
+
+    QRect boundingRect(QString);
+    QRect tightBoundingRect(QString);
+    int   width(QString);
+
+    QString elidedText(QString text, TextElideMode mode, int w);
+}
+
+QFontMetrics qfontMetrics(QFont f) [[
+    XiQFontMetrics* fm = gcNew<XiQFontMetrics>();
+    fm->handle = new QFontMetrics(fromXi(f));
+    return fm;
+]]
+
+/* You use this to paint on a QPaintDevice. Be sure to call end() when you're
+   done. If you extend, you'll need to call begin() to describe what to draw on
+*/
+// Note: no toXi for these.
+pointer QPainter {
+    bindH [[
+        QPainter* handle;
+        QPainter* getImpl() {
+            return handle;
+        }
+
+        void createImpl() {
+            handle = new QPainter();
+        }
+    ]]
+
+    void begin(QPaintDevice*);
+    void end();
+    bool isActive();
+
+    /* turns on various hints that enable fancier (but slower) anti-aliased
+       painting
+    */
+    void setHighQuality(bool on) [[
+        __this->impl()->setRenderHints(QPainter::Antialiasing |
+                                       QPainter::SmoothPixmapTransform, on);
+    ]]
+
+    void save();
+    void restore();
+
+
+    QPoint brushOrigin();
+    void   setBrushOrigin(QPoint);
+
+    QFont font();
+    void  setFont(QFont f);
+
+    /* opacity is in percent */
+    int opacity() [[
+        return qRound(__this->impl()->opacity() * 100);
+    ]]
+
+    void setOpacity(int o) [[
+        __this->impl()->setOpacity(o / 100.0);
+    ]]
+
+    QPen pen();
+    void setPen(QPen);
+
+    QBrush brush();
+    void setBrush(QBrush);
+
+
+    void drawArc(QRect rect, int starAngle, int spanAngle);
+    void drawChord(QRect rect, int starAngle, int spanAngle);
+    void drawEllipse(QRect rect);
+    void drawPie(QRect rect, int starAngle, int spanAngle);
+
+    bindCPP [[
+        static QPoint* toPointArray(void* points, int* len) {
+            *len = reinterpret_cast<int*>(points)[-1];
+            XiQPoint** pp = reinterpret_cast<XiQPoint**>(points);
+
+            QPoint* arr = new QPoint[*len];
+            for (int i = 0; i < *len; ++i)
+                arr[i] = pp[i]->value;
+            return arr;
+        }
+    ]]
+
+    void drawConvexPolygon(QPoint[] points) [[
+        int len;
+        QPoint* arr = toPointArray(points, &len);
+        __this->impl()->drawConvexPolygon(arr, len);
+        delete[] arr;
+    ]]
+
+    void drawPolygon(QPoint[] points) [[
+        int len;
+        QPoint* arr = toPointArray(points, &len);
+        __this->impl()->drawPolygon(arr, len);
+        delete[] arr;
+    ]]
+
+    void drawRect(QRect r);
+    void eraseRect(QRect r);
+    void fillRect(QRect r, QBrush b);
+
+    void drawPixmap(QPoint p, QPixmap pm) [[
+        __this->impl()->drawPixmap(fromXi(p), *fromXi(pm));
+    ]]
+
+    void drawPixmapPortion(QPoint p, QPixmap pm, QRect portion) [[
+        __this->impl()->drawPixmap(fromXi(p), *fromXi(pm), fromXi(portion));
+    ]]
+
+    void drawScaledPixmapPortion(QRect d, QPixmap pm, QRect portion) [[
+        __this->impl()->drawPixmap(fromXi(d), *fromXi(pm), fromXi(portion));
+    ]]
+
+    void drawTiledPixmap(QRect d, QPixmap p) [[
+        __this->impl()->drawTiledPixmap(fromXi(d), *fromXi(p));
+    ]]
+
+    void drawTiledOffsetPixmap(QRect d, QPixmap p, QPoint origin) [[
+        __this->impl()->drawTiledPixmap(fromXi(d), *fromXi(p), fromXi(origin));
+    ]]
+
+    void drawPoint(QPoint p);
+
+    void drawLine(QPoint p1, QPoint p2);
+    void drawText(QPoint p, QString text);
+}
+
+QPainter qpainter(QPaintDevice target) [[
+    XiQPainter* p = gcNew<XiQPainter>();
+    p->handle = new QPainter(fromXi(target));
+    return p;
+]]
+
+/****************************************************************************
+  Layouts. These are used to size & position widgets automatically.
+  The concept is similar to LayoutManager's in Java, but they
+  tend to produce much nicer results.
+*/
+
+/* This is the base class for layouts. You want to use one of the subclasses
+  defined here instead (as QtRho doesn't bind most of the advanced API).
+  Should not be extended from Rho.
+*/
+pointer QLayout {
+    bindH [[
+        XiQObjectHolder<QLayout> handle;
+        QLayout* getImpl() {
+            return handle.get();
+        }
+
+        void createImpl() {
+            assert(false);
+        }
+
+        void setObject(QLayout* l) {
+            handle.setObject(l, this);
+        }
+    ]]
+
+    /* unlike QLayout::removeWidget, this returns ownership to Rho */
+    void removeWidget(QWidget* iw) [[
+        QWidget* w = fromXi(iw);
+        __this->impl()->removeWidget(w);
+        w->setParent(0);
+        iw->handle.parentChange();
+    ]]
+}
+
+bindH [[
+    typedef QBoxLayout::Direction BoxLayoutDirection;
+]]
+
+value BoxLayoutDirection {
+    enumPrefix [[QBoxLayout::]]
+    enumConst LeftToRight;
+    enumConst RightToLeft;
+    enumConst TopToBottom;
+    enumConst BottomToTop;
+}
+
+/** Defaults to top-to-bottom */
+pointer QBoxLayout: QLayout {
+    bindH [[
+        QBoxLayout* getImpl() {
+            return static_cast<QBoxLayout*>(XiQLayout::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new QBoxLayout(QBoxLayout::TopToBottom));
+        }
+    ]]
+
+    BoxLayoutDirection direction();
+    void setDirection(BoxLayoutDirection d);
+
+    /* add a nested layout at end. A common case would be nasty
+       a horizontal box in a vertical one */
+    void addLayout(QLayout* child) [[
+        QLayout* k = fromXi(child);
+        __this->impl()->addLayout(k);
+        child->handle.parentChange();
+    ]]
+
+    /* Basically, adds stretchable/empty space to end */
+    void addStretch();
+
+    /* Add a widget to the end.. */
+    void addWidget(QWidget* w) [[
+        QWidget* qw = fromXi(w);
+        __this->impl()->addWidget(qw);
+        w->handle.parentChange();
+    ]]
+
+    /* insert methods are like add, but take an index instead of
+       assuming end */
+    void insertLayout(int idx, QLayout* l) [[
+        QLayout* k = fromXi(l);
+        __this->impl()->insertLayout(idx, k);
+        l->handle.parentChange();
+    ]]
+
+    void insertStretch(int idx);
+
+    void insertWidget(int idx, QWidget* w) [[
+        QWidget* qw = fromXi(w);
+        __this->impl()->insertWidget(idx, qw);
+        w->handle.parentChange();
+    ]]
+
+    /* you probably don't need to tweak these as the defaults take
+       widget charactertistics in account, and the widgets have
+       margins by default
+    */
+    void addSpacing(int);
+
+    /* index of last spot, for easier use of below */
+    int lastIdx() [[
+        return __this->impl()->count() - 1;
+    ]]
+
+    /* override space distribution weights. */
+    void setStretch(int idx, int stretch);
+}
+
+pointer QHBoxLayout: QBoxLayout {
+    bindH [[
+        void createImpl() {
+            setObject(new QHBoxLayout());
+        }
+
+        QHBoxLayout* getImpl() {
+            return static_cast<QHBoxLayout*>(XiQBoxLayout::getImpl());
+        }
+    ]]
+}
+
+QHBoxLayout* qhboxLayout() [[
+    XiQHBoxLayout* l = gcNew<XiQHBoxLayout>();
+    l->createImpl();
+    return l;
+]]
+
+pointer QVBoxLayout: QBoxLayout {
+    bindH [[
+        void createImpl() {
+            setObject(new QVBoxLayout());
+        }
+
+        QVBoxLayout* getImpl() {
+            return static_cast<QVBoxLayout*>(XiQBoxLayout::getImpl());
+        }
+    ]]
+}
+
+QVBoxLayout* qvboxLayout() [[
+    XiQVBoxLayout* l = gcNew<XiQVBoxLayout>();
+    l->createImpl();
+    return l;
+]]
+
+
+pointer QGridLayout: QLayout {
+    bindH [[
+        QGridLayout* getImpl() {
+            return static_cast<QGridLayout*>(XiQLayout::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new QGridLayout());
+        }
+    ]]
+
+    void addLayout(QLayout* l, int row, int col) [[
+        QLayout* ql = fromXi(l);
+        __this->impl()->addLayout(ql, row, col);
+        l->handle.parentChange();
+    ]]
+
+    void addWidget(QWidget* w, int row, int col) [[
+        QWidget* qw = fromXi(w);
+        __this->impl()->addWidget(qw, row, col);
+        w->handle.parentChange();
+    ]]
+
+    QRect cellRect(int row, int col);
+    int columnCount();
+    int columnMinimumWidth(int col);
+    void setColumnMinimumWidth(int col, int m);
+    int columnStretch(int col);
+    void setColumnStretch(int col, int s);
+    int rowCount();
+    int rowMinimumHeight(int row);
+    void setRowMinimumHeight(int row, int m);
+    int rowStretch(int row);
+    void setRowStretch (int row, int s);
+    int  horizontalSpacing();
+    void setHorizontalSpacing(int s);
+    int spacing();
+    void setSpacing(int s);
+    void setVerticalSpacing(int s);
+    int verticalSpacing();
+}
+
+QGridLayout* qgridLayout() [[
+    XiQGridLayout* l = gcNew<XiQGridLayout>();
+    l->createImpl();
+    return l;
+]]
+
+/* Shows one thing at a time */
+pointer QStackedLayout: QLayout {
+    bindH [[
+        QStackedLayout* getImpl() {
+            return static_cast<QStackedLayout*>(XiQLayout::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new QStackedLayout());
+        }
+    ]]
+
+    int addWidget(QWidget* w) [[
+        QWidget* qw = fromXi(w);
+        int r = __this->impl()->addWidget(qw);
+        w->handle.parentChange();
+        return r;
+    ]]
+
+    int insertWidget(int idx, QWidget* w) [[
+        QWidget* qw = fromXi(w);
+        int r = __this->impl()->insertWidget(idx, qw);
+        w->handle.parentChange();
+        return r;
+    ]]
+
+    int currentIndex();
+    void setCurrentIndex(int);
+    void setCurrentWidget(QWidget* w);
+    QWidget* currentWidget();
+}
+
+QStackedLayout* qstackedLayout() [[
+    XiQStackedLayout* l = gcNew<XiQStackedLayout>();
+    l->createImpl();
+    return l;
+]]
+
+/**
+ Widgets and a few other things
+*/
+
+pointer QTimer {
+   bindH [[
+        XiQObjectHolder<QTimer> handle;
+        xiqEventListenerList<XiTimerListener> timerListeners;
+        XiQTimerSigs* sig;
+
+        QTimer* getImpl() {
+            return handle.get();
+        }
+
+        void createImpl() {
+            setObject(new QTimer);
+        }
+
+        void setObject(QTimer* w) {
+            handle.setObject(w, this);
+            sig = new XiQTimerSigs(this, w);
+        }
+
+        ~XiQTimer() {
+            delete sig;
+        }
+    ]]
+
+    int interval();
+    bool isActive();
+    bool isSingleShot();
+    void setInterval(int);
+    void setSingleShot(bool);
+
+    void start();
+    void stop();
+
+    /* To handle the timeout signal, you can either extend and override
+       timeout(), or add individual listeners.
+    */
+    void timeout() [[]]
+
+    void addTimerListener(TimerListener tl) [[
+        __this->timerListeners.append(tl);
+    ]]
+}
+
+QTimer qtimer() [[
+    XiQTimer* t = gcNew<XiQTimer>();
+    t->createImpl();
+    return t;
+]]
+
+nopeer TimerListener {
+    void timeout(QTimer* timer) [[]]
+}
+
+/* actions basically abstract the idea of a menu/toolbar entry.
+   You can add them to menus and toolbars to create
+   the appropriate things.
+*/
+pointer QAction {
+    bindH [[
+        XiQObjectHolder<QAction> handle;
+        xiqEventListenerList<XiActionListener> actionListeners;
+        XiQActionSigs* sig;
+
+        QAction* getImpl() {
+            return handle.get();
+        }
+
+        void createImpl() {
+            setObject(new QAction(0));
+        }
+
+        void setObject(QAction* action) {
+            handle.setObject(action, this);
+            sig = new XiQActionSigs(this, action);
+        }
+
+        ~XiQAction() {
+            delete sig;
+        }
+    ]]
+
+    bool isCheckable();
+    void setCheckable(bool);
+    bool isChecked();
+    void setChecked(bool);
+    bool isEnabled();
+    void setEnabled(bool);
+    QFont font();
+    void setFont(QFont);
+    QIcon icon();
+    void setIcon(QIcon);
+    QString text();
+    void setText(QString);
+    QString toolTip();
+    void setToolTip(QString);
+    QMenu menu();
+    void setMenu(QMenu*);
+
+    /* Override this or add a listener to be notified when activated */
+    void triggered() [[]]
+    void addActionListener(ActionListener l) [[
+        __this->actionListeners.append(l);
+    ]]
+}
+
+QAction qaction(QString text) [[
+    XiQAction* a = gcNew<XiQAction>();
+    a->setObject(new QAction(fromXi(text), 0));
+    return a;
+]]
+
+nopeer ActionListener {
+    void triggered(QAction a) [[]]
+}
+
+
+/* Used to set window/button icons and the like */
+value QIcon {
+}
+
+QIcon qicon(QString fname) [[
+    XiQIcon* i = gcNew<XiQIcon>();
+    i->value = QIcon(fromXi(fname));
+    return i;
+]]
+
+QIcon qiconFromPixmap(QPixmap pmap) [[
+    XiQIcon* i = gcNew<XiQIcon>();
+    i->value = QIcon(*fromXi(pmap));
+    return i;
+]]
+
+QIcon qiconNull() [[
+    return gcNew<XiQIcon>();
+]]
+
+QIcon qiconStandard(StandardIcon id) [[
+    return toXi(qApp->style()->standardIcon(fromXi(id)));
+]]
+
+value FocusPolicy {
+    enumConst TabFocus;
+    enumConst ClickFocus;
+    enumConst StrongFocus;
+    enumConst WheelFocus;
+    enumConst NoFocus;
+}
+
+/* A QWidget is a user interface object that has a graphical
+ representation and handles input from the user. */
+pointer QWidget: QPaintDevice {
+    bindH [[
+        XiQObjectHolder<QWidget> handle;
+        QWidget* getImpl() {
+            return handle.get();
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QWidget>());
+        }
+
+        void setObject(QWidget* w) {
+            handle.setObject(w, this);
+        }
+
+        // Call this when the parameter ought to be a logical
+        // kid of this object in some sense, and hence shouldn't
+        // be GC'd independently. If it's a QObject kid, it'll use
+        // the kids' qobjectholder to pin it. If not, it will use
+        // an intermediary.
+        void protectObject(XiQWidget* kid);
+        void protectObject(XiQAction* Kid);
+    ]]
+
+    bindCPP [[
+        // To protect a QObject which doesn't get parented by Qt,
+        // we add a PinHolder object as child of the logical parent,
+        // and have that hold an Xi pin for the logical kid
+        class PinHolder: public QObject
+        {
+            GCPin pin;
+        public:
+            PinHolder(QObject* logicalParent, Xiobj* logicalKid):
+                QObject(logicalParent), pin(logicalKid)
+            {}
+        };
+
+        void XiQWidget::protectObject(XiQWidget* kid) {
+            QWidget* qKid = kid->impl();
+            if (qKid->parent()) {
+                kid->handle.parentChange();
+                return;
+            }
+            // We're forced to pin..
+            new PinHolder(impl(), kid);
+        }
+
+        void XiQWidget::protectObject(XiQAction* kid) {
+            QAction* qKid = kid->impl();
+            if (qKid->parent()) {
+                kid->handle.parentChange();
+                return;
+            }
+            // We're forced to pin..
+            new PinHolder(impl(), kid);
+        }
+    ]]
+
+    QWidget toWidget() [[
+        return __this;
+    ]]
+
+    void show();
+    void hide();
+    void raise();
+    void lower();
+    void close();
+
+    bool isEnabled();
+    void setEnabled(bool);
+
+    void setLayout(QLayout* layout) [[
+        QLayout* ql = fromXi(layout);
+        __this->impl()->setLayout(ql);
+        layout->handle.parentChange();
+    ]]
+
+    /* Top-level window stuff */
+    bool isWindowModified();
+    void setWindowModified(bool);
+    QString windowTitle();
+    void setWindowTitle(QString);
+    QIcon windowIcon();
+    void setWindowIcon(QIcon);
+
+    bool isActiveWindow();
+    void activateWindow();
+    bool isMinimized();
+    bool isMaximized();
+    bool isFullScreen();
+    void showMinimized();
+    void showMaximized();
+    void showFullScreen();
+    void showNormal();
+
+    /* Lazily update rectangle r */
+    void update(QRect r);
+
+    /* Repaint rectangle r immediately */
+    void repaint(QRect r);
+
+    /* These methods are mainly of use for simple demos --- normally
+     layouts will take care of things
+    */
+    void setMinimumSize(QSize);
+    QSize minimumSize();
+    void setMaximumSize(QSize);
+    QSize maximumSize();
+    void setFixedSize(QSize);
+
+    void resize(QSize s);
+    void adjustSize();
+
+    QPoint pos();
+    void move(QPoint p);
+
+    // ### proxy?
+    QSize sizeHint();
+    QSize minimumSizeHint();
+
+    QPoint mapFrom(QWidget* w, QPoint);
+    QPoint mapFromGlobal(QPoint);
+    QPoint mapFromParent(QPoint);
+    QPoint mapTo(QWidget* w, QPoint);
+    QPoint mapToGlobal(QPoint);
+    QPoint mapToParent(QPoint);
+
+    /* Apperance tweaks */
+    void setFont(QFont f);
+    QFont font();
+    QString styleSheet();
+    void setStyleSheet(QString);
+
+    /* Focus stuff */
+    FocusPolicy focusPolicy();
+    void setFocusPolicy(FocusPolicy);
+    void setFocus();
+    void clearFocus();
+    bool hasFocus();
+
+    /* help stuff */
+    QString toolTip();
+    void setToolTip(QString);
+    QString whatsThis();
+    void setWhatsThis(QString);
+
+    /* turn this on if you want mouse move events */
+    bool hasMouseTracking();
+    void setMouseTracking(bool);
+
+    /* adds an action to the widget; by default this
+       adds a context menu entry; but changes contents
+       of menus and toolbars.
+    */
+    void addAction(QAction* action) [[
+        QAction* qa = fromXi(action);
+        __this->impl()->addAction(qa);
+        __this->protectObject(action);
+    ]]
+
+    /* Override this to change drawing behavior.
+       Similarly, you can override other methods to be notified of
+       mouse events, etc. */
+    void paintEvent(QPaintEvent* pe) [[
+        // By default, just call up to paintEvent of the class behind the
+        // proxy. We dispatch to the native type by calling the appropriate
+        // defaultEvent via the vtable.
+        __this->vtable()->defaultEvent(__this, pe);
+    ]]
+
+    void mousePressEvent(QMouseEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void mouseReleaseEvent(QMouseEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void mouseDoubleClickEvent(QMouseEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void mouseMoveEvent(QMouseEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void wheelEvent(QWheelEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void keyPressEvent(QKeyEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void keyReleaseEvent(QKeyEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void enterEvent(QEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void leaveEvent(QEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void resizeEvent(QResizeEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void closeEvent(QEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void contextMenuEvent(QContextMenuEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void showEvent(QEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+    void hideEvent(QEvent e) [[
+        __this->vtable()->defaultEvent(__this, e);
+    ]]
+
+
+    /* Call this to fall back to the default implementation of
+       event handling, for any type that has a *Event method */
+    void defaultEvent(QEvent* pe) [[
+        static_cast<Proxy<QWidget>*>(__this->getImpl())->defaultEvent(fromXi(pe));
+    ]]
+}
+
+/* A QPushButton is a button that can be pushed to deliver an
+ click event.
+*/
+pointer QPushButton: QWidget {
+    bindH [[
+        xiqEventListenerList<XiClickListener> clickListeners;
+        XiQPushButtonSigs* sig;
+
+        QPushButton* getImpl() {
+            return static_cast<QPushButton*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QPushButton>());
+        }
+
+        void setObject(QPushButton* b) {
+            XiQWidget::setObject(b);
+            sig = new XiQPushButtonSigs(this, b);
+        }
+
+        ~XiQPushButton() {
+            delete sig;
+        }
+    ]]
+
+    // useful stuff from QAbstractButton.
+    QIcon icon();
+    void setIcon(QIcon);
+    QString text();
+    void setText(QString);
+    QMenu* menu();
+    void setMenu(QMenu*);
+    void showMenu();
+
+
+    bool isDefault();
+    void setDefault(bool);
+    bool autoDefault();
+    void setAutoDefault(bool);
+    bool isFlat();
+    void setFlat(bool);
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<QPushButton>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    /* To handle the clicked signal, you can either extend and override
+       clicked(bool), or add individual listeners.
+    */
+    void addClickListener(ClickListener cl) [[
+        __this->clickListeners.append(cl);
+    ]]
+
+    void clicked() [[]]
+}
+
+/* Creates a button with given label */
+QPushButton qpushbutton(QString label) [[
+    return toXi(new QPushButton(fromXi(label)));
+]]
+
+/* A ClickListener listens for button click events. */
+nopeer ClickListener {
+    void clicked(QPushButton pb) [[]]
+}
+
+/* A checkbox with a label */
+pointer QCheckBox: QWidget {
+    bindH [[
+        xiqEventListenerList<XiToggleListener> listeners;
+        XiQCheckBoxSigs* sig;
+
+        QCheckBox* getImpl() {
+            return static_cast<QCheckBox*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QCheckBox>());
+        }
+
+        void setObject(QCheckBox* b) {
+            XiQWidget::setObject(b);
+            sig = new XiQCheckBoxSigs(this, b);
+        }
+
+        ~XiQCheckBox() {
+            delete sig;
+        }
+    ]]
+
+    // useful stuff from QAbstractButton.
+    QString text();
+    void setText(QString);
+    bool isChecked();
+    void setChecked(bool);
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<QCheckBox>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    void addToggleListener(ToggleListener l) [[
+        __this->listeners.append(l);
+    ]]
+
+    void toggled(bool) [[]]
+}
+
+/* Creates a checkbox with given label */
+QCheckBox qcheckbox(QString label) [[
+    return toXi(new QCheckBox(fromXi(label)));
+]]
+
+nopeer ToggleListener {
+    void toggled(QWidget widget, bool state) [[]]
+}
+
+/* A radio button. Those with the same parent widget
+   will be grouped together, unless you use a QButtonGroup
+   to override that. */
+pointer QRadioButton: QWidget {
+    bindH [[
+        xiqEventListenerList<XiToggleListener> listeners;
+        XiQRadioButtonSigs* sig;
+
+        QRadioButton* getImpl() {
+            return static_cast<QRadioButton*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QRadioButton>());
+        }
+
+        void setObject(QRadioButton* b) {
+            XiQWidget::setObject(b);
+            sig = new XiQRadioButtonSigs(this, b);
+        }
+
+        ~XiQRadioButton() {
+            delete sig;
+        }
+    ]]
+
+    // useful stuff from QAbstractButton.
+    QString text();
+    void setText(QString);
+    bool isChecked();
+    void setChecked(bool);
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<QRadioButton>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    void addToggleListener(ToggleListener l) [[
+        __this->listeners.append(l);
+    ]]
+
+    void toggled(bool) [[]]
+}
+
+QRadioButton qradio(QString label) [[
+    return toXi(new QRadioButton(fromXi(label)));
+]]
+
+/* Use these to organize which radio buttons go together, if you
+   need multiple groups in the same widget.
+
+   Note: make sure to keep a reference to these to avoid it from
+   being garbage-collected!
+*/
+pointer QButtonGroup {
+    bindH [[
+        XiQObjectHolder<QButtonGroup> handle;
+
+        // the listener list type is actually a general GC-traceable
+        // list... So we (ab)use it to guard the buttons added to us.
+        xiqEventListenerList<XiQRadioButton> buttons;
+
+        QButtonGroup* getImpl() {
+            return handle.get();
+        }
+
+        void createImpl() {
+            setObject(new QButtonGroup());
+        }
+
+        void setObject(QButtonGroup* a) {
+            handle.setObject(a, this);
+        }
+    ]]
+
+    void addButton(QRadioButton* button) [[
+        __this->buttons.append(button);
+        __this->impl()->addButton(fromXi(button));
+    ]]
+}
+
+QButtonGroup qbuttongroup() [[
+    XiQButtonGroup* g = gcNew<XiQButtonGroup>();
+    g->createImpl();
+    return g;
+]]
+
+pointer QMenu: QWidget {
+    bindH [[
+        QMenu* getImpl() {
+            return static_cast<QMenu*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QMenu>());
+        }
+    ]]
+
+    void addAction(QAction* a) [[         // non-virtual in QWidget somehow?
+        QAction* qa = fromXi(a);
+        __this->impl()->addAction(qa);
+        __this->protectObject(a);
+    ]]
+
+    /* adds a submenu */
+    void addMenu(QMenu* m) [[
+        QMenu* qm = fromXi(m);
+        __this->impl()->addMenu(qm);
+        __this->protectObject(m);
+    ]]
+
+    void addSeparator();
+
+    /* this menu represented as an action */
+    QAction* menuAction();
+
+    /* This executes menu synchronously, showing it at the given
+       position, and returns the selected action */
+    QAction* exec(QPoint p);
+
+    /* title + icon for when we're added as a submenu */
+    QString title();
+    void setTitle(QString);
+    QIcon icon();
+    void setIcon(QIcon);
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<QMenu>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+}
+
+QMenu qmenu(QString title) [[
+    return toXi(new QMenu(fromXi(title)));
+]]
+
+value ToolButtonStyle {
+    enumConst ToolButtonIconOnly;
+    enumConst ToolButtonTextOnly;
+    enumConst ToolButtonTextBesideIcon;
+    enumConst ToolButtonTextUnderIcon;
+}
+
+pointer QToolBar: QWidget {
+    bindH [[
+        QToolBar* getImpl() {
+            return static_cast<QToolBar*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QToolBar>());
+        }
+    ]]
+
+    void addAction(QAction* a) [[         // non-virtual in QWidget somehow?
+        QAction* qa = fromXi(a);
+        __this->impl()->addAction(qa);
+        __this->protectObject(a);
+    ]]
+
+    void addSeparator();
+
+    ToolButtonStyle toolButtonStyle();
+    void setToolButtonStyle(ToolButtonStyle);
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<QToolBar>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+}
+
+QToolBar qtoolbar() [[
+    return toXi(new QToolBar());
+]]
+
+/* The menu bar of the window... Use a QMainWindow if you want one */
+pointer QMenuBar: QWidget {
+    bindH [[
+        QMenuBar* getImpl() {
+            return static_cast<QMenuBar*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<QMenuBar>());
+        }
+    ]]
+
+    void addMenu(QMenu* m) [[
+        QMenu* qm = fromXi(m);
+        __this->impl()->addMenu(qm);
+        __this->protectObject(m);
+    ]]
+
+    void addSeparator();
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<QMenuBar>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+}
+
+/* A piece of text (perhaps rich text!) or a pixmap */
+pointer QLabel: QWidget {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    int margin();
+    void setMargin(int);
+    int indent();
+    void setIndent(int);
+
+    /* if you click on a label, it'll focus its buddy */
+    void setBuddy(QWidget* buddy);
+
+    QString text();
+    /* the text can include some basic HTML --- start it off with
+       <qt> to force that mode
+    */
+    void setText(QString);
+
+    bool wordWrap();
+    void setWordWrap(bool);
+
+    /* note: setting this will erase previous content */
+    void setPixmap(QPixmap* p) [[
+        QPixmap* qp = fromXi(p);
+        __this->impl()->setPixmap(*qp);
+    ]]
+
+    QPixmap pixmap() [[
+        const QPixmap* p = __this->impl()->pixmap();
+        if (p)
+            return toXi(*p);
+        else
+            return 0;
+    ]]
+
+    bool hasScaledContents();
+    void setScaledContents(bool);
+
+    bool openExternalLinks();
+    void setOpenExternalLinks(bool);
+}
+
+QLabel qlabel(QString text) [[
+    XiQLabel* l = gcNew<XiQLabel>();
+    l->setObject(new QLabel(fromXi(text)));
+    return l;
+]]
+
+QLabel qlabelPixmap(QPixmap p) [[
+    XiQLabel* l = gcNew<XiQLabel>();
+    l->impl()->setPixmap(*fromXi(p));
+    return l;
+]]
+
+/* A QMainWindow manages toolbars & the menubar.
+   Set your stuff as the central widget */
+pointer QMainWindow: QWidget {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    void addToolBar(QToolBar* t) [[
+        QToolBar* qt = fromXi(t);
+        __this->impl()->addToolBar(qt);
+        __this->protectObject(t);
+    ]]
+
+    QMenuBar* menuBar();
+    void setCentralWidget(QWidget* w);
+}
+
+QMainWindow qmainwindow() [[
+    return toXi(new QMainWindow());
+]]
+
+pointer QGroupBox: QWidget {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    QString title();
+    void setTitle(QString t);
+
+    void setFlat(bool);
+    bool isFlat();
+}
+
+QGroupBox qgroupbox(QString title) [[
+    return toXi(new QGroupBox(fromXi(title)));
+]]
+
+bindH [[
+    typedef QDialog::DialogCode DialogCode;
+]]
+
+value DialogCode {
+    enumPrefix [[QDialog::]]
+    enumConst Accepted;
+    enumConst Rejected;
+}
+
+pointer QDialog: QWidget {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    /* show modally until accept/reject called */
+    int exec();
+    void accept();
+    void reject();
+}
+
+QDialog qdialog() [[
+    return toXi(new QDialog);
+]]
+
+/* input one line of text */
+pointer QLineEdit: QWidget {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    QString text();
+    void setText(QString);
+    void clear();
+
+    bool isReadOnly();
+    void setReadOnly(bool);
+    bool isModified();
+    void setModified(bool);
+}
+
+QLineEdit qlineedit() [[
+    return toXi(new QLineEdit);
+]]
+
+/* input/output many lines of text, including HTML */
+pointer QTextEdit: QWidget {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    bool isReadOnly();
+    void setReadOnly(bool);
+
+    QString toHtml();
+    QString toPlainText();
+    void setHtml(QString);
+    void setPlainText(QString);
+
+    void append(QString);
+    void clear();
+}
+
+QTextEdit qtextedit() [[
+    return toXi(new QTextEdit);
+]]
+
+nopeer SliderListener {
+    void sliderMoved(QWidget* slider, int val) [[]]
+}
+
+/* base class for sliders and scrollbars */
+pointer QAbstractSlider: QWidget {
+    bindH [[
+        xiqEventListenerList<XiSliderListener> sliderListeners;
+        XiQAbstractSliderSigs* sig;
+
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+
+        void setObject(QAbstractSlider* b) {
+            XiQWidget::setObject(b);
+            sig = new XiQAbstractSliderSigs(this, b);
+        }
+
+        ~XiQAbstractSlider() {
+            delete sig;
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    Orientation orientation();
+    void setOrientation(Orientation);
+
+    /* method renamed since 'value' is a binding generator keyword. oops */
+    int  getValue() [[
+        return __this->impl()->value();
+    ]]
+    void setValue(int);
+
+    void setRange(int min, int max);
+
+    int minimum();
+    void setMinimum(int);
+    int maximum();
+    void setMaximum(int);
+    int pageStep();
+    void setPageStep(int);
+
+    /* override this or add a listener to get events... */
+    void sliderMoved(int) [[]]
+
+    void addSliderListener(SliderListener l) [[
+        __this->sliderListeners.append(l);
+    ]]
+}
+
+pointer QScrollBar: QAbstractSlider {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    /* All the methods are in QAbstractSlider*/
+}
+
+QScrollBar qscrollbar(Orientation o) [[
+    return toXi(new QScrollBar(fromXi(o)));
+]]
+
+bindH [[
+    typedef QSlider::TickPosition SliderTickPosition;
+]]
+
+value SliderTickPosition {
+    enumPrefix [[QSlider::]]
+    enumConst TicksBothSides;
+
+    /* above (horizontal) and left (vertical) */
+    enumConst TicksAbove;
+
+    /* below (horizontal) and right (vertical) */
+    enumConst TicksBelow;
+}
+
+pointer QSlider: QAbstractSlider {
+    bindH [[
+        wrappedType* getImpl() {
+            return static_cast<wrappedType*>(XiQWidget::getImpl());
+        }
+
+        void createImpl() {
+            setObject(new Proxy<wrappedType>());
+        }
+    ]]
+
+    void defaultEvent(QEvent* e) [[
+        static_cast<Proxy<wrappedType>*>(__this->getImpl())->defaultEvent(fromXi(e));
+    ]]
+
+    /* Most the methods are in QAbstractSlider*/
+    int tickInterval();
+    void setTickInterval(int);
+
+    void setTickPosition(SliderTickPosition);
+    SliderTickPosition tickPosition();
+}
+
+QSlider qslider() [[
+    return toXi(new QSlider);
+]]
+
+value StandardIcon {
+    enumPrefix [[QStyle::SP_]]
+    enumConst TitleBarMenuButton;
+    enumConst TitleBarMinButton;
+    enumConst TitleBarMaxButton;
+    enumConst TitleBarCloseButton;
+    enumConst TitleBarNormalButton;
+    enumConst TitleBarShadeButton;
+    enumConst TitleBarUnshadeButton;
+    enumConst TitleBarContextHelpButton;
+    enumConst DockWidgetCloseButton;
+    enumConst MessageBoxInformation;
+    enumConst MessageBoxWarning;
+    enumConst MessageBoxCritical;
+    enumConst MessageBoxQuestion;
+    enumConst DesktopIcon;
+    enumConst TrashIcon;
+    enumConst ComputerIcon;
+    enumConst DriveFDIcon;
+    enumConst DriveHDIcon;
+    enumConst DriveCDIcon;
+    enumConst DriveDVDIcon;
+    enumConst DriveNetIcon;
+    enumConst DirOpenIcon;
+    enumConst DirClosedIcon;
+    enumConst DirLinkIcon;
+    enumConst FileIcon;
+    enumConst FileLinkIcon;
+    enumConst ToolBarHorizontalExtensionButton;
+    enumConst ToolBarVerticalExtensionButton;
+    enumConst FileDialogStart;
+    enumConst FileDialogEnd;
+    enumConst FileDialogToParent;
+    enumConst FileDialogNewFolder;
+    enumConst FileDialogDetailedView;
+    enumConst FileDialogInfoView;
+    enumConst FileDialogContentsView;
+    enumConst FileDialogListView;
+    enumConst FileDialogBack;
+    enumConst DirIcon;
+    enumConst DialogOkButton;
+    enumConst DialogCancelButton;
+    enumConst DialogHelpButton;
+    enumConst DialogOpenButton;
+    enumConst DialogSaveButton;
+    enumConst DialogCloseButton;
+    enumConst DialogApplyButton;
+    enumConst DialogResetButton;
+    enumConst DialogDiscardButton;
+    enumConst DialogYesButton;
+    enumConst DialogNoButton;
+    enumConst ArrowUp;
+    enumConst ArrowDown;
+    enumConst ArrowLeft;
+    enumConst ArrowRight;
+    enumConst ArrowBack;
+    enumConst ArrowForward;
+    enumConst DirHomeIcon;
+    enumConst CommandLink;
+    enumConst VistaShield;
+    enumConst BrowserReload;
+    enumConst BrowserStop;
+    enumConst MediaPlay;
+    enumConst MediaStop;
+    enumConst MediaPause;
+    enumConst MediaSkipForward;
+    enumConst MediaSkipBackward;
+    enumConst MediaSeekForward;
+    enumConst MediaSeekBackward;
+    enumConst MediaVolume;
+    enumConst MediaVolumeMuted;
+}
+
+/* constants for use with qmessageBox* methods below. Add them up
+   to get the buttons you need
+*/
+
+int ButtonOk() [[ return QMessageBox::Ok; ]]
+int ButtonSave() [[ return QMessageBox::Save; ]]
+int ButtonSaveAll() [[ return QMessageBox::SaveAll; ]]
+int ButtonOpen() [[ return QMessageBox::Open; ]]
+int ButtonYes() [[ return QMessageBox::Yes; ]]
+int ButtonYesToAll() [[ return QMessageBox::YesToAll; ]]
+int ButtonNo() [[ return QMessageBox::No; ]]
+int ButtonNoToAll() [[ return QMessageBox::NoToAll; ]]
+int ButtonAbort() [[ return QMessageBox::Abort; ]]
+int ButtonRetry() [[ return QMessageBox::Retry; ]]
+int ButtonIgnore() [[ return QMessageBox::Ignore; ]]
+int ButtonClose() [[ return QMessageBox::Close; ]]
+int ButtonCancel() [[ return QMessageBox::Cancel; ]]
+int ButtonDiscard() [[ return QMessageBox::Discard; ]]
+int ButtonHelp() [[ return QMessageBox::Help; ]]
+int ButtonApply() [[ return QMessageBox::Apply; ]]
+int ButtonReset() [[ return QMessageBox::Reset; ]]
+int ButtonRestoreDefaults() [[ return QMessageBox::RestoreDefaults; ]]
+
+int qmessageBoxCritical(QWidget* parent, QString title, QString text, int buttons) [[
+    return QMessageBox::critical(fromXi(parent), fromXi(title), fromXi(text),
+                                 QMessageBox::StandardButtons(buttons));
+]]
+
+int qmessageBoxInformation(QWidget* parent, QString title, QString text, int buttons) [[
+    return QMessageBox::information(fromXi(parent), fromXi(title), fromXi(text),
+                                 QMessageBox::StandardButtons(buttons));
+]]
+
+int qmessageBoxWarning(QWidget* parent, QString title, QString text, int buttons) [[
+    return QMessageBox::warning(fromXi(parent), fromXi(title), fromXi(text),
+                                 QMessageBox::StandardButtons(buttons));
+]]
+
+int qmessageBoxQuestion(QWidget* parent, QString title, QString text, int buttons) [[
+    return QMessageBox::question(fromXi(parent), fromXi(title), fromXi(text),
+                                 QMessageBox::StandardButtons(buttons));
+]]
+
+QWidget* NO_WIDGET() [[
+    return 0;
+]]

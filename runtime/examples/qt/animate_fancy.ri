@@ -1,0 +1,3 @@
+paintEvent(self: QWidget, pe: QPaintEvent)
+timeout(self: TimerListener, timerObj: QTimer)
+triggered(self: ActionListener, a: QAction)

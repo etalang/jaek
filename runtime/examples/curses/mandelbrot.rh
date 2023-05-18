@@ -1,0 +1,79 @@
+//written by Surendra Ghentiyala on 03/29/2023
+//Objective: plot mandelbrot set in eta using curses
+//This is almost completley just a translation from python to eta with the python code coming from
+//https://www.codingame.com/playgrounds/2358/how-to-plot-the-mandelbrot-set/mandelbrot-set
+use io
+use conv
+use curses
+
+exp: int = 1000
+max_iter: int = 100
+RE_START:int = -2*exp
+RE_END:int = 1*exp
+IM_START:int = -1*exp
+IM_END:int = 1*exp
+
+record Complex {
+    x, y: int
+}
+
+main(args: int[][]) {
+  initCurses()
+  showCursor(false)
+  echoKeys(false)
+  width: int, height: int = getWindowSize()
+  image: int[][] = fill(width, height)
+  s: int = 0
+  while s<width {
+    t: int = 0
+    while t<height {
+        if (image[s][t]==max_iter) putCharAt('x', s, t)
+    	t = t+1
+    }
+    s = s+1
+  }
+  refreshWindow()
+  _ = getInputChar()
+  destroyCurses()
+}
+
+fill(width: int, height:int): int[][] {
+  a: int[width][height]
+  s:int = 0
+  while s<width {
+    t:int = 0
+    while t<height {
+      c: Complex = Complex(RE_START + (((s*exp)/width)*(RE_END - RE_START))/exp,
+                           IM_START + (((t*exp)/height)*(IM_END - IM_START))/exp)
+      a[s][t] = mandelbrot(c)
+      //print(unparseInt(c.x)+" "+unparseInt(c.y)+"\n")
+      //print(unparseInt(a[s][t])+"\n")
+      t = t+1
+    }
+    s = s+1
+  } 
+  return a
+}
+
+mandelbrot(c: Complex): int {
+  z: Complex = Complex(0, 0)
+  n: int = 0
+  while abs_squared(z)<=4*exp & n<max_iter {
+	z = add(mul(z, z), c)
+	n = n+1
+
+  }
+  return n
+}
+
+add(p: Complex, q:Complex): Complex {
+	return Complex(p.x+q.x, p.y+q.y)
+}
+
+mul(p: Complex, q:Complex): Complex {
+	return Complex((p.x*q.x)/exp-(q.y*p.y)/exp, (p.x*q.y)/exp+(p.y*q.x)/exp)
+}
+
+abs_squared(p: Complex): int {
+	return (p.x*p.x)/exp + (p.x*p.y)/exp
+}

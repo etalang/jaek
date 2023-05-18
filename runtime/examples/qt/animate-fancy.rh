@@ -1,0 +1,155 @@
+// A fancier bouncing ball demo, with menus and such
+use qt;
+use animate_fancy;
+
+// Dimension of the arena, and radius of the object.
+DIM:int = 556;
+R:int   = 16;
+
+// position of the object.
+x:int = 100;
+y:int = 50;
+// directions
+dx:int = 2;
+dy:int = 1;
+
+mainWidget: QWidget;
+
+// global to prevent GC
+BallWidget: QWidgetDerived;
+AnimationTimer: TimerListenerDerived;
+PlaybackController: ActionListenerDerived;
+
+// we use a pixmap for double-buffering. Actually, Qt will do it
+// for us, but I test more things this way!
+backBuffer: QPixmap;
+
+ballRect(): QRect {
+    return qrect(x - R, y - R, R*2, R*2);
+}
+
+paintEvent(self: QWidget, pe: QPaintEvent) {
+    // draw scene on backBuffer
+    QPixmap_fill(backBuffer, qcolor(255, 255, 192));
+
+    p: QPainter = qpainter(QPixmap_to_QPaintDevice(backBuffer));
+    QPainter_setHighQuality(p, true);
+
+    pen: QPen = qpen(qcolor(0, 0, 255));
+    QPen_setWidth(pen, 5);
+    QPainter_setPen(p, pen);
+    QPainter_setBrush(p, qbrush(qcolor(255, 0, 0)));
+    QPainter_drawEllipse(p, ballRect());
+    QPainter_end(p)
+
+    // paint the backbuffer
+    dirty: QRect = QPaintEvent_rect(pe);
+    pw: QPainter = qpainter(QWidget_to_QPaintDevice(self));
+    QPainter_drawPixmapPortion(pw, QRect_topLeft(dirty), backBuffer, dirty);
+    QPainter_end(pw);
+}
+
+timeout(self: TimerListener, timerObj: QTimer) {
+    oldRect: QRect = ballRect();
+
+    x = x + dx;
+    y = y + dy;
+
+    if (x + R >= DIM | (x - R)<= 0)
+        dx = -dx;
+
+    if (y + R >= DIM | (y - R) <= 0)
+        dy = -dy;
+
+    newRect: QRect = ballRect();
+    both:    QRect = QRect_united(newRect, oldRect);
+
+    QWidget_repaint(mainWidget, QRect_adjusted(both, -5, -5, 5, 5));
+}
+
+timer: QTimer;
+play:  QAction;
+stop:  QAction;
+
+triggered(self: ActionListener, a: QAction) {
+    if (QString_equals(QAction_text(a), QAction_text(play))) {
+        QAction_setEnabled(play, false);
+        QAction_setEnabled(stop, true);
+        QTimer_start(timer);
+    } else {
+        QAction_setEnabled(play, true);
+        QAction_setEnabled(stop, false);
+        QTimer_stop(timer)
+    }
+}
+
+main(args: int[][]) {
+    qapp: QApplication, _ = qapplication(args);
+
+    // Create the main window.
+    mw: QMainWindow = qmainwindow();
+
+    // Create toolbar
+    tb: QToolBar = qtoolbar();
+    QToolBar_setToolButtonStyle(tb, ToolButtonTextBesideIcon());
+    QMainWindow_addToolBar(mw, tb);
+
+    // Create menu, add it.
+    menu: QMenu = qmenu(qs("Playback"));
+    QMenuBar_addMenu(QMainWindow_menuBar(mw), menu);
+
+    // Actions for controlling animation
+    play = qaction(qs("Play"));
+    QAction_setIcon(play, qiconStandard(MediaPlay()));
+    QAction_setEnabled(play, false);
+
+    stop = qaction(qs("Stop"));
+    QAction_setIcon(stop, qiconStandard(MediaStop()));
+
+    // Hook them up to our listener
+    PlaybackController = ActionListener_extend();
+    ActionListener_override_triggered(PlaybackController, "triggered");
+
+    al: ActionListener = actionlistener_alloc();
+    ActionListener_downcast(al, PlaybackController);
+
+    QAction_addActionListener(play, al);
+    QAction_addActionListener(stop, al);
+
+    // Add actions to toolbar, menu
+    QToolBar_addAction(tb, play);
+    QToolBar_addAction(tb, stop);
+    QMenu_addAction(menu, play);
+    QMenu_addAction(menu, stop);
+
+    BallWidget = QWidget_extend();
+    QWidget_override_paintEvent(BallWidget, "paintEvent");
+
+    mainWidget = qwidget_alloc();
+    QWidget_downcast(mainWidget, BallWidget);
+
+    QWidget_setFixedSize(mainWidget, qsize(DIM, DIM));
+    backBuffer = qpixmap(DIM, DIM);
+
+    // create animation timer.
+    timer = qtimer();
+
+    // make our listener.
+    AnimationTimer = TimerListener_extend()
+    TimerListener_override_timeout(AnimationTimer, "timeout");
+
+    listener: TimerListener = timerlistener_alloc();
+    TimerListener_downcast(listener, AnimationTimer);
+
+    QTimer_addTimerListener(timer, listener);
+
+    // start the timer.
+    QTimer_setSingleShot(timer, false);
+    QTimer_setInterval(timer, 40);
+    QTimer_start(timer);
+
+    QMainWindow_setCentralWidget(mw, mainWidget);
+    QMainWindow_show(mw);
+    QApplication_exec(qapp);
+}
+

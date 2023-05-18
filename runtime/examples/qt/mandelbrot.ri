@@ -1,0 +1,3 @@
+timeout(t: QTimer)
+paintEvent(w: QWidget, pe: QPaintEvent)
+mouseDoubleClickEvent(w: QWidget, e: QMouseEvent)

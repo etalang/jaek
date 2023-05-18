@@ -1,0 +1,46 @@
+use qt;
+use io;
+use conv;
+use widgetevents;
+
+qapp: QApplication;
+MyButton: QPushButtonDerived; // global to prevent GC
+
+keyPressEvent(self: QPushButton, e: QKeyEvent) {
+    println(QString_RhoString(QKeyEvent_text(e)));
+    QPushButton_defaultEvent(self, QKeyEvent_to_QEvent(e));
+}
+
+mouseMoveEvent(self: QPushButton, e: QMouseEvent) {
+    p: QPoint = QMouseEvent_pos(e);
+    print(unparseInt(QPoint_x(p)));
+    print(",");
+    println(unparseInt(QPoint_y(p)));
+}
+
+clicked(self: QPushButton) {
+    res: int = qmessageBoxQuestion(NO_WIDGET(), qs("Quit?"), qs("Should we quit?"),
+                                   ButtonYes() + ButtonNo());
+    if (res == ButtonYes())
+        QApplication_quit(qapp);
+}
+
+main(args: int[][]) {
+    app: QApplication, _ = qapplication(args);
+    qapp = app;
+
+    MyButton = QPushButton_extend();
+    QPushButton_override_keyPressEvent(MyButton, "keyPressEvent");
+    QPushButton_override_mouseMoveEvent(MyButton, "mouseMoveEvent");
+    QPushButton_override_clicked(MyButton, "clicked");
+
+    w: QPushButton = qpushbutton_alloc();
+    QPushButton_downcast(w, MyButton);
+
+    QPushButton_setIcon(w, qiconStandard(DialogOkButton()));
+    QPushButton_setFocusPolicy(w, ClickFocus());
+    QPushButton_setMouseTracking(w, true);
+    QPushButton_show(w);
+    QApplication_exec(qapp);
+}
+

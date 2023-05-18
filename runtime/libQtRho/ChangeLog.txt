@@ -1,0 +1,18 @@
+Version 2011.1, 14 Nov 2011:
+-------------------
+- Ported to 64-bit Xi, maybe
+- Incremented version number by a few thousand
+
+Version 3, Dec 10th:
+-------------------
+- Fixes to syntax of examples.
+
+Version 2, Dec 8th:
+-------------------
+- Add -m32 when possible to fix build on x86-64
+- Don't use 'length', as it's a keyword, and fix
+some instances of shadowing.
+
+Version 1, Dec 7th:
+-------------------
+Initial version.
