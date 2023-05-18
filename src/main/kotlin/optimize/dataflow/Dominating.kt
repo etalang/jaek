@@ -17,11 +17,11 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg) {
     }
 
     /** F_N (in) = {n} ∪ in */
-    override fun transition(n: CFGNode, inInfo: Info): Map<Edge, Info> {
+    override fun transition(n: CFGNode, argumentInfo: Info): Map<Edge, Info> {
         val out = when (n) {
             is CFGNode.Start -> IntersectNodes.Data(setOf(n)) // start is only dominated by itself
             else -> {
-                when (val nset = inInfo.doms) {
+                when (val nset = argumentInfo.doms) {
                     IntersectNodes.Bottom -> {
                         println("surprising bottom incoming")
                         IntersectNodes.Data(setOf(n))

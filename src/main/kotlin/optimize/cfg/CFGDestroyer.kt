@@ -14,79 +14,64 @@ class CFGDestroyer(val cfg: CFG, val func: LIRFuncDecl) {
     val stmts = mutableListOf<FlatStmt>()
     private val jumpLabels: MutableMap<CFGNode, LIRLabel> = mutableMapOf()
     private val mm = cfg.mm
+    private val sett = mutableSetOf<String>()
 
     init {
         mm.nodesWithJumpInto().forEach { jumpLabels[it] = freshLabel() }
-        addToStack(cfg.start)
-        while (stack.isNotEmpty()) {
-            val peek = stack.first()
-            val fallThrough = mm.fallThroughsInto(peek)
-            if (fallThrough?.let { visited.contains(it) } == false) {
-                //ENSURE WE DO FALL-THROUGHS FIRST
-                addToStack(fallThrough)
-            } else {
-                val node = stack.removeFirst()
-                if (!visited.contains(node)) {
-                    visited.add(node)
-
-                    when (node) {
-                        is Funcking -> {
-                            val retMoves = node.movIntos.map {
-                                when (it) {
-                                    is Gets -> LIRMove(LIRTemp(it.varName), translateExpr(it.expr))
-                                    is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
-                                }
-                            }
-                            addStmt(
-                                node,
-                                LIRCallStmt(
-                                    LIRName(node.name),
-                                    node.movIntos.size.toLong(),
-                                    node.args.map { translateExpr(it) })
-                            )
-                            stmts.addAll(retMoves)
-                        }
-
-                        is If -> mm.jumpingTo(node)
-                            ?.let {
-                                addStmt(node, LIRTrueJump(translateExpr(node.cond), jumpLabels[it]!!))
-                                addToStack(it)
-                            }
-
-                        is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
-
-                        is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
-
-                        is Return -> {
-                            addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
-                        }
-
-                        is Start -> {}
-
-                        is Cricket -> {
-                            mm.jumpingTo(node)?.let {
-                                addStmt(node, LIRJump(LIRName(jumpLabels[it]!!.l)))
-                                addToStack(it)
+        val parents = listOf(cfg.start) + mm.nodesWithNoFallThroughsMinusStart()
+        parents.forEach {
+            var node: CFGNode? = it
+            while (node != null) {
+                when (node) {
+                    is Funcking -> {
+                        val retMoves = node.movIntos.map {
+                            when (it) {
+                                is Gets -> LIRMove(LIRTemp(it.varName), translateExpr(it.expr))
+                                is CFGNode.Mem -> LIRMove(translateExpr(it.loc), translateExpr(it.expr))
                             }
                         }
+                        addStmt(
+                            node,
+                            LIRCallStmt(
+                                LIRName(node.name),
+                                node.movIntos.size.toLong(),
+                                node.args.map { translateExpr(it) })
+                        )
+                        stmts.addAll(retMoves)
                     }
-                    mm.fallThrough(node)?.let {
-                        addToStack(it)
+
+                    is If -> node.let { n ->
+                        mm.jumpingTo(n)
+                            ?.let { addStmt(n, LIRTrueJump(translateExpr(n.cond), jumpLabels[it]!!)) }
+                    }
+
+                    is Gets -> addStmt(node, LIRMove(LIRTemp(node.varName), translateExpr(node.expr)))
+
+                    is CFGNode.Mem -> addStmt(node, LIRMove(translateExpr(node.loc), translateExpr(node.expr)))
+
+                    is Return -> addStmt(node, LIRReturn(node.rets.map { translateExpr(it) }))
+
+                    is Start -> {}
+
+                    is Cricket -> node.let { n ->
+                        mm.jumpingTo(n)
+                            ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
+                    }
+
+                    is NOOP -> node.let { n ->
+                        mm.jumpingTo(n)
+                            ?.let { addStmt(n, LIRJump(LIRName(jumpLabels[it]!!.l))) }
                     }
                 }
+                node = mm.fallThrough(node)
             }
         }
         body = LIRSeq(stmts)
     }
 
     private fun addStmt(node: CFGNode, stmt: FlatStmt) {
-        jumpLabels[node]?.let { stmts.add(it) }
+        jumpLabels[node]?.let { stmts.add(it); sett.add(it.l) }
         stmts.add(stmt)
-    }
-
-    private fun addToStack(node: CFGNode) {
-        if (!visited.contains(node))
-            stack.addFirst(node)
     }
 
     fun destroy(): LIRFuncDecl {

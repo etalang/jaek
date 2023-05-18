@@ -7,6 +7,22 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     /* node to fall-throughs and jumps */
     private val successors: MutableMap<CFGNode, Successors> = mutableMapOf()
 
+    fun repOk() {
+        allNodes().forEach {
+            predecessors[it]?.forEach { (pred, jump) ->
+                if (jump) require(jumpingTo(pred) == it)
+                else require(fallThrough(pred) == it)
+            }
+            require((predecessors[it]?.filter { !it.second }?.size ?: 0) < 2) //fall-throughs In
+            successors[it]?.let { l ->
+                l.fallThrough?.let { succ -> require(predecessors[succ]?.contains(Pair(it, false)) ?: false) }
+                l.jumpNode?.let { succ -> require(predecessors[succ]?.contains(Pair(it, true)) ?: false) }
+            }
+            if (it is CFGNode.If) require(successorEdges(it).let { it.size==2 || it.size==0  })
+            require(!predecessors.contains(it) || predecessors[it]?.isNotEmpty()==true)
+        }
+    }
+
     fun allNodes(): Set<CFGNode> {
         return predecessors.keys union successors.keys
     }
@@ -19,9 +35,19 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         return predecessors.keys
     }
 
+    fun nodesWithPredecessorEdges(): Set<Edge> {
+        return predecessors.keys.map { predecessorEdges(it) }.flatten().toSet()
+    }
+
     fun nodesWithJumpInto(): Set<CFGNode> {
-        return predecessors.entries.filter { entry -> entry.value.filter { edgesIn -> edgesIn.second }.isNotEmpty() }.map { it.key }
+        return predecessors.entries.filter { entry -> entry.value.any { edgesIn -> edgesIn.second } }.map { it.key }
             .toSet()
+    }
+
+    fun nodesWithNoFallThroughsMinusStart(): List<CFGNode> {
+        return predecessors.entries.filter { entry ->
+            entry.key !is CFGNode.Start && entry.value.none { edgesIn -> !edgesIn.second }
+        }.map { it.key }
     }
 
     fun build(from: CFGNode, to: String, jump: Boolean) {
@@ -29,21 +55,56 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     }
 
     fun connect(from: CFGNode, to: CFGNode, jump: Boolean) {
-        successors.computeIfAbsent(from) { Successors() }.set(to, jump)
-        predecessors.computeIfAbsent(to) { mutableSetOf() }.add(Pair(from, jump))
-    }
-
-    /** Given a -> b -> c. Removes b and connects a to c, preserving jump status of (a,b) */
-    fun translate(a: CFGNode, b: CFGNode, c: CFGNode) {
-        if (fallThrough(a) == b) {
-            removeConnection(a, b, false)
-            connect(a, c, false)
-        } else if (jumpingTo(a) == b) {
-            removeConnection(a, b, true)
-            connect(a, c, true)
+        if (!jump && predecessors[to]?.any { !it.second } == true) {
+            val dummy = CFGNode.NOOP()
+            connect(from, dummy, false)
+            connect(dummy, to, true)
+            println("SHIT'S FUNKY")
+            return
+        } else {
+            successors.computeIfAbsent(from) { Successors() }.set(to, jump)
+            predecessors.computeIfAbsent(to) { mutableSetOf() }.let {
+                require(jump || !it.any { !it.second })
+                it.add(Pair(from, jump))
+            }
         }
     }
 
+    /**
+     * Given a -> b -> c. Removes b and connects a to c.
+     *
+     * Jxy = jump status (x,y) (X, Y) = ( jump status(a,b) , jump status (b,c) )
+     * - (JUMP, JUMP) => JUMP
+     * - (JUMP, FALL) => JUMP
+     * - (FALL, JUMP) => FALL -> DUMMY JUMP
+     * - (FALL, FALL) => FALL
+     */
+    fun translate(a: CFGNode, b: CFGNode, c: CFGNode) {
+        require(fallThrough(a) == b || jumpingTo(a) == b)
+        val jumpAB = jumpingTo(a) == b
+        val jumpBC = jumpingTo(b) == c
+
+        if (jumpAB) {
+            //JUMP-JUMP or JUMP-FALL
+            removeConnection(a, b, true)
+            removeConnection(b, c, jumpBC)
+            connect(a, c, true)
+        } else if (jumpBC) {
+            //FALL-JUMP
+            removeConnection(a, b, false)
+            removeConnection(b, c, true)
+            val dummy = CFGNode.NOOP()
+            connect(a, dummy, false)
+            connect(dummy, c, true)
+        } else {
+            //FALL-FALL
+            removeConnection(a, b, false)
+            removeConnection(b, c, false)
+            connect(a, c, false)
+        }
+    }
+
+    /* Remove a node that is useless.*/
     fun removeNode(node: CFGNode) {
         //REMOVE CONNECTIONS IN
         val aboutToScrewWith = predecessors[node]?.toSet()
@@ -63,8 +124,35 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     fun removeConnection(from: CFGNode, to: CFGNode, jump: Boolean) {
         predecessors[to]?.remove(Pair(from, jump))
         if (predecessors[to]?.isEmpty() == true) predecessors.remove(to)
-        successors[from]?.remove(to)
+        successors[from]?.remove(to, jump)
         if (successors[from]?.useless() == true) successors.remove(from)
+    }
+
+    fun ensureIfsAreOk() : Boolean{
+        val found = successors.keys.firstOrNull{it is CFGNode.If && successorEdges(it).size < 2}
+        if (found != null) {
+//            if (fallThrough(found)==found) {
+//                println("DUMB")
+//                val dummy = CFGNode.NOOP()
+//                connect(dummy,dummy,true)
+//                connect(found,dummy,true)
+//                return true
+//            }
+//            if (jumpsInto(found)==found) {
+//                println("DUMB")
+//
+//                val dummy = CFGNode.NOOP()
+//                connect(dummy,dummy,true)
+//                connect(found,dummy,false)
+//                return true
+//
+//            }
+//            println("found $found. child: ${successors(found)}")
+            removeAndLink(found)
+            ensureIfsAreOk()
+            return true
+        }
+        return false
     }
 
     fun fallThrough(node: CFGNode): CFGNode? {
@@ -102,6 +190,7 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
     fun removeAndLink(node: CFGNode): Boolean {
         val fallThrough = fallThrough(node)
         val jumpTo = jumpingTo(node)
+        require(fallThrough == null || jumpTo==null)
         if (jumpTo == null && fallThrough == null) {
             removeNode(node)
             return true
@@ -124,21 +213,20 @@ class MatchMaker(val start: CFGNode, private val constructionMap: Map<String, CF
         var jumpNode: CFGNode? = null
         fun set(node: CFGNode, jump: Boolean) {
             if (jump) {
-                if (jumpNode != null) {
-                    throw Exception("cannot override jump!")
-                }
+                require(jumpNode == null)
                 jumpNode = node
             } else {
-                if (fallThrough != null) {
-                    throw Exception("cannot override fall through!")
-                }
+                require(fallThrough == null)
                 fallThrough = node
             }
         }
 
-        fun remove(node: CFGNode) {
-            if (jumpNode == node) jumpNode = null
-            if (fallThrough == node) fallThrough = null
+        fun remove(node: CFGNode, jump: Boolean) {
+            if (jump && jumpNode == node) jumpNode = null
+            else if (!jump && fallThrough == node) fallThrough = null
+            else {
+                throw Exception("WHY ARE YOU REMOVING THIS MY GOOD SIR? ping noah")
+            }
         }
 
         fun successors(): Set<CFGNode> {
