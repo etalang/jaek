@@ -21,7 +21,7 @@ class IROptimizer(val lir: LIRFuncDecl, optimize: Settings.Opt, val outputCFG: S
         var count = 0
 
         var timeRemaining = 5000L
-        while (timeRemaining > 0 && count <= 20) {
+        while (timeRemaining > 0 && count < 20) {
             timeRemaining -= measureTimeMillis {
                 if (optimize.desire(Settings.Opt.Actions.cp)) {
                     val ccp = CondConstProp(cfg)
