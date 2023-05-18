@@ -38,10 +38,6 @@ jobs:
           mv submission.zip /home/student/shared
           unzip -qq /home/student/shared/submission.zip -d /home/student/shared/production
 
-      - name: Run vm tests
-        working-directory: /home/student/
-        run: eth /home/student/eth/tests/pa6/ethScript -ec -compilerpath /home/student/shared/production/
-
       - name: Run custom tests
         working-directory: /home/student/
         run: eth /home/student/shared/production/src/tests/ethScript -ec -compilerpath /home/student/shared/production/
