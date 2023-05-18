@@ -64,7 +64,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     /* HELPERS FOR ANALYZING NODES */
 
     fun nodeMoves(n: Register): Set<Move> {
-        return ig.moveList[n]!!.intersect(activeMoves union worklistMoves)
+        return ig.moveList.getOrDefault(n, emptySet()).intersect(activeMoves union worklistMoves)
     }
 
     fun moveRelated(n: Register): Boolean {
@@ -76,7 +76,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     }
 
     /* REQUIRED FOR SIMPLIFY */
-    fun decrementDegree(m: Register) {
+    fun decrementDegree(m: Abstract) {
         val d = ig.degrees[m]
         ig.degrees[m] = d!!.minus(1)
         if (d == K) {
@@ -110,7 +110,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     }
 
     fun OK(t: Register, r: Register): Boolean {
-        return ig.degrees[t]!! < K || t is x86 || Pair(t, r) in ig.adjSet
+        return t is x86 || ig.degrees[t]!! < K || Pair(t, r) in ig.adjSet
 //        if (t is x86) return true
 //        else {
 //            val dt = ig.degrees[t]
@@ -122,7 +122,7 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     fun conservative(nodes: Set<Register>): Boolean {
         var k = 0
         for (n in nodes) {
-            if (ig.degrees[n]!! >= K) k++
+            if (n is x86 || ig.degrees[n]!! >= K) k++
         }
         return k < K
     }
@@ -175,28 +175,27 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
     }
 
     fun assignColors() {
+        for (n in Register.x86Name.values()) {
+            ig.colors[x86(n)] = n.ordinal
+        }
         while (selectStack.isNotEmpty()) {
             val n = selectStack.pop()
-//            selectStack = selectStack.removeLast
             if (n is x86) {
                 coloredNodes.add(n)
                 continue
             }
             val okColors = mutableSetOf<Int>()
             for (idx in 0 until K) {
-//                if (!reservedColors.contains(idx)) {
                 okColors.add(idx)
-//                }
             }
-//            okColors.addAll(0 until K)
-//            val nNeighbors = ig.adjList[n] ?: emptySet()
             for (w in ig.adjList[n]!!) {
                 val r = getAlias(w)
                 if (coloredNodes.contains(r) || r is x86) {
-                    ig.colors[r].let { okColors.remove(it) }
+                    okColors.remove(ig.colors[r])
                 }
             }
             if (okColors.isEmpty()) {
+                println("there is no color left for ${n}")
                 spilledNodes.add(n)
             } else {
                 coloredNodes.add(n)

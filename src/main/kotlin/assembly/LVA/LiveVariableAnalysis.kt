@@ -27,7 +27,7 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
             outVals[node] = out
             val oldIn = inVals[node]
             if (node.insn is Instruction.PUSH) {
-                println("push on charles")
+//                println("push on charles")
 
             }
             val newIn = node.insn.use union (out - node.insn.def)

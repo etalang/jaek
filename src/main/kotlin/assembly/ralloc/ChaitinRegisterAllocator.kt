@@ -42,7 +42,6 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     init {
         for (funcDecl in assembly.functions) {
             fullOffsetMap[funcDecl.name] = mutableMapOf()
-//            fullGeneratedTempCounts[funcDecl.name] = mutableMapOf()
         }
     }
 
@@ -69,7 +68,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 
         for (insn in n.body) {
             if (insn is LEAVE) {
-                withCalleeSaved.addAll(calleeSavedRegs.map {
+                withCalleeSaved.addAll(calleeSavedRegs.reversed().map {
                     MOV(
                         Destination.RegisterDest(it), Source.RegisterSrc(calleeTemps[it]!!)
                     )
@@ -102,6 +101,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         val worklistMoves = mutableSetOf<InterferenceGraph.Move>()
         //Procedure Build
         dataflow.cfg.nodes.forEach {
+            var live = dataflow.liveOut[it]!!
             if (it.insn is MOV && it.insn.dest is Destination.RegisterDest && it.insn.src is Source.RegisterSrc) {
                 val move = InterferenceGraph.Move(
                     it.insn.dest.r, it.insn.src.r
@@ -109,10 +109,11 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 for (reg in (it.insn.def union it.insn.use)) {
                     interferenceGraph.moveList.computeIfAbsent(reg) { mutableSetOf() }.add(move)
                     //TODO: maybe sub from live if we are bold
+                    live = live - it.insn.use
                 }
                 worklistMoves.add(move)
             }
-            val live = dataflow.liveOut[it]!! union it.insn.def
+            live = live union it.insn.def
             for (d in it.insn.def) {
                 for (l in live) {
                     interferenceGraph.addEdge(l, d)
@@ -127,10 +128,10 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         File("ig${debugLoopCtr}.dot").writeText(interferenceGraph.graphViz())
 
         // LOOP
-        while (worklist.simplifyWorkList.isNotEmpty() // || worklist.worklistMoves.isNotEmpty()
+        while (worklist.simplifyWorkList.isNotEmpty() || worklist.worklistMoves.isNotEmpty()
             || worklist.freezeWorkList.isNotEmpty() || worklist.spillWorkList.isNotEmpty()) {
             if (worklist.simplifyWorkList.isNotEmpty()) simplify(worklist)
-//            else if (worklist.worklistMoves.isNotEmpty()) coalesce(worklist)
+            else if (worklist.worklistMoves.isNotEmpty()) coalesce(worklist)
             else if (worklist.freezeWorkList.isNotEmpty()) freeze(worklist)
             else if (worklist.spillWorkList.isNotEmpty()) selectSpill(worklist)
         }
@@ -141,6 +142,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
 
         // check for spills -- if there are spills, have to repeat >.<
         return if (worklist.spilledNodes.isNotEmpty()) {
+            println(worklist.spilledNodes)
             val spillInsns = rewriteSpills(n, worklist)
             val nextFuncDecl = x86FuncDecl(n.name, spillInsns)
             File("assemblyIteration${debugLoopCtr}.txt").writeText(nextFuncDecl.toString())
@@ -164,7 +166,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
         worklist.simplifyWorkList.remove(n)
         worklist.selectStack.push(n)
         for (m in worklist.adjacent(n)) {
-            if (m !is x86) worklist.decrementDegree(m)
+            if (m is Abstract) worklist.decrementDegree(m)
         }
     }
 
@@ -182,22 +184,34 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
             worklist.constrainedMoves.add(m)
             worklist.addWorkList(u)
             worklist.addWorkList(v)
-        } else if (u is x86 && v is Abstract) { // TODO: CHECK IF THIS IS OK TO ENFORCE
+        } else {
             var isOK = true
             val vNeighbors = worklist.adjacent(v)
             for (t in vNeighbors) {
                 isOK = isOK && worklist.OK(t, u)
             }
-            if (isOK) {
+            val firstCond =  u is x86 && isOK
+            val secondCond = u is Abstract &&
+                    worklist.conservative(worklist.adjacent(u) union worklist.adjacent(v))
+            if (firstCond || secondCond) {
                 worklist.coalescedMoves.add(m)
                 worklist.combine(u, v)
                 worklist.addWorkList(u)
             }
-        } else if (u is Abstract && worklist.conservative(worklist.adjacent(u) union worklist.adjacent(v))) {
-            worklist.coalescedMoves.add(m)
-            worklist.combine(u, v)
-            worklist.addWorkList(u)
-        } else worklist.activeMoves.add(m)
+            else worklist.activeMoves.add(m)
+//            if (u is x86 && v is Abstract) { // TODO: CHECK IF THIS IS OK TO ENFORCE
+//                var isOK = true
+//                val vNeighbors = worklist.adjacent(v)
+//                for (t in vNeighbors) {
+//                    isOK = isOK && worklist.OK(t, u)
+//                }
+//                if (isOK) {
+//                    worklist.coalescedMoves.add(m)
+//                    worklist.combine(u, v)
+//                    worklist.addWorkList(u)
+//                }
+        }
+
     }
 
     private fun freeze(worklist: Worklist) {
@@ -220,6 +234,7 @@ class ChaitinRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
     }
 
     private fun selectSpill(worklist: Worklist) {
+        print("HEY I'M SPILLING")
         val m =
             heuristic(worklist.spillWorkList) // worklist.spillWorkList.random()  // TODO: MUST pick w/ heuristic instead
         worklist.spillWorkList.remove(m)
