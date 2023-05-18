@@ -1,0 +1,12 @@
+use io
+use conv
+
+main(args : int[][]) {
+    v : int = 0; n : int;
+    t : int; y : int; u : int;
+    while (v < 100000000) {
+    y = 4; t = v + 1; y = 5; n = y; u = 10
+    v = v + 1 }
+    a : int = v * n * y * u * v
+    print(unparseInt(v))
+}
