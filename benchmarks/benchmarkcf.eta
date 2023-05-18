@@ -1,0 +1,17 @@
+use io
+use conv
+
+main(args : int[][]){
+    println(unparseInt(9223372036854775807 + 1))
+    println(unparseInt(3234132342433431 * 25222329538))
+    println(unparseInt(10/9))
+    println(unparseInt(-9223372036854775808 - 1))
+    b : bool = true
+    i : int = 0
+    y : int = 10
+    while (i < 2000) {
+      x : int = 5 * 23 / 13
+      print(unparseInt(2 * x + 3 / 413))
+      i = i + 1
+    }
+}
