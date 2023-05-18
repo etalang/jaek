@@ -39,6 +39,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
     private val odce: Boolean by option("-Odce", help = "Enable dead code elimination.").flag()
     private val ocopy: Boolean by option("-Ocopy", help = "Enable copy propagation.").flag()
     private val ocp: Boolean by option("-Ocp", help = "Enable conditional constant propagation.").flag()
+    private val ocf: Boolean by option("-Ocf", help = "Enable consant folding.").flag()
     private val reportOps: Boolean by option(
         "--report-opts", help = " Output (only) a list of optimizations supported by the compiler"
     ).flag()
@@ -166,6 +167,7 @@ class Etac(val disableOutput: Boolean = false) : CliktCommand(printHelpOnEmptyAr
                                             if (ocopy) include.add(Opt.Actions.copy)
                                             if (ocp) include.add(Opt.Actions.cp)
                                             if (odce) include.add(Opt.Actions.dce)
+                                            if (ocf) include.add(Opt.Actions.cf)
                                             if (oreg) include.add(Opt.Actions.reg)
                                             Opt.Of(include)
                                         }
