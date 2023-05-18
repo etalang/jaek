@@ -1,0 +1,13 @@
+use io
+use conv
+
+main(args : int[][]) {
+    n : int = 0
+    a : int = n 
+    b : int = n
+    while (n < 10000) {
+    c : int = n; z : int = b; d : int = c; 
+    n = n + 1 }
+    b : int = n
+    print(unparseInt(n))
+}

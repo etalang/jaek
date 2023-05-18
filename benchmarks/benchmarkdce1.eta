@@ -1,0 +1,20 @@
+use io
+use conv
+a : int[];
+b : int[];
+e : int[];
+main(args:int[][])  {
+    a = {13, 6, 4, 'a', 's', 9}; b = "hello"
+    c : int[] = {5, 3, 2}; d : int[] = a + c
+    f : int[4][5];
+    i : int = 0
+    while(i < 2000) {
+        c = c + a
+        i = i + 1
+    }
+    print(unparseInt(length(a)))
+    while(i < 2000){
+        b = b + {1}
+    }
+    f[3][3] = 1
+}
