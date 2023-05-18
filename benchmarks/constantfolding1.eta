@@ -1,0 +1,19 @@
+use io
+use conv
+
+foo(){
+    print(unparseInt(1 + 2 * 3 * (4 - 5) / 6 *>> 7 % 8))
+    print(unparseInt(3 * 4 * (4 - 5) / 6 + 7 % 8))
+    x : int = 1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16
+    print(unparseInt(x))
+    y : int = 100 / 100 * 100 / 100 * 100 / 100 * 100
+    print(unparseInt(y))
+}
+
+main(args : int[][]){
+    foo()
+    x : bool = true & false
+    if (x) {
+        foo()
+    }
+}
