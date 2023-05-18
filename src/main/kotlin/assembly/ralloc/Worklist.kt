@@ -183,9 +183,9 @@ class Worklist(val ig: InterferenceGraph, val K: Int,  insns: List<Instruction>,
             }
             val okColors = mutableSetOf<Int>()
             for (idx in 0 until K) {
-                if (!reservedColors.contains(idx)) {
+//                if (!reservedColors.contains(idx)) {
                     okColors.add(idx)
-                }
+//                }
             }
             for (w in ig.adjList[n]!!) {
                 val r = getAlias(w)
