@@ -1,0 +1,17 @@
+use io
+use conv
+
+main(args:int[][]) {
+    thing : int = 5
+    incr : int = 300000000
+    b : int
+    while (incr > 0) {
+        if (thing == 5) {
+            b = 6
+        } else {
+            b = 7
+        }
+        b = 8
+        incr = incr - 1
+    }
+}
