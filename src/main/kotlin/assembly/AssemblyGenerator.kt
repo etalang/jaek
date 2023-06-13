@@ -1,6 +1,7 @@
 package assembly
 
 import assembly.ralloc.ChaitinRegisterAllocator
+import assembly.ralloc.LinearScan
 import assembly.ralloc.RegisterAllocator
 import assembly.ralloc.TrivialRegisterAllocator
 import ir.lowered.LIRCompUnit
@@ -10,7 +11,8 @@ class AssemblyGenerator(val ir: LIRCompUnit, val functionType: Map<String, EtaFu
     fun generate(): String {
         val compUnit = ir.abstractAssembly()
         val ra : RegisterAllocator = if (chaitin)
-            ChaitinRegisterAllocator(compUnit, functionType)
+              LinearScan(compUnit, functionType)
+//            ChaitinRegisterAllocator(compUnit, functionType)
             else TrivialRegisterAllocator(compUnit, functionType)
         return ra.allocate().toString()
     }

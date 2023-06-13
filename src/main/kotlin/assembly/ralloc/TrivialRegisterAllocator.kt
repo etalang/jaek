@@ -18,7 +18,6 @@ class TrivialRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
      * default three registers used in trivial register allocation ASSUME: we don't use these registers ANYWHERE in a
      * nontrivial capacity before we allocate
      */
-    private val defaults = listOf(x86(R12), x86(R13), x86(R14))
 
 //    fun allocate(): x86CompUnit {
 //        return allocateCompUnit(assembly)
@@ -82,32 +81,7 @@ class TrivialRegisterAllocator(assembly: x86CompUnit, functionTypes: Map<String,
                 returnedInsns.addAll(calleeSavedRegs.reversed().map { POP(it) })
             }
 
-            for (ru in encountered) {
-                replaced[ru.name]?.let { idx ->
-                    offsetMap[ru.name]?.let { shift ->
-                        returnedInsns.add(
-                            MOV(
-                                RegisterDest(defaults[idx]),
-                                MemorySrc(RegisterMem(x86(RBP), null, offset = -8L * shift))
-                            )
-                        )
-                    }
-                }
-            }
-            returnedInsns.add(replaceInsnRegisters(insn, replaced))
-            for (rw in encountered) {
-                replaced[rw.name]?.let { idx ->
-                    offsetMap[rw.name]?.let { shift ->
-                        returnedInsns.add(
-                            MOV(
-                                MemoryDest(RegisterMem(x86(RBP), null, offset = -8L * shift)),
-                                RegisterSrc(defaults[idx])
-                            )
-                        )
-                    }
-                }
-            }
-
+            returnedInsns.addAll(trivialSpill(insn, offsetMap))
         }
         return returnedInsns
     }

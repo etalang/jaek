@@ -26,6 +26,28 @@ sealed class Register {
         RAX, RBX, RCX, RDX, RSP, RBP, RDI, RSI, R8, R9, R10, R11, R12, R13, R14, R15
     }
 
+    fun idxTox86Name(i : Int) : x86Name {
+        return when (i) {
+            0 -> x86Name.RAX
+            1 -> x86Name.RBX
+            2 -> x86Name.RCX
+            3 -> x86Name.RDX
+            4 -> x86Name.RSP
+            5 -> x86Name.RBP
+            6 -> x86Name.RDI
+            7 -> x86Name.RSI
+            8 -> x86Name.R8
+            9 -> x86Name.R9
+            10 -> x86Name.R10
+            11 -> x86Name.R11
+            12 -> x86Name.R12
+            13 -> x86Name.R13
+            14 -> x86Name.R14
+            15 -> x86Name.R15
+            else -> throw Exception("bad index for converting back to register")
+        }
+    }
+
     /** prints the corresponding name of the register */
     fun x86NametoString(n: x86Name): String {
         return when (n) {
