@@ -23,7 +23,6 @@ class Dominating(cfg: CFG) : CFGFlow.Forward<Dominating.Info>(cfg) {
             else -> {
                 when (val nset = argumentInfo.doms) {
                     IntersectNodes.Bottom -> {
-                        println("surprising bottom incoming")
                         IntersectNodes.Data(setOf(n))
                     }
 

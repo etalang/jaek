@@ -121,7 +121,7 @@ char* tryDemangleType(char** posPtr) {
         return strdup("bool");
     }
 
-    if (*pos == 'o') {
+    if (*pos == 'r') {
         int   length, out;
         char* str;
         ++pos;

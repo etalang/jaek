@@ -16,6 +16,11 @@ NCURSESLIBDIR = ncurses-6.3
 NCURSESLIBZIP = $(NCURSESLIBDIR).tar.gz
 NCURSESLIB = $(NCURSESLIBDIR)/lib/libncurses.a
 
+# QtRho
+QTRHODIR = libQtRho
+QTRHOINC = include/qt.ri
+QTRHOLIB = libQtRho.a
+
 LIBETA_EXTRAS = libeta/curses.o
 
 ABI_FLAG = $(shell ../platform-flags.sh)
@@ -25,12 +30,12 @@ CFLAGS_EXAMPLES = -masm=intel -O0 -fno-stack-protector -fno-asynchronous-unwind-
 ABI_FLAG=$(shell ./platform-flags.sh)
 
 
-all: etafilt libeta.a examples/arr examples/fact
+all: etafilt libeta.a examples/arr examples/fact $(QTRHOLIB)
 
 etafilt: demangle/demangle.o
 	gcc $(ABI_FLAG) -o $@ $^
 
-libeta.a: $(GCLIB) $(NCURSESLIB) libeta/libeta.o $(LIBETA_EXTRAS) 
+libeta.a: $(GCLIB) $(NCURSESLIB) libeta/libeta.o $(LIBETA_EXTRAS)
 	rm -rf $@ gc_tmp nc_tmp
 	mkdir gc_tmp; cd gc_tmp; ar -x ../$(GCLIB)
 	mkdir nc_tmp; cd nc_tmp; ar -x ../$(NCURSESLIB)
@@ -73,6 +78,15 @@ $(NCURSESLIBDIR)/configure:
 	rm -rf $(NCURSESLIBDIR)
 	tar -xzvf deps/$(NCURSESLIBZIP)
 
+$(QTRHOLIB) $(QTRHOINC) &: libeta.deps
+	cd $(QTRHODIR); cmake .; make;
+	cp $(QTRHODIR)/qt.ri include/
+	cp $(QTRHODIR)/$(QTRHOLIB) .
+
+libeta.deps: ./libeta/*.h
+	cp ./libeta/*.h ./libQtRho/
+	@touch libeta.deps
+
 examples/fact: examples/fact.s
 	./linketa.sh examples/fact.s -o examples/fact
 	gcc -E examples/fact.s -o examples/fact.sx
@@ -86,10 +100,12 @@ examples/curses: examples/curses.s
 
 clean:
 	rm -f libeta.a etafilt
-	rm -f libeta/libeta.o
+	rm -f libeta/libeta.o libeta/curses.o
 	rm -f demangle/demangle.o
 	rm -f examples/fact examples/arr examples/fact-init examples/*.s examples/*.sx
 	rm -f *~
+	rm -rf $(QTRHODIR)/CMakeCache.txt $(QTRHODIR)/CMakefiles
+	rm -f $(QTRHOLIB)
 
 clobber: clean
 	$(MAKE) -C $(GCLIBDIR) clean
@@ -105,7 +121,8 @@ dust: clobber
 FILES = runtime/demangle runtime/libeta \
         runtime/linketa.sh runtime/Makefile runtime/README.txt runtime/$(GCLIBDIR)\
         runtime/examples/*.c runtime/examples/*.s runtime/include \
-        runtime/ChangeLog.txt runtime/platform-flags.sh
+        runtime/ChangeLog.txt runtime/platform-flags.sh \
+        runtime/linkqt.sh runtime/$(QTRHOLIBDIR)
 
 tarballs: $(GCLIBDIR)/configure $(NCURSESLIBDIR)/configure
 	make clean

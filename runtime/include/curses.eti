@@ -1,0 +1,91 @@
+// Initialise the ncurses window
+initCurses()
+
+// Destroy the ncurses window
+destroyCurses()
+
+// Whether to show the cursor
+showCursor(enabled: bool)
+
+// Get the size of the window in
+// number of columns, and rows
+getWindowSize(): int, int
+
+// Get the position of the cursor
+// in the window with origin being
+// the top-left corner of the window
+// in terms of the column number and
+// row number
+getCursorPosition(): int, int
+
+// Move the cursor to the given
+// position with x being the column
+// number and y being the row number
+moveCursor(x: int, y: int)
+
+// Enable or disable echoing of
+// pressed keys to the console
+echoKeys(enable: bool)
+
+// Clear the current window of
+// all characters
+clearWindow()
+
+// Push the current modifications
+// to the window contents to the
+// screen, without this the contents
+// will not be modified
+refreshWindow()
+
+// Set the time for which we wait
+// for input before returning without
+// reading any input in millisecond
+inputTimeout(delay: int)
+
+// To determine which key was pressed
+KEYUP(): int
+KEYDOWN(): int
+KEYLEFT(): int
+KEYRIGHT(): int
+
+// Get an input character from the
+// keyboard
+getInputChar(): int
+
+// Get an input string from the keyboard,
+// equivalent to doing getInputChar() in
+// a loop until an EOF or newline is received
+// with a given maximum length of the string
+getInputString(maxlength: int): int[]
+
+// Put a character on the screen at the
+// current cursor position
+putChar(c: int)
+
+// Put a character on the screen at the
+// given cursor position
+putCharAt(c: int, x: int, y: int)
+
+// Put a string on the screen at the
+// current cursor position
+putString(str: int[])
+
+// Put a string on the screen at the
+// given cursor position
+putStringAt(str: int[], x: int, y: int)
+
+// Delete the character at the current
+// position on the screen
+deleteChar()
+
+// Delete the character at the given
+// position on the screen
+deleteCharAt(x: int, y: int)
+
+// Read the character that exists at the
+// current position on the screen
+readChar(): int
+
+// Read the character that exists at the
+// given position on the screen
+readCharAt(x: int, y: int): int

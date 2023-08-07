@@ -50,9 +50,6 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 counter++
             }
 //            println("it took $counter to terminate $name")
-            if (counter == THRESHOLD) {
-                println("TOOK TOO MANY!")
-            }
         }
     }
 
@@ -80,9 +77,6 @@ sealed class CFGFlow<Lattice : EdgeValues>(val cfg: CFG) : Graphable {
                 counter++
             }
 //            println("it took $counter to terminate $name")
-            if (counter == 10000) {
-                println("TOOK TOO MANY!")
-            }
         }
 
     }

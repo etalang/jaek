@@ -1,0 +1,19 @@
+use io
+use conv
+
+foo(){
+    print(unparseInt(3*0))
+    print(unparseInt(3 * 4 * (4 - 5) / 6 + 7 % 8))
+    y : int = 7*7*7*7*7*7*7*7*7*7*7*7
+    x : int = 1 + 2 * 3 * (4 - 5) / 6 *>> 7 % 8
+    print(unparseInt(x))
+    print(unparseInt(y))
+}
+
+main(args : int[][]){
+    foo()
+    x : bool = true & false
+    if (x) {
+        foo()
+    }
+}

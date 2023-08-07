@@ -52,7 +52,6 @@ class LIRCallStmt(val target: LIRExpr.LIRName, val n_returns: Long, val args: Li
                 )
             }
 
-
             for (i in args.size - 1 downTo 0) {
                 val argNum = i + 1
                 val tile = args[i].optimalTile()

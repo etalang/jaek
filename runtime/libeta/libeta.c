@@ -40,6 +40,7 @@ void registerFinalizer(void* object, Finalizer* fin) {
 }
 
 void ETA_BUILTIN(out_of_bounds)(void) {
+  asm("and $-16, %rsp");
     fprintf(stderr, "Array index out of bounds\n");
     abort();
 }
@@ -49,14 +50,9 @@ void report_stack_error() {
   abort();
 }
 
-
-#define CHECK_STACK_ALIGNMENT                   \
-  asm("pushq %rbp");                              \
-  asm("andq $15, %rbp");                           \
-  asm("testq %rbp, %rbp");                         \
-  asm("jne report_stack_error");                 \
-  asm("popq %rbp");
-
+#define CHECK_STACK_ALIGNMENT												  \
+  asm("testq $15, %rbp");													  \
+  asm("jnz report_stack_error");
 
 // Internal helper for making arrays
 static void* mkArray(int bytes, int cells) {
@@ -97,18 +93,25 @@ int main(int argc, char *argv[]) {
  I/O module
 */
 
-void ETA(print_pai) (etastring str) {
-    int c;
-    int len = str[-1];
-    CHECK_STACK_ALIGNMENT;
-    for (c = 0; c < len; ++c)
-        printUcs4char(str[c], stdout);
+void print_eta_string(etastring str) {
+  int c;
+  int len = str[-1];
+  for (c = 0; c < len; ++c)
+    printUcs4char(str[c], stdout);
+
 }
+
+
+void ETA(print_pai) (etastring str) {
+    CHECK_STACK_ALIGNMENT;
+    print_eta_string(str);
+ }
 
 void ETA(println_pai) (etastring str) {
     CHECK_STACK_ALIGNMENT;
-    ETA(print_pai)(str);
+    print_eta_string(str);
     fputc('\n', stdout);
+    fflush(stdout);
 }
 
 etastring ETA(readln_ai) (void) {

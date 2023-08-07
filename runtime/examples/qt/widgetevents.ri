@@ -1,0 +1,3 @@
+keyPressEvent(self: QPushButton, e: QKeyEvent)
+mouseMoveEvent(self: QPushButton, e: QMouseEvent)
+clicked(self: QPushButton)

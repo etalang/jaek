@@ -1,0 +1,20 @@
+use io
+use conv
+main(args : int[][]) {
+    i : int = 2
+    b : int = 3
+    c : int = 4
+    d : int = i + b
+    while (i > 10){
+        f : int = 9
+    }
+    if (10 > 12){
+        return
+    } else {
+        e : int = 14
+        f : int = 3
+        e = f + 1
+    }
+    print(unparseInt(d))
+    return
+}

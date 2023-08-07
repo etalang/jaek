@@ -1,0 +1,101 @@
+// A simple bouncing ball demo.
+use qt;
+use animate;
+
+// Dimension of the arena, and radius of the object.
+DIM:int = 256;
+R:int   = 16;
+
+// position of the object.
+x:int = 100;
+y:int = 50;
+// directions
+dx:int = 2;
+dy:int = 1;
+
+mainWidget: QWidget;
+
+// global to prevent GC
+BallWidget: QWidgetDerived;
+AnimationTimer: TimerListenerDerived;
+
+// we use a pixmap for double-buffering. Actually, Qt will do it
+// for us, but I test more things this way!
+backBuffer: QPixmap;
+
+ballRect() : QRect {
+    return qrect(x - R, y - R, R*2, R*2);
+}
+
+paintEvent(self: QWidget, pe: QPaintEvent) {
+    // draw scene on backBuffer
+    QPixmap_fill(backBuffer, qcolor(255, 255, 192));
+
+    p: QPainter = qpainter(QPixmap_to_QPaintDevice(backBuffer));
+    QPainter_setHighQuality(p, true);
+
+    pen: QPen = qpen(qcolor(0, 0, 255));
+    QPen_setWidth(pen, 5);
+    QPainter_setPen(p, pen);
+    QPainter_setBrush(p, qbrush(qcolor(255, 0, 0)));
+    QPainter_drawEllipse(p, ballRect());
+    QPainter_end(p)
+
+    // paint the backbuffer
+    dirty: QRect = QPaintEvent_rect(pe);
+    pw: QPainter = qpainter(QWidget_to_QPaintDevice(self));
+    QPainter_drawPixmapPortion(pw, QRect_topLeft(dirty), backBuffer, dirty);
+    QPainter_end(pw);
+}
+
+timeout(self: TimerListener, timer: QTimer) {
+    oldRect: QRect = ballRect();
+
+    x = x + dx;
+    y = y + dy;
+
+    if (x + R >= DIM | (x - R)<= 0)
+        dx = -dx;
+
+    if (y + R >= DIM | (y - R) <= 0)
+        dy = -dy;
+
+    newRect: QRect = ballRect();
+    both:    QRect = QRect_united(newRect, oldRect);
+
+    QWidget_repaint(mainWidget, QRect_adjusted(both, -5, -5, 5, 5));
+}
+
+main(args: int[][]) {
+    qapp: QApplication, _ = qapplication(args);
+
+    BallWidget = QWidget_extend();
+    QWidget_override_paintEvent(BallWidget, "paintEvent");
+
+    mainWidget = qwidget_alloc();
+    QWidget_downcast(mainWidget, BallWidget);
+
+    backBuffer = qpixmap(DIM, DIM);
+
+    // create animation timer.
+    timer: QTimer = qtimer();
+
+    // make our listener.
+    AnimationTimer = TimerListener_extend()
+    TimerListener_override_timeout(AnimationTimer, "timeout");
+
+    listener: TimerListener = timerlistener_alloc();
+    TimerListener_downcast(listener, AnimationTimer);
+
+    QTimer_addTimerListener(timer, listener);
+
+    // start the timer.
+    QTimer_setSingleShot(timer, false);
+    QTimer_setInterval(timer, 40);
+    QTimer_start(timer);
+
+    QWidget_setFixedSize(mainWidget, qsize(DIM, DIM));
+    QWidget_show(mainWidget);
+    QApplication_exec(qapp);
+}
+

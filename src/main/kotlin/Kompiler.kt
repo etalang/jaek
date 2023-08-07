@@ -10,6 +10,7 @@ import java.io.File
 
 class Kompiler {
     var libraries : MutableMap<String, Node> = HashMap()
+    var moduleRecords : MutableMap<String, EtaType.ContextType.RecordType> = HashMap()
     fun createTopLevelContext(inFile: File, ast : Node, libpath: String, typedFile: File?) : Context {
         var returnGamma = Context()
         if (ast is Program) {
@@ -50,6 +51,7 @@ class Kompiler {
                             val recordType = EtaType.ContextType.RecordType(definition.name, fieldTypes)
                             definition.etaType = recordType
                             returnGamma.bind(definition.name, recordType)
+                            moduleRecords[definition.name] = recordType
                         }
                     }
 
@@ -159,6 +161,43 @@ class Kompiler {
           }
        }
     }
+    fun checkRecordExact(header : RhoRecord, recordtype : EtaType.ContextType.RecordType, inFile: File) {
+        header.fields.forEach{ field ->
+            for (identifier in field.ids) {
+                if (recordtype.fields[identifier.name] == null) {
+                    throw SemanticError(identifier.terminal.line, identifier.terminal.column,"${identifier.name} is not defined in record ${recordtype.name} in Rho Module", inFile)
+                } else {
+                    val headerFieldType = EtaType.translateType(field.type)
+                    val recordFieldType = recordtype.fields[identifier.name]
+                    if (headerFieldType != recordFieldType) {
+                        throw SemanticError(
+                            identifier.terminal.line,
+                            identifier.terminal.column,
+                            "Conflicting record types in Interfaces",
+                            inFile)
+                    }
+                }
+            }
+        }
+
+        recordtype.fields.forEach{field, type ->
+            var found = false
+            header.fields.forEach{ headerField ->
+                for (identifier in headerField.ids) {
+                    if (identifier.name == field) {
+                        found = true
+                    }
+                }
+            }
+            if (!found) {
+                throw SemanticError(
+                    header.terminal.line,
+                    header.terminal.column,
+                    "Conflicting record types in Interfaces",
+                    inFile)
+            }
+        }
+    }
 
     fun loadRhoInterfaceDependencies(inFile : File, importPath : String, imports : MutableList<Use>, returnGamma : Context, typedFile : File?) : Context {
         val seenImports = mutableSetOf<String>()
@@ -257,7 +296,13 @@ class Kompiler {
                 throw SemanticError(header.terminal.line, header.terminal.column, "Conflicting record definition in Interface", inFile)
             }
             else {
-                checkRecordSubtyping(header, existingRecordType, inFile)
+                //module defined the record, which is imported first, so we only need to check subtyping
+                if (moduleRecords.contains(header.name)) {
+                    checkRecordSubtyping(header, existingRecordType, inFile)
+                } else {
+                    //otherwise they need to be exactly the same
+                    checkRecordExact(header, existingRecordType, inFile)
+                }
             }
         } else {
             header.etaType = currRecordType

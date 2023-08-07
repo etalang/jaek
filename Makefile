@@ -14,6 +14,7 @@ zip:
 	cp production/etac tempzipdir
 	cp production/etac-build tempzipdir
 	cp cup tempzipdir
+	cp -R benchmarks tempzipdir
 	cd tempzipdir; zip -r ../submission.zip . -x '__MACOSX'
 	rm -rf tempzipdir/
 

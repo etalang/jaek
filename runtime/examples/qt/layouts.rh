@@ -1,0 +1,93 @@
+use qt
+
+bg: QButtonGroup // global to prevent GC
+
+main(args: int[][]) {
+    app: QApplication, _ = qapplication(args)
+
+    // We use it modeless here
+    d: QDialog = qdialog()
+    v: QVBoxLayout = qvboxLayout()
+    QDialog_setLayout(d, QVBoxLayout_to_QLayout(v))
+
+    // Add a slider and a buddy label
+    l1: QLabel  = qlabel(qs("Value"))
+    sl: QSlider = qslider()
+    QLabel_setBuddy(l1, QSlider_to_QWidget(sl))
+    QSlider_setOrientation(sl, Horizontal())
+    QSlider_setRange(sl, 0, 100)
+    QSlider_setTickInterval(sl, 10)
+    QSlider_setTickPosition(sl, TicksAbove())
+
+    hrow1:QHBoxLayout = qhboxLayout()
+    QHBoxLayout_addWidget(hrow1, QLabel_to_QWidget(l1))
+    QHBoxLayout_addWidget(hrow1, QSlider_to_QWidget(sl))
+    QVBoxLayout_addLayout(v, QHBoxLayout_to_QLayout(hrow1))
+
+    // A a checkbox.
+    cb: QCheckBox = qcheckbox(qs("Checkbox"))
+    QVBoxLayout_addWidget(v, QCheckBox_to_QWidget(cb))
+
+    // Some radios... We add them to a QButtonGroup, though we don't have to -
+    // they'd be grouped automatically due to same parent.
+    aStr: QString = qs("A")
+    bg = qbuttongroup()
+
+    i: int = 0
+    while (i < 5) {
+        label: QString = QString_plus(aStr, qsNum(i + 1))
+        r: QRadioButton = qradio(label)
+        QVBoxLayout_addWidget(v, QRadioButton_to_QWidget(r))
+        QButtonGroup_addButton(bg, r)
+        i = i + 1
+    }
+
+    // Some more, inside a QGroupBox
+    group: QGroupBox = qgroupbox(qs("Group"))
+    QVBoxLayout_addWidget(v, QGroupBox_to_QWidget(group))
+
+	vg: QVBoxLayout = qvboxLayout()
+    QGroupBox_setLayout(group, QVBoxLayout_to_QLayout(vg))
+    QGroupBox_setFlat(group, true)
+
+    bStr: QString = qs("B")
+    i = 0
+    while (i < 5) {
+        label: QString = QString_plus(bStr, qsNum(i + 1))
+        r: QRadioButton = qradio(label)
+        QVBoxLayout_addWidget(vg, QRadioButton_to_QWidget(r))
+        i = i + 1
+    }
+
+    // QLineEdit + a buddy.
+    l2: QLabel    = qlabel(qs("Value"))
+    le: QLineEdit = qlineedit()
+    QLabel_setBuddy(l2, QLineEdit_to_QWidget(le))
+
+    hrow2:QHBoxLayout = qhboxLayout()
+    QHBoxLayout_addWidget(hrow2, QLabel_to_QWidget(l2))
+    QHBoxLayout_addWidget(hrow2, QLineEdit_to_QWidget(le))
+    QVBoxLayout_addLayout(v, QHBoxLayout_to_QLayout(hrow2))
+
+    // A QTextEdit
+    t: QTextEdit = qtextedit()
+    QVBoxLayout_addWidget(v, QTextEdit_to_QWidget(t))
+
+    // A couple of buttons, right-aligned
+    hrow3: QHBoxLayout = qhboxLayout()
+    QHBoxLayout_addStretch(hrow3)
+
+    ok: QPushButton = qpushbutton(qs("Ok"))
+    QPushButton_setIcon(ok, qiconStandard(DialogOkButton()))
+    QHBoxLayout_addWidget(hrow3, QPushButton_to_QWidget(ok))
+
+    cancel: QPushButton = qpushbutton(qs("Cancel"))
+    QPushButton_setIcon(cancel, qiconStandard(DialogCancelButton()))
+    QHBoxLayout_addWidget(hrow3, QPushButton_to_QWidget(cancel))
+
+    QVBoxLayout_addLayout(v, QHBoxLayout_to_QLayout(hrow3))
+
+    QDialog_show(d)
+    QApplication_exec(app)
+}
+
