@@ -29,7 +29,9 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
         val replaced = mutableMapOf<String, Int>()
         val encountered = insn.involved.toList()
         assert(encountered.size <= 3)
-        encountered.forEachIndexed { index, register -> replaced[register.name] = index }
+        encountered.forEachIndexed { index, register ->
+            if (offsets.containsKey(register.name))
+                replaced[register.name] = index }
 
         val returnedInsns = mutableListOf<Instruction>()
         for (ru in encountered) {
@@ -199,6 +201,6 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
         }
     }
 
-    abstract fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int = 64): Register.x86
+    abstract fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int = 64): Register
 
 }

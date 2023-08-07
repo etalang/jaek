@@ -96,15 +96,18 @@ class LinearScan(assembly: x86CompUnit, functionTypes: Map<String, EtaFunc>) :
         return default
     }
 
-    override fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int): Register.x86 {
+    override fun replaceRegister(r: Register, replaceMap: Map<String, Int>, size: Int): Register {
         return when (r) {
             is Register.Abstract -> {
                 if (replaceMap.keys.contains(r.name)) {
                     Register.x86(r.idxTox86Name(replaceMap[r.name]!!))
                 }
                 else {
-                    throw Exception("should be unreachable")
+                    r
                 }
+//                else {
+//                    throw Exception("should be unreachable")
+//                }
             }
             is Register.x86 -> r
         }
