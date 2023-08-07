@@ -8,6 +8,7 @@ import optimize.IROptimizer.Graphable
 class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
     val liveIn: Map<CFGNode, Set<Register>>
     val liveOut: Map<CFGNode, Set<Register>>
+    val live: Map<Instruction, Set<Register>>
     val cfg = CFGBuilder(funcDecl).build()
 
     init {
@@ -43,6 +44,7 @@ class LiveVariableAnalysis(val funcDecl: x86FuncDecl) : Graphable {
             }
         }
         liveOut = outVals
+        live = liveIn.mapKeys { it.key.insn }
     }
 
     override fun graphViz(): String {

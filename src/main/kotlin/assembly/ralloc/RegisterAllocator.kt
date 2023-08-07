@@ -9,6 +9,11 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
     val calleeSavedRegs = Register.x86.calleeSaved()
     val callerSavedRegs = Register.x86.callerSaved()
     val hackyCallerSavedRegs = Register.x86.callerSaved().minus(Register.x86(Register.x86Name.RDX)).minus(Register.x86(Register.x86Name.RAX))
+    val defaults = listOf(
+        Register.x86(Register.x86Name.R12),
+        Register.x86(Register.x86Name.R13),
+        Register.x86(Register.x86Name.R14)
+    )
 
     fun allocate(): x86CompUnit {
         return allocateCompUnit(assembly)
@@ -19,6 +24,53 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
     }
 
     abstract fun allocateFunction(n: x86FuncDecl): x86FuncDecl
+
+    fun trivialSpill(insn : Instruction, offsets : Map<String, Int>) : List<Instruction> {
+        val replaced = mutableMapOf<String, Int>()
+        val encountered = insn.involved.toList()
+        assert(encountered.size <= 3)
+        encountered.forEachIndexed { index, register -> replaced[register.name] = index }
+
+        val returnedInsns = mutableListOf<Instruction>()
+        for (ru in encountered) {
+            replaced[ru.name]?.let { idx ->
+                offsets[ru.name]?.let { shift ->
+                    returnedInsns.add(
+                        MOV(
+                            Destination.RegisterDest(defaults[idx]),
+                            Source.MemorySrc(
+                                Memory.RegisterMem(
+                                    Register.x86(Register.x86Name.RBP),
+                                    null,
+                                    offset = -8L * shift
+                                )
+                            )
+                        )
+                    )
+                }
+            }
+        }
+        returnedInsns.add(replaceInsnRegisters(insn, replaced))
+        for (rw in encountered) {
+            replaced[rw.name]?.let { idx ->
+                offsets[rw.name]?.let { shift ->
+                    returnedInsns.add(
+                        MOV(
+                            Destination.MemoryDest(
+                                Memory.RegisterMem(
+                                    Register.x86(Register.x86Name.RBP),
+                                    null,
+                                    offset = -8L * shift
+                                )
+                            ),
+                            Source.RegisterSrc(defaults[idx])
+                        )
+                    )
+                }
+            }
+        }
+        return returnedInsns
+    }
 
     fun replaceInsnRegisters(insn: Instruction, replaceMap: Map<String, Int>): Instruction {
         return when (insn) {
@@ -136,7 +188,6 @@ sealed class RegisterAllocator(val assembly: x86CompUnit, val functionTypes: Map
             is Source.RegisterSrc -> Source.RegisterSrc(replaceRegister(s.r, replaceMap))
         }
     }
-
     private fun replaceMemRegister(m: Memory, replaceMap: Map<String, Int>): Memory {
         return when (m) {
             is Memory.LabelMem -> m
